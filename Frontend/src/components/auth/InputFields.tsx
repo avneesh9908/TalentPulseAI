@@ -11,12 +11,19 @@ interface Props {
 export const InputField = ({ label, type = "text", value, onChange }: Props) => {
   return (
     <div className="flex flex-col gap-1">
-      <Label>{label}</Label>
+      <Label className="font-medium text-gray-700">{label}</Label>
+
       <Input
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="rounded-lg"
+        className="
+          rounded-xl px-4 py-2
+          border border-gray-300
+          focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:border-purple-500
+          transition-all duration-300
+          bg-white/60 backdrop-blur-lg
+        "
       />
     </div>
   );

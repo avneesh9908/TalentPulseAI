@@ -9,37 +9,39 @@ export default function Register() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
 
-  // NOTE: ye backend connect hone ke baad implement hoga
   const handleRegister = () => {
     console.log("Register clicked:", { email, phone });
   };
 
   return (
     <AuthCard title="Create Your Account">
-      <div className="flex flex-col gap-4">
-        {/* Email Input */}
-        <InputField label="Email" value={email} onChange={setEmail} />
+      <div className="flex flex-col gap-5">
 
-        {/* Phone Input */}
+        <InputField label="Email Address" value={email} onChange={setEmail} />
+
         <InputField label="Phone Number" value={phone} onChange={setPhone} />
 
-        {/* Register Button */}
-        <Button onClick={handleRegister} className="w-full rounded-lg">
+        <Button
+          onClick={handleRegister}
+          className="
+            w-full py-3 rounded-xl text-white
+            bg-gradient-to-r from-indigo-500 to-purple-600 
+            hover:opacity-90 transition-all duration-300
+          "
+        >
           Register
         </Button>
 
-        {/* Divider */}
-        <div className="text-center text-sm text-muted-foreground">OR</div>
+        <div className="text-center text-sm text-gray-600">OR</div>
 
-        {/* Google Login */}
         <SocialButton
           text="Continue with Google"
           onClick={() => console.log("Google register")}
         />
 
-        <p className="text-center text-sm mt-2">
+        <p className="text-center text-sm mt-2 text-gray-700">
           Already have an account?{" "}
-          <Link to="/auth/login" className="text-blue-600 font-medium">
+          <Link to="/auth/login" className="text-purple-600 font-semibold">
             Login
           </Link>
         </p>
