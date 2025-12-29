@@ -28,7 +28,13 @@
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
-    --radius: 0.5rem
+    --radius: 0.5rem;
+      /* Custom Dashboard Colors - Light Mode */
+    --primary-gradient-start: 271 81% 56%; /* violet-600 */
+    --primary-gradient-end: 189 85% 57%;   /* cyan-500 */
+    --card-bg-start: 220 13% 91%;          /* slate-200 */
+    --card-bg-end: 220 14% 96%;            /* slate-100 */
+    --dashboard-bg: 210 20% 98%;           /* light gray */
   }
   .dark {
     --background: 222.2 84% 4.9%;
@@ -54,7 +60,13 @@
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%
+    --chart-5: 340 75% 55%;
+      /* Custom Dashboard Colors - Dark Mode */
+    --primary-gradient-start: 271 81% 56%; /* violet-600 */
+    --primary-gradient-end: 189 85% 57%;   /* cyan-500 */
+    --card-bg-start: 222 47% 11%;          /* slate-900 */
+    --card-bg-end: 215 28% 17%;            /* slate-800 */
+    --dashboard-bg: 222 47% 11%;           /* dark slate */
   }
 }
 

@@ -472,7 +472,7 @@
 //   return (
 //     <motion.div
 //       whileHover={{ y: -4, scale: 1.02 }}
-//       className="relative overflow-hidden bg-gradient-to-br from-slate-900/90 to-slate-800/90 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-2xl group"
+//       className="relative overflow-hidden bg-gradient-card backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-2xl group"
 //     >
 //       <div className={`absolute inset-0 bg-gradient-to-br ${color} opacity-0 group-hover:opacity-10 transition-opacity duration-300`}></div>
 //       <div className="relative z-10">
@@ -602,7 +602,7 @@
 //                   exit={{ opacity: 0, height: 0 }}
 //                   className="md:hidden mb-4 overflow-hidden"
 //                 >
-//                   <div className="bg-gradient-to-br from-slate-900/90 to-slate-800/90 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl">
+//                   <div className="bg-gradient-card backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl">
 //                     <div className="flex flex-col gap-2">
 //                       {["Dashboard", "My Interviews", "Schedule", "Achievements", "Notifications"].map((item, i) => (
 //                         <button
@@ -640,7 +640,7 @@
 //                   <IconButton className="bg-slate-900/50 backdrop-blur-xl border border-white/10">
 //                     <Bell size={18} className="text-white" />
 //                   </IconButton>
-//                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-600 to-cyan-500 flex items-center justify-center text-white font-bold shadow-lg">A</div>
+//                   <div className="w-10 h-10 rounded-full bg-gradient-primary flex items-center justify-center text-white font-bold shadow-lg">A</div>
 //                 </div>
 //               </motion.div>
 
@@ -959,6 +959,7 @@
 // }
 
 import { useState } from "react";
+import { useTheme } from "@/App"; 
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LineChart,
@@ -1069,7 +1070,7 @@ function GlassCard({ children, className = "", isDark = true }: any) {
   return (
     <div className={`${
       isDark 
-        ? "bg-gradient-to-br from-slate-900/90 to-slate-800/90 backdrop-blur-xl border border-white/10" 
+        ? "bg-gradient-card backdrop-blur-xl border border-white/10" 
         : "bg-white/80 backdrop-blur-xl border border-gray-200 shadow-lg"
     } rounded-2xl p-6 ${className}`}>
       {children}
@@ -1082,12 +1083,13 @@ export default function UserDashboardPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
-  const [isDark, setIsDark] = useState(true);
+   const { isDark, toggleTheme } = useTheme();
+ 
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${
       isDark 
-        ? "bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950" 
+        ? "bg-dashboard-bg to-slate-950" 
         : "bg-gradient-to-br from-gray-50 via-white to-gray-100"
     }`}>
       {/* Animated background elements */}
@@ -1113,11 +1115,11 @@ export default function UserDashboardPage() {
           >
             <div className={`${
               isDark 
-                ? "bg-gradient-to-br from-slate-900/90 to-slate-800/90 backdrop-blur-xl border border-white/10" 
+                ? "bg-gradient-card backdrop-blur-xl border border-white/10" 
                 : "bg-white/80 backdrop-blur-xl border border-gray-200 shadow-lg"
             } rounded-2xl p-4 mb-4`}>
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-600 to-cyan-500 shadow-lg flex items-center justify-center">
+                <div className="w-12 h-12 rounded-xl bg-gradient-primary shadow-lg flex items-center justify-center">
                   <Activity className="text-white" size={24} />
                 </div>
                 {!sidebarCollapsed && (
@@ -1162,7 +1164,7 @@ export default function UserDashboardPage() {
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                onClick={() => setIsDark(!isDark)}
+                onClick={() => toggleTheme()}
                 className={`w-full py-3 rounded-xl transition font-semibold shadow-lg ${
                   isDark
                     ? "bg-slate-800/50 hover:bg-slate-700/50 text-white border border-white/10"
@@ -1186,7 +1188,7 @@ export default function UserDashboardPage() {
           <div className="flex-1">
             <header className={`flex items-center justify-between md:hidden mb-4 ${
               isDark 
-                ? "bg-gradient-to-br from-slate-900/90 to-slate-800/90 backdrop-blur-xl border border-white/10" 
+                ? "bg-gradient-card backdrop-blur-xl border border-white/10" 
                 : "bg-white/80 backdrop-blur-xl border border-gray-200 shadow-lg"
             } rounded-2xl p-4`}>
               <div className="flex items-center gap-3">
@@ -1197,13 +1199,13 @@ export default function UserDashboardPage() {
               </div>
 
               <div className="flex items-center gap-2">
-                <IconButton onClick={() => setIsDark(!isDark)}>
+                <IconButton onClick={() => toggleTheme()}>
                   {isDark ? <span className="text-xl">☀️</span> : <span className="text-xl">🌙</span>}
                 </IconButton>
                 <IconButton>
                   <Bell size={18} className={isDark ? "text-white" : "text-gray-900"} />
                 </IconButton>
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-600 to-cyan-500 flex items-center justify-center text-white font-bold shadow-lg">U</div>
+                <div className="w-10 h-10 rounded-full bg-gradient-primary flex items-center justify-center text-white font-bold shadow-lg">U</div>
               </div>
             </header>
 
@@ -1218,7 +1220,7 @@ export default function UserDashboardPage() {
                 >
                   <div className={`${
                     isDark 
-                      ? "bg-gradient-to-br from-slate-900/90 to-slate-800/90 backdrop-blur-xl border border-white/10" 
+                      ? "bg-gradient-card backdrop-blur-xl border border-white/10" 
                       : "bg-white/80 backdrop-blur-xl border border-gray-200 shadow-lg"
                   } rounded-2xl p-4`}>
                     <div className="flex flex-col gap-2">
@@ -1256,7 +1258,7 @@ export default function UserDashboardPage() {
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    onClick={() => setIsDark(!isDark)}
+                    onClick={() => toggleTheme()}
                     className={`p-2 rounded-lg transition ${
                       isDark 
                         ? "bg-slate-900/50 backdrop-blur-xl border border-white/10 text-white" 
@@ -1276,7 +1278,7 @@ export default function UserDashboardPage() {
                   <IconButton className={isDark ? "bg-slate-900/50 backdrop-blur-xl border border-white/10" : "bg-white/80 backdrop-blur-xl border border-gray-300 shadow-md"}>
                     <Bell size={18} className={isDark ? "text-white" : "text-gray-900"} />
                   </IconButton>
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-600 to-cyan-500 flex items-center justify-center text-white font-bold shadow-lg">A</div>
+                  <div className="w-10 h-10 rounded-full bg-gradient-primary flex items-center justify-center text-white font-bold shadow-lg">A</div>
                 </div>
               </motion.div>
 
