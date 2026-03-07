@@ -31,28 +31,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(false);
   }, []);
 
-  const login = async (email: string, password: string) => {
-    // FastAPI OAuth2 requires form data with "username" field
-    const formData = new URLSearchParams();
-    formData.append("username", email);
-    formData.append("password", password);
+// If you want to keep UserLogin schema in backend, change frontend to send JSON
 
-    const res = await fetch(`${API}/auth/signup`, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: formData,
-    });
+const login = async (email: string, password: string) => {
+  // ✅ Send as JSON instead of form data
+  const res = await fetch(`${API}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },  // Changed to JSON
+    body: JSON.stringify({ email, password }),         // Send as JSON
+  });
 
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.detail || "Invalid email or password");
-    }
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || "Invalid email or password");
+  }
 
-    const data = await res.json();
-    localStorage.setItem("access_token", data.access_token);
-    setToken(data.access_token);
-    navigate("/dashboard");
-  };
+  const data = await res.json();
+  localStorage.setItem("access_token", data.access_token);
+  setToken(data.access_token);
+  navigate("/dashboard");
+};
 
   const register = async (name: string, email: string, phone: string, password: string) => {
     const res = await fetch(`${API}/auth/register`, {
