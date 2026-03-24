@@ -12,6 +12,13 @@ import Register from "@/app/pages/auth/register";
 import Dashboard from "./app/pages/dashboard/dashboard";
 import LandingPage from "@/App/pages/landing";
 
+// Interview Pages
+import SelectRole from "@/app/pages/interview/select-role";
+import SelectProfile from "@/app/pages/interview/select-profile";
+import QuickSetup from "@/app/pages/interview/quick-setup";
+// import InterviewSession from "@/app/pages/interview/session";
+// import InterviewResult from "@/app/pages/interview/result";
+
 // ─── Theme Context ────────────────────────────────────────────────
 interface ThemeContextType {
   isDark: boolean;
@@ -68,6 +75,52 @@ function App() {
                   <Dashboard />
                 </ProtectedRoute>
               }
+            />
+
+            {/* INTERVIEW ROUTES */}
+            <Route
+              path="/interview"
+              element={
+                <ProtectedRoute>
+                  <SelectRole />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/interview/select-profile"
+              element={
+                <ProtectedRoute>
+                  <SelectProfile />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/interview/quick-setup"
+              element={
+                <ProtectedRoute>
+                  <QuickSetup />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              // path="/interview/session"
+              // element={
+              //   <ProtectedRoute>
+              //     <InterviewSession />
+              //   </ProtectedRoute>
+              // }
+            />
+
+            <Route
+              // path="/interview/result"
+              // element={
+              //   <ProtectedRoute>
+              //     <InterviewResult />
+              //   </ProtectedRoute>
+              // }
             />
 
             {/* FALLBACK */}
