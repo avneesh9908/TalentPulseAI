@@ -1,13 +1,14 @@
 import { useState } from "react";
+import { useTheme } from "@/App";
 import { motion } from "framer-motion";
 import { 
   Menu, X, ArrowRight, CheckCircle2, Sparkles, Mic, BarChart3, 
-  Code, Brain, Target, Zap, Users, Award, Clock, Star, 
-  Play, ChevronRight, Github, Twitter, Linkedin, Mail
+  Code, Brain, Target, Play, ChevronRight, Github, Twitter, Linkedin, Sun, Moon
 } from "lucide-react";
 
 export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { isDark, toggleTheme } = useTheme();
 
   const interviewTracks = [
     { name: "Python Interview", icon: "🐍", color: "from-blue-500 to-cyan-500", topics: "Core Python, DSA, OOP" },
@@ -55,16 +56,36 @@ export default function LandingPage() {
     { value: "4.9★", label: "User Rating" },
   ];
 
+  // Reusable card class
+  const cardClass = isDark
+    ? "bg-gradient-to-br from-slate-900/90 to-slate-800/90 border-white/10 text-white"
+    : "bg-white border-slate-200 text-slate-900 shadow-sm";
+
+  const subTextClass = isDark ? "text-slate-400" : "text-slate-500";
+  const sectionBgClass = isDark ? "bg-slate-900/50" : "bg-slate-50";
+
   return (
-    <div className="bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white">
-      {/* Animated background */}
+    <div className={`min-h-screen transition-colors duration-300 ${
+      isDark 
+        ? "bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white" 
+        : "bg-gradient-to-b from-white via-slate-50 to-white text-slate-900"
+    }`}>
+      {/* Animated background blobs */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: "1s" }}></div>
+        <div className={`absolute top-0 left-1/4 w-96 h-96 rounded-full blur-3xl animate-pulse ${
+          isDark ? "bg-violet-500/10" : "bg-violet-200/40"
+        }`}></div>
+        <div className={`absolute bottom-0 right-1/4 w-96 h-96 rounded-full blur-3xl animate-pulse ${
+          isDark ? "bg-cyan-500/10" : "bg-cyan-200/40"
+        }`} style={{ animationDelay: "1s" }}></div>
       </div>
 
-      {/* Header */}
-      <header className="relative z-50 sticky top-0 bg-slate-900/80 backdrop-blur-xl border-b border-white/10">
+      {/* ── Header ── */}
+      <header className={`relative z-50 sticky top-0 backdrop-blur-xl border-b ${
+        isDark
+          ? "bg-slate-900/80 border-white/10 text-white"
+          : "bg-white/80 border-slate-200 text-slate-900"
+      }`}>
         <nav className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             {/* Logo */}
@@ -76,25 +97,53 @@ export default function LandingPage() {
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-cyan-500 shadow-lg flex items-center justify-center">
                 <Sparkles className="text-white" size={20} />
               </div>
-              <span className="text-xl font-bold">TalentPulse<span className="text-cyan-400">AI</span></span>
+              <span className="text-xl font-bold">
+                TalentPulse<span className="text-cyan-500">AI</span>
+              </span>
             </motion.div>
 
             {/* Desktop Menu */}
             <div className="hidden md:flex items-center gap-8">
-              <a href="#features" className="text-slate-300 hover:text-white transition">Features</a>
-              <a href="#how-it-works" className="text-slate-300 hover:text-white transition">How It Works</a>
-              <a href="#tracks" className="text-slate-300 hover:text-white transition">Tracks</a>
-              <a href="/explore" className="text-slate-300 hover:text-white transition">Explore</a>
-              <a href="/demo" className="text-slate-300 hover:text-white transition">Demo</a>
+              {["#features", "#how-it-works", "#tracks", "/explore", "/demo"].map((href, i) => (
+                <a
+                  key={i}
+                  href={href}
+                  className={`transition text-sm font-medium ${
+                    isDark
+                      ? "text-slate-300 hover:text-white"
+                      : "text-slate-600 hover:text-violet-600"
+                  }`}
+                >
+                  {["Features", "How It Works", "Tracks", "Explore", "Demo"][i]}
+                </a>
+              ))}
             </div>
 
-            {/* Desktop CTA */}
-            <div className="hidden md:flex items-center gap-4">
+            {/* Desktop CTA + Theme toggle */}
+            <div className="hidden md:flex items-center gap-3">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={toggleTheme}
+                aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+                className={`p-2 rounded-lg transition ${
+                  isDark
+                    ? "bg-slate-800 text-yellow-300 hover:bg-slate-700"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                }`}
+              >
+                {isDark ? <Sun size={18} /> : <Moon size={18} />}
+              </motion.button>
+
               <a href="/auth/login">
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition"
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+                    isDark
+                      ? "bg-slate-800 hover:bg-slate-700 text-white"
+                      : "bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200"
+                  }`}
                 >
                   Login
                 </motion.button>
@@ -103,20 +152,35 @@ export default function LandingPage() {
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="px-4 py-2 rounded-lg bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-500 hover:to-cyan-500 transition shadow-lg"
+                  className="px-4 py-2 rounded-lg bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-500 hover:to-cyan-500 text-white text-sm font-medium transition shadow-lg"
                 >
                   Get Started Free
                 </motion.button>
               </a>
             </div>
 
-            {/* Mobile Menu Button */}
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 rounded-lg hover:bg-white/10 transition"
-            >
-              {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
+            {/* Mobile right controls */}
+            <div className="flex items-center gap-2 md:hidden">
+              <button
+                onClick={toggleTheme}
+                aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+                className={`p-2 rounded-lg transition ${
+                  isDark
+                    ? "bg-slate-800 text-yellow-300"
+                    : "bg-slate-100 text-slate-600"
+                }`}
+              >
+                {isDark ? <Sun size={20} /> : <Moon size={20} />}
+              </button>
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className={`p-2 rounded-lg transition ${
+                  isDark ? "hover:bg-white/10 text-white" : "hover:bg-slate-100 text-slate-700"
+                }`}
+              >
+                {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+              </button>
+            </div>
           </div>
 
           {/* Mobile Menu */}
@@ -125,17 +189,39 @@ export default function LandingPage() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              className="md:hidden mt-4 py-4 border-t border-white/10"
+              className={`md:hidden mt-4 py-4 border-t ${
+                isDark ? "border-white/10" : "border-slate-200"
+              }`}
             >
               <div className="flex flex-col gap-4">
-                <a href="#features" className="text-slate-300 hover:text-white transition">Features</a>
-                <a href="#how-it-works" className="text-slate-300 hover:text-white transition">How It Works</a>
-                <a href="#tracks" className="text-slate-300 hover:text-white transition">Tracks</a>
-                <a href="/explore" className="text-slate-300 hover:text-white transition">Explore</a>
-                <a href="/demo" className="text-slate-300 hover:text-white transition">Demo</a>
-                <div className="flex flex-col gap-2 pt-4 border-t border-white/10">
-                  <a href="/auth/login" className="px-4 py-2 rounded-lg bg-slate-800 text-center">Login</a>
-                  <a href="/auth/register" className="px-4 py-2 rounded-lg bg-gradient-to-r from-violet-600 to-cyan-600 text-center">Get Started</a>
+                {["#features", "#how-it-works", "#tracks", "/explore", "/demo"].map((href, i) => (
+                  <a
+                    key={i}
+                    href={href}
+                    className={`transition text-sm font-medium ${
+                      isDark ? "text-slate-300 hover:text-white" : "text-slate-600 hover:text-violet-600"
+                    }`}
+                  >
+                    {["Features", "How It Works", "Tracks", "Explore", "Demo"][i]}
+                  </a>
+                ))}
+                <div className={`flex flex-col gap-2 pt-4 border-t ${
+                  isDark ? "border-white/10" : "border-slate-200"
+                }`}>
+                  <a
+                    href="/auth/login"
+                    className={`px-4 py-2 rounded-lg text-center text-sm font-medium ${
+                      isDark ? "bg-slate-800 text-white" : "bg-slate-100 text-slate-700 border border-slate-200"
+                    }`}
+                  >
+                    Login
+                  </a>
+                  <a
+                    href="/auth/register"
+                    className="px-4 py-2 rounded-lg bg-gradient-to-r from-violet-600 to-cyan-600 text-white text-center text-sm font-medium"
+                  >
+                    Get Started
+                  </a>
                 </div>
               </div>
             </motion.div>
@@ -143,34 +229,41 @@ export default function LandingPage() {
         </nav>
       </header>
 
-      {/* Hero Section */}
+      {/* ── Hero ── */}
       <section className="relative pt-20 pb-32 px-6">
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-            {/* Left Content */}
+            {/* Left */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
             >
-              <div className="inline-block px-4 py-2 rounded-full bg-violet-500/20 border border-violet-500/30 text-violet-300 text-sm mb-6">
+              <div className={`inline-block px-4 py-2 rounded-full text-sm mb-6 border ${
+                isDark
+                  ? "bg-violet-500/20 border-violet-500/30 text-violet-300"
+                  : "bg-violet-50 border-violet-200 text-violet-600"
+              }`}>
                 🚀 AI-Powered Interview Platform
               </div>
+
               <h1 className="text-5xl md:text-7xl font-bold leading-tight mb-6">
                 Practice Real AI Interviews.{" "}
-                <span className="bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-violet-500 to-cyan-500 bg-clip-text text-transparent">
                   Get Instant Feedback.
                 </span>
               </h1>
-              <p className="text-xl text-slate-400 mb-8 leading-relaxed">
+
+              <p className={`text-xl mb-8 leading-relaxed ${subTextClass}`}>
                 TalentPulseAI simulates real interviews using advanced AI. Answer via video/audio, get scored in seconds, and improve with personalized smart feedback.
               </p>
+
               <div className="flex flex-col sm:flex-row gap-4">
                 <a href="/demo">
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="px-8 py-4 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-500 hover:to-cyan-500 transition shadow-lg font-semibold flex items-center justify-center gap-2"
+                    className="px-8 py-4 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-500 hover:to-cyan-500 text-white transition shadow-lg font-semibold flex items-center justify-center gap-2"
                   >
                     <Play size={20} />
                     Try Free Demo
@@ -180,7 +273,11 @@ export default function LandingPage() {
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="px-8 py-4 rounded-xl bg-slate-800 hover:bg-slate-700 transition font-semibold flex items-center justify-center gap-2"
+                    className={`px-8 py-4 rounded-xl font-semibold flex items-center justify-center gap-2 transition border ${
+                      isDark
+                        ? "bg-slate-800 hover:bg-slate-700 text-white border-white/10"
+                        : "bg-white hover:bg-slate-50 text-slate-800 border-slate-200 shadow-sm"
+                    }`}
                   >
                     Get Started Free
                     <ArrowRight size={20} />
@@ -198,42 +295,54 @@ export default function LandingPage() {
                     transition={{ delay: 0.2 + i * 0.1 }}
                     className="text-center"
                   >
-                    <div className="text-2xl font-bold text-cyan-400">{stat.value}</div>
-                    <div className="text-xs text-slate-400 mt-1">{stat.label}</div>
+                    <div className={`text-2xl font-bold ${isDark ? "text-cyan-400" : "text-violet-600"}`}>
+                      {stat.value}
+                    </div>
+                    <div className={`text-xs mt-1 ${subTextClass}`}>{stat.label}</div>
                   </motion.div>
                 ))}
               </div>
             </motion.div>
 
-            {/* Right Image */}
+            {/* Right – hero image */}
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.6, delay: 0.2 }}
               className="relative"
             >
-              <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-white/10">
+              <div className={`relative rounded-2xl overflow-hidden shadow-2xl border ${
+                isDark ? "border-white/10" : "border-slate-200"
+              }`}>
                 <img
                   src="https://huru.ai/wp-content/uploads/2025/08/Huru-on-Desktop-web.png"
                   alt="AI Interview Platform"
                   className="w-full h-auto"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent"></div>
+                <div className={`absolute inset-0 bg-gradient-to-t ${
+                  isDark ? "from-slate-900/80" : "from-white/40"
+                } to-transparent`}></div>
               </div>
-              
-              {/* Floating Card */}
+
+              {/* Floating success card */}
               <motion.div
                 animate={{ y: [0, -10, 0] }}
                 transition={{ duration: 3, repeat: Infinity }}
-                className="absolute -bottom-6 -left-6 bg-gradient-to-br from-slate-900/90 to-slate-800/90 backdrop-blur-xl border border-white/10 rounded-xl p-4 shadow-2xl"
+                className={`absolute -bottom-6 -left-6 backdrop-blur-xl border rounded-xl p-4 shadow-2xl ${
+                  isDark
+                    ? "bg-slate-900/90 border-white/10"
+                    : "bg-white border-slate-200"
+                }`}
               >
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
                     <CheckCircle2 className="text-white" size={24} />
                   </div>
                   <div>
-                    <div className="text-sm font-semibold">Interview Completed!</div>
-                    <div className="text-xs text-slate-400">Score: 89/100</div>
+                    <div className={`text-sm font-semibold ${isDark ? "text-white" : "text-slate-800"}`}>
+                      Interview Completed!
+                    </div>
+                    <div className={`text-xs ${subTextClass}`}>Score: 89/100</div>
                   </div>
                 </div>
               </motion.div>
@@ -242,8 +351,8 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* How It Works */}
-      <section id="how-it-works" className="py-24 px-6 bg-slate-900/50">
+      {/* ── How It Works ── */}
+      <section id="how-it-works" className={`py-24 px-6 ${sectionBgClass}`}>
         <div className="max-w-7xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -252,7 +361,7 @@ export default function LandingPage() {
             className="text-center mb-16"
           >
             <h2 className="text-4xl md:text-5xl font-bold mb-4">How It Works</h2>
-            <p className="text-xl text-slate-400">Get started in 3 simple steps</p>
+            <p className={`text-xl ${subTextClass}`}>Get started in 3 simple steps</p>
           </motion.div>
 
           <div className="grid md:grid-cols-3 gap-8">
@@ -264,21 +373,23 @@ export default function LandingPage() {
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.2 }}
                 whileHover={{ y: -8 }}
-                className="relative bg-gradient-to-br from-slate-900/90 to-slate-800/90 backdrop-blur-xl border border-white/10 rounded-2xl p-8"
+                className={`relative backdrop-blur-xl border rounded-2xl p-8 transition ${cardClass}`}
               >
                 <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${step.color} shadow-lg flex items-center justify-center mb-6`}>
                   <step.icon className="text-white" size={32} />
                 </div>
-                <div className="absolute top-4 right-4 text-6xl font-bold text-white/5">{i + 1}</div>
+                <div className={`absolute top-4 right-4 text-6xl font-bold ${
+                  isDark ? "text-white/5" : "text-slate-100"
+                }`}>{i + 1}</div>
                 <h3 className="text-2xl font-bold mb-3">{step.title}</h3>
-                <p className="text-slate-400">{step.desc}</p>
+                <p className={subTextClass}>{step.desc}</p>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Features */}
+      {/* ── Features ── */}
       <section id="features" className="py-24 px-6">
         <div className="max-w-7xl mx-auto">
           <motion.div
@@ -288,7 +399,7 @@ export default function LandingPage() {
             className="text-center mb-16"
           >
             <h2 className="text-4xl md:text-5xl font-bold mb-4">Why TalentPulseAI?</h2>
-            <p className="text-xl text-slate-400">Powerful features to ace your interviews</p>
+            <p className={`text-xl ${subTextClass}`}>Powerful features to ace your interviews</p>
           </motion.div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -299,20 +410,24 @@ export default function LandingPage() {
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
-                whileHover={{ scale: 1.05 }}
-                className="bg-gradient-to-br from-slate-900/90 to-slate-800/90 backdrop-blur-xl border border-white/10 rounded-2xl p-6 hover:border-violet-500/30 transition"
+                whileHover={{ scale: 1.04 }}
+                className={`backdrop-blur-xl border rounded-2xl p-6 transition hover:border-violet-500/40 ${cardClass}`}
               >
-                <feature.icon className="text-violet-400 mb-4" size={32} />
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${
+                  isDark ? "bg-violet-500/20" : "bg-violet-50"
+                }`}>
+                  <feature.icon className={isDark ? "text-violet-400" : "text-violet-600"} size={24} />
+                </div>
                 <h3 className="text-xl font-bold mb-2">{feature.title}</h3>
-                <p className="text-slate-400 text-sm">{feature.desc}</p>
+                <p className={`text-sm ${subTextClass}`}>{feature.desc}</p>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Interview Tracks */}
-      <section id="tracks" className="py-24 px-6 bg-slate-900/50">
+      {/* ── Interview Tracks ── */}
+      <section id="tracks" className={`py-24 px-6 ${sectionBgClass}`}>
         <div className="max-w-7xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -321,7 +436,7 @@ export default function LandingPage() {
             className="text-center mb-16"
           >
             <h2 className="text-4xl md:text-5xl font-bold mb-4">Popular Interview Tracks</h2>
-            <p className="text-xl text-slate-400">Choose your domain and start practicing</p>
+            <p className={`text-xl ${subTextClass}`}>Choose your domain and start practicing</p>
           </motion.div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -333,15 +448,18 @@ export default function LandingPage() {
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
                 whileHover={{ y: -8 }}
-                className="relative overflow-hidden bg-gradient-to-br from-slate-900/90 to-slate-800/90 backdrop-blur-xl border border-white/10 rounded-2xl p-6 group cursor-pointer"
+                className={`relative overflow-hidden backdrop-blur-xl border rounded-2xl p-6 group cursor-pointer transition ${cardClass}`}
               >
+                {/* Gradient overlay on hover */}
                 <div className={`absolute inset-0 bg-gradient-to-br ${track.color} opacity-0 group-hover:opacity-10 transition-opacity`}></div>
                 <div className="relative z-10">
                   <div className="text-5xl mb-4">{track.icon}</div>
                   <h3 className="text-2xl font-bold mb-2">{track.name}</h3>
-                  <p className="text-slate-400 text-sm mb-4">{track.topics}</p>
-                  <div className="flex items-center text-violet-400 font-semibold group-hover:gap-2 transition-all">
-                    Start Practice 
+                  <p className={`text-sm mb-4 ${subTextClass}`}>{track.topics}</p>
+                  <div className={`flex items-center font-semibold group-hover:gap-2 transition-all ${
+                    isDark ? "text-violet-400" : "text-violet-600"
+                  }`}>
+                    Start Practice
                     <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
                   </div>
                 </div>
@@ -351,7 +469,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* CTA Section */}
+      {/* ── CTA ── */}
       <section className="py-24 px-6">
         <div className="max-w-5xl mx-auto">
           <motion.div
@@ -362,8 +480,8 @@ export default function LandingPage() {
           >
             <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzRjMC0yLjIxLTEuNzktNC00LTRzLTQgMS43OS00IDQgMS43OSA0IDQgNCA0LTEuNzkgNC00em0wLTEwYzAtMi4yMS0xLjc5LTQtNC00cy00IDEuNzktNCA0IDEuNzkgNCA0IDQgNC0xLjc5IDQtNHoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-10"></div>
             <div className="relative z-10">
-              <h2 className="text-4xl md:text-5xl font-bold mb-4">Ready to Crack Your Next Interview?</h2>
-              <p className="text-xl opacity-90 mb-8 max-w-2xl mx-auto">
+              <h2 className="text-4xl md:text-5xl font-bold mb-4 text-white">Ready to Crack Your Next Interview?</h2>
+              <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
                 Start your AI-powered mock interview today and land your dream tech job.
               </p>
               <a href="/demo">
@@ -381,8 +499,10 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="relative border-t border-white/10 py-12 px-6">
+      {/* ── Footer ── */}
+      <footer className={`relative border-t py-12 px-6 ${
+        isDark ? "border-white/10" : "border-slate-200"
+      }`}>
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-4 gap-12 mb-12">
             {/* Brand */}
@@ -391,58 +511,66 @@ export default function LandingPage() {
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-cyan-500 shadow-lg flex items-center justify-center">
                   <Sparkles className="text-white" size={20} />
                 </div>
-                <span className="text-xl font-bold">TalentPulse<span className="text-cyan-400">AI</span></span>
+                <span className="text-xl font-bold">
+                  TalentPulse<span className="text-cyan-500">AI</span>
+                </span>
               </div>
-              <p className="text-slate-400 text-sm">
+              <p className={`text-sm ${subTextClass}`}>
                 AI-powered interview platform to help you ace your tech interviews.
               </p>
               <div className="flex gap-4 mt-4">
-                <a href="#" className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center transition">
-                  <Twitter size={16} />
-                </a>
-                <a href="#" className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center transition">
-                  <Github size={16} />
-                </a>
-                <a href="#" className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center transition">
-                  <Linkedin size={16} />
-                </a>
+                {[Twitter, Github, Linkedin].map((Icon, i) => (
+                  <a
+                    key={i}
+                    href="#"
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center transition ${
+                      isDark
+                        ? "bg-slate-800 hover:bg-slate-700 text-slate-300"
+                        : "bg-slate-100 hover:bg-slate-200 text-slate-600"
+                    }`}
+                  >
+                    <Icon size={16} />
+                  </a>
+                ))}
               </div>
             </div>
 
             {/* Product */}
             <div>
               <h3 className="font-bold mb-4">Product</h3>
-              <ul className="space-y-2 text-slate-400 text-sm">
-                <li><a href="/explore" className="hover:text-white transition">Explore</a></li>
-                <li><a href="/demo" className="hover:text-white transition">Demo</a></li>
-                <li><a href="#features" className="hover:text-white transition">Features</a></li>
-                <li><a href="#tracks" className="hover:text-white transition">Tracks</a></li>
+              <ul className={`space-y-2 text-sm ${subTextClass}`}>
+                <li><a href="/explore" className={`hover:${isDark ? "text-white" : "text-violet-600"} transition`}>Explore</a></li>
+                <li><a href="/demo" className={`hover:${isDark ? "text-white" : "text-violet-600"} transition`}>Demo</a></li>
+                <li><a href="#features" className={`hover:${isDark ? "text-white" : "text-violet-600"} transition`}>Features</a></li>
+                <li><a href="#tracks" className={`hover:${isDark ? "text-white" : "text-violet-600"} transition`}>Tracks</a></li>
               </ul>
             </div>
 
             {/* Company */}
             <div>
               <h3 className="font-bold mb-4">Company</h3>
-              <ul className="space-y-2 text-slate-400 text-sm">
-                <li><a href="#" className="hover:text-white transition">About Us</a></li>
-                <li><a href="#" className="hover:text-white transition">Blog</a></li>
-                <li><a href="#" className="hover:text-white transition">Careers</a></li>
-                <li><a href="#" className="hover:text-white transition">Contact</a></li>
+              <ul className={`space-y-2 text-sm ${subTextClass}`}>
+                <li><a href="#" className="hover:text-violet-600 transition">About Us</a></li>
+                <li><a href="#" className="hover:text-violet-600 transition">Blog</a></li>
+                <li><a href="#" className="hover:text-violet-600 transition">Careers</a></li>
+                <li><a href="#" className="hover:text-violet-600 transition">Contact</a></li>
               </ul>
             </div>
 
             {/* Legal */}
             <div>
               <h3 className="font-bold mb-4">Legal</h3>
-              <ul className="space-y-2 text-slate-400 text-sm">
-                <li><a href="#" className="hover:text-white transition">Privacy Policy</a></li>
-                <li><a href="#" className="hover:text-white transition">Terms of Service</a></li>
-                <li><a href="#" className="hover:text-white transition">Cookie Policy</a></li>
+              <ul className={`space-y-2 text-sm ${subTextClass}`}>
+                <li><a href="#" className="hover:text-violet-600 transition">Privacy Policy</a></li>
+                <li><a href="#" className="hover:text-violet-600 transition">Terms of Service</a></li>
+                <li><a href="#" className="hover:text-violet-600 transition">Cookie Policy</a></li>
               </ul>
             </div>
           </div>
 
-          <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-slate-400">
+          <div className={`pt-8 border-t flex flex-col md:flex-row justify-between items-center gap-4 text-sm ${subTextClass} ${
+            isDark ? "border-white/10" : "border-slate-200"
+          }`}>
             <p>© {new Date().getFullYear()} TalentPulseAI. All rights reserved.</p>
             <p>Made with ❤️ for aspiring developers</p>
           </div>

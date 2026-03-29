@@ -1,21 +1,24 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { createContext, useContext, useEffect, useState } from "react";
 import { AuthProvider } from "@/contexts/auth-context";
+import { InterviewProvider } from "@/contexts/interview-context";
 import ProtectedRoute from "@/app/pages/auth/protected-route";
 
 // Layouts
 import AuthLayout from "@/app/pages/auth/layout";
+import ProtectedLayout from "@/app/pages/protected-layout";
 
 // Pages
 import Login from "@/app/pages/auth/login";
 import Register from "@/app/pages/auth/register";
-import Dashboard from "./app/pages/dashboard/dashboard";
-import LandingPage from "@/App/pages/landing";
+import Dashboard from "@/app/pages/dashboard/dashboard";
+import LandingPage from "@/app/pages/landing";
 
 // Interview Pages
 import SelectRole from "@/app/pages/interview/select-role";
 import SelectProfile from "@/app/pages/interview/select-profile";
 import QuickSetup from "@/app/pages/interview/quick-setup";
+import Profile from "@/app/pages/profile/profile";
 // import InterviewSession from "@/app/pages/interview/session";
 // import InterviewResult from "@/app/pages/interview/result";
 
@@ -56,42 +59,27 @@ function App() {
     // ⚠️ AuthProvider must be INSIDE BrowserRouter (needs useNavigate)
     <BrowserRouter>
       <AuthProvider>
-        <ThemeContext.Provider value={{ isDark, toggleTheme }}>
-          <Routes>
-            {/* LANDING PAGE */}
+        <InterviewProvider>
+          <ThemeContext.Provider value={{ isDark, toggleTheme }}>
+            <Routes>
+            {/* LANDING PAGE - ENTRY POINT */}
             <Route path="/" element={<LandingPage />} />
 
-            {/* AUTH ROUTES */}
+            {/* AUTH ROUTES - NOT PROTECTED */}
             <Route path="/auth" element={<AuthLayout />}>
               <Route path="login" element={<Login />} />
               <Route path="register" element={<Register />} />
             </Route>
 
-            {/* PROTECTED DASHBOARD */}
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              }
-            />
-
-            {/* INTERVIEW ROUTES */}
+            {/* INTERVIEW FLOW - PROTECTED ROUTES */}
+            {/* Entry point: Quick-Setup */}
             <Route
               path="/interview"
               element={
                 <ProtectedRoute>
-                  <SelectRole />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/interview/select-profile"
-              element={
-                <ProtectedRoute>
-                  <SelectProfile />
+                  <ProtectedLayout>
+                    <QuickSetup />
+                  </ProtectedLayout>
                 </ProtectedRoute>
               }
             />
@@ -100,7 +88,45 @@ function App() {
               path="/interview/quick-setup"
               element={
                 <ProtectedRoute>
-                  <QuickSetup />
+                  <ProtectedLayout>
+                    <QuickSetup />
+                  </ProtectedLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Flow Step 1: Select Role */}
+            <Route
+              path="/interview/select-role"
+              element={
+                <ProtectedRoute>
+                  <ProtectedLayout>
+                    <SelectRole />
+                  </ProtectedLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Flow Step 2: Select Profile */}
+            <Route
+              path="/interview/select-profile"
+              element={
+                <ProtectedRoute>
+                  <ProtectedLayout>
+                    <SelectProfile />
+                  </ProtectedLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* PROTECTED DASHBOARD */}
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <ProtectedLayout>
+                    <Dashboard />
+                  </ProtectedLayout>
                 </ProtectedRoute>
               }
             />
@@ -123,10 +149,23 @@ function App() {
               // }
             />
 
+            {/* PROTECTED PROFILE */}
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <ProtectedLayout>
+                    <Profile />
+                  </ProtectedLayout>
+                </ProtectedRoute>
+              }
+            />
+
             {/* FALLBACK */}
             <Route path="*" element={<Navigate to="/auth/login" replace />} />
           </Routes>
         </ThemeContext.Provider>
+        </InterviewProvider>
       </AuthProvider>
     </BrowserRouter>
   );

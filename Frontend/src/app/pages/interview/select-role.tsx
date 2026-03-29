@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "@/App";
+import { useInterview } from "@/contexts/interview-context";
 import {
   Code2,
   Server,
@@ -14,6 +16,8 @@ import {
   Search,
   Sparkles,
   ArrowLeft,
+  Loader,
+  AlertCircle,
 } from "lucide-react";
 
 // ─────────────────────────────────────────
@@ -217,6 +221,9 @@ function RoleCard({
 // ─────────────────────────────────────────
 export default function SelectRolePage() {
   const { isDark } = useTheme();
+  const navigate = useNavigate();
+  const { saveRole, isLoading, error, clearError } = useInterview();
+
   const [selected, setSelected] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [hoveredRole, setHoveredRole] = useState<string | null>(null);
@@ -228,6 +235,21 @@ export default function SelectRolePage() {
   );
 
   const selectedRole = roles.find((r) => r.id === selected);
+
+  // Handle continue - API call
+  const handleContinue = async () => {
+    if (!selected) return;
+    try {
+      clearError();
+      // Save role to backend
+      await saveRole(selected);
+      // Navigate to next step
+      navigate("/interview/select-profile");
+    } catch (err) {
+      console.error("Error saving role:", err);
+      // Error is already set in context
+    }
+  };
 
   return (
     <div
@@ -457,14 +479,59 @@ export default function SelectRolePage() {
 
                 {/* Continue button */}
                 <motion.button
-                  whileHover={{ scale: 1.04 }}
-                  whileTap={{ scale: 0.97 }}
-                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm text-white shadow-lg bg-gradient-to-r ${selectedRole.gradient} hover:shadow-xl transition`}
+                  whileHover={!isLoading ? { scale: 1.04 } : {}}
+                  whileTap={!isLoading ? { scale: 0.97 } : {}}
+                  disabled={isLoading}
+                  onClick={handleContinue}
+                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm text-white shadow-lg bg-gradient-to-r ${selectedRole.gradient} transition ${
+                    isLoading ? "opacity-70 cursor-not-allowed" : "hover:shadow-xl cursor-pointer"
+                  }`}
                 >
-                  Continue
-                  <ChevronRight size={16} />
+                  {isLoading ? (
+                    <>
+                      <Loader size={14} className="animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      Continue
+                      <ChevronRight size={16} />
+                    </>
+                  )}
                 </motion.button>
               </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Error Alert */}
+        <AnimatePresence>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              className={`fixed bottom-6 left-6 z-50 flex items-start gap-3 p-4 rounded-lg max-w-sm ${
+                isDark
+                  ? "bg-red-500/10 border border-red-500/30"
+                  : "bg-red-50 border border-red-200"
+              }`}
+            >
+              <AlertCircle size={16} className={isDark ? "text-red-400 mt-0.5" : "text-red-600 mt-0.5"} />
+              <div className="flex-1">
+                <p className={`text-sm font-semibold ${isDark ? "text-red-300" : "text-red-700"}`}>
+                  Error
+                </p>
+                <p className={`text-sm ${isDark ? "text-red-200/70" : "text-red-600/70"}`}>
+                  {error}
+                </p>
+              </div>
+              <button
+                onClick={clearError}
+                className={`text-lg transition ${isDark ? "text-red-300 hover:text-red-200" : "text-red-400 hover:text-red-600"}`}
+              >
+                ×
+              </button>
             </motion.div>
           )}
         </AnimatePresence>

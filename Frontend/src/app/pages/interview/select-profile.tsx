@@ -1,6 +1,8 @@
 import { useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "@/App";
+import { useInterview } from "@/contexts/interview-context";
 import {
   UserCircle2,
   Upload,
@@ -11,6 +13,7 @@ import {
   Sparkles,
   X,
   AlertCircle,
+  Loader,
 } from "lucide-react";
 
 // ─────────────────────────────────────────
@@ -270,11 +273,29 @@ function UploadZone({
 // ─────────────────────────────────────────
 export default function SelectProfilePage() {
   const { isDark } = useTheme();
+  const navigate = useNavigate();
+  const { saveProfile, isLoading, error, clearError } = useInterview();
+
   const [selected, setSelected] = useState<ProfileOption>(null);
   const [file, setFile] = useState<File | null>(null);
 
   const canContinue =
     selected === "existing" || (selected === "upload" && file !== null);
+
+  // Handle continue - API call
+  const handleContinue = async () => {
+    if (!selected) return;
+    try {
+      clearError();
+      // Save profile option to backend
+      await saveProfile(selected);
+      // Navigate to next step
+      navigate("/interview/quick-setup");
+    } catch (err) {
+      console.error("Error saving profile:", err);
+      // Error is already set in context
+    }
+  };
 
   const options = [
     {
@@ -508,19 +529,61 @@ export default function SelectProfilePage() {
           </button>
 
           <motion.button
-            whileHover={canContinue ? { scale: 1.04 } : {}}
-            whileTap={canContinue ? { scale: 0.97 } : {}}
-            disabled={!canContinue}
+            whileHover={canContinue && !isLoading ? { scale: 1.04 } : {}}
+            whileTap={canContinue && !isLoading ? { scale: 0.97 } : {}}
+            disabled={!canContinue || isLoading}
+            onClick={handleContinue}
             className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm text-white shadow-lg transition ${
-              canContinue
+              canContinue && !isLoading
                 ? "bg-gradient-to-r from-violet-600 to-cyan-600 hover:shadow-xl cursor-pointer"
                 : "opacity-40 cursor-not-allowed bg-gradient-to-r from-violet-600 to-cyan-600"
             }`}
           >
-            Continue to Quick Setup
-            <ChevronRight size={16} />
+            {isLoading ? (
+              <>
+                <Loader size={16} className="animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                Continue to Quick Setup
+                <ChevronRight size={16} />
+              </>
+            )}
           </motion.button>
         </motion.div>
+
+        {/* Error Alert */}
+        <AnimatePresence>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              className={`mt-4 flex items-start gap-3 p-4 rounded-lg ${
+                isDark
+                  ? "bg-red-500/10 border border-red-500/30"
+                  : "bg-red-50 border border-red-200"
+              }`}
+            >
+              <AlertCircle size={16} className={isDark ? "text-red-400 mt-0.5" : "text-red-600 mt-0.5"} />
+              <div className="flex-1">
+                <p className={`text-sm font-semibold ${isDark ? "text-red-300" : "text-red-700"}`}>
+                  Error
+                </p>
+                <p className={`text-sm ${isDark ? "text-red-200/70" : "text-red-600/70"}`}>
+                  {error}
+                </p>
+              </div>
+              <button
+                onClick={clearError}
+                className={`text-lg transition ${isDark ? "text-red-300 hover:text-red-200" : "text-red-400 hover:text-red-600"}`}
+              >
+                ×
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
