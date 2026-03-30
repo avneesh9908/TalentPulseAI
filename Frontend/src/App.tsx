@@ -13,6 +13,7 @@ import Login from "@/app/pages/auth/login";
 import Register from "@/app/pages/auth/register";
 import Dashboard from "@/app/pages/dashboard/dashboard";
 import LandingPage from "@/app/pages/landing";
+import UserProfile from "./app/pages/userProfile"; 
 
 // Interview Pages
 import SelectRole from "@/app/pages/interview/select-role";
@@ -30,7 +31,7 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-export const useTheme = () => {
+export const useTheme  = () => {
   const context = useContext(ThemeContext);
   if (!context) throw new Error("useTheme must be used within ThemeProvider");
   return context;
@@ -130,6 +131,16 @@ function App() {
                 </ProtectedRoute>
               }
             />
+                   {/* PROTECTED PROFILE */}
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <UserProfile />   {/* ← capital U */}
+                </ProtectedRoute>
+              }
+            />
+
 
             <Route
               // path="/interview/session"
