@@ -242,7 +242,7 @@ export default function SelectRolePage() {
       clearError();
       // Save role to local state only
       saveRole(selected);
-      // Navigate to next step
+      // Navigate to next step: Select Profile
       navigate("/interview/select-profile");
     } catch (err) {
       console.error("Error saving role:", err);

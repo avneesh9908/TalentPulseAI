@@ -274,7 +274,7 @@ function UploadZone({
 export default function SelectProfilePage() {
   const { isDark } = useTheme();
   const navigate = useNavigate();
-  const { saveProfile, submitInterviewSetup, isLoading, error, clearError } = useInterview();
+  const { saveProfile, isLoading, error, clearError } = useInterview();
 
   const [selected, setSelected] = useState<ProfileOption>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -282,7 +282,7 @@ export default function SelectProfilePage() {
   const canContinue =
     selected === "existing" || (selected === "upload" && file !== null);
 
-  // Handle continue - save to local state and submit interview setup
+  // Handle continue - save to local state only
   const handleContinue = async () => {
     if (!selected) return;
     try {
@@ -291,13 +291,10 @@ export default function SelectProfilePage() {
       // 1. Save profile option to local state
       saveProfile(selected);
 
-      // 2. Submit interview setup (single API call with all collected data)
-      await submitInterviewSetup();
-
-      // 3. Navigate to interview start page
-      navigate("/interview/start");
+      // 2. Navigate to quick setup (final step)
+      navigate("/interview/quick-setup");
     } catch (err) {
-      console.error("Error setting up interview:", err);
+      console.error("Error saving profile:", err);
       // Error is already set in context
     }
   };
@@ -547,11 +544,11 @@ export default function SelectProfilePage() {
             {isLoading ? (
               <>
                 <Loader size={16} className="animate-spin" />
-                Submitting...
+                Loading...
               </>
             ) : (
               <>
-                Start Interview
+                Continue to Quick Setup
                 <ChevronRight size={16} />
               </>
             )}

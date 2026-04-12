@@ -93,7 +93,7 @@ function SectionLabel({ icon: Icon, label, isDark }: SectionLabelProps) {
 export default function QuickSetupPage() {
   const { isDark } = useTheme();
   const navigate = useNavigate();
-  const { saveQuickSetup, isLoading, error, clearError } = useInterview();
+  const { saveQuickSetup, submitInterviewSetup, isLoading, error, clearError } = useInterview();
 
   const [experience, setExperience] = useState<string | null>(null);
   const [difficulty, setDifficulty] = useState<string | null>(null);
@@ -120,17 +120,22 @@ export default function QuickSetupPage() {
 
   const canContinue = experience !== null && difficulty !== null && skills.length > 0;
 
-  // Handle continue - save to local state only
+  // Handle continue - save to local state and submit interview setup (FINAL STEP)
   const handleContinue = async () => {
     if (!experience || !difficulty || skills.length === 0) return;
     try {
       clearError();
-      // Save to local state only
+      // Save quick setup to local state
       saveQuickSetup(experience, difficulty, skills);
-      // Navigate to next step
-      navigate("/interview/select-role");
+
+      // Submit interview setup (single API call with all collected data)
+      await submitInterviewSetup();
+
+      // Navigate to interview start page
+      navigate("/interview/start");
     } catch (err) {
-      console.error("Error saving quick setup:", err);
+      console.error("Error starting interview:", err);
+      // Error is already set in context
     }
   };
 
@@ -430,11 +435,11 @@ export default function QuickSetupPage() {
             {isLoading ? (
               <>
                 <Loader size={16} className="animate-spin" />
-                Loading...
+                Submitting...
               </>
             ) : (
               <>
-                Continue
+                Start Interview
                 <ChevronRight size={16} />
               </>
             )}
