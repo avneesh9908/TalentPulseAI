@@ -17,14 +17,14 @@ import {
   Loader,
 } from "lucide-react";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+
 interface SectionLabelProps {
   icon: React.ElementType;
   label: string;
   isDark: boolean;
 }
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+
 const EXPERIENCE_OPTIONS = [
   { id: "0-1", label: "0–1 yrs", sublabel: "Fresher / Intern" },
   { id: "1-3", label: "1–3 yrs", sublabel: "Junior" },
@@ -93,7 +93,7 @@ function SectionLabel({ icon: Icon, label, isDark }: SectionLabelProps) {
 export default function QuickSetupPage() {
   const { isDark } = useTheme();
   const navigate = useNavigate();
-  const { startInterview, saveQuickSetup, isLoading, error, clearError } = useInterview();
+  const { saveQuickSetup, isLoading, error, clearError } = useInterview();
 
   const [experience, setExperience] = useState<string | null>(null);
   const [difficulty, setDifficulty] = useState<string | null>(null);
@@ -120,24 +120,17 @@ export default function QuickSetupPage() {
 
   const canContinue = experience !== null && difficulty !== null && skills.length > 0;
 
-  // Handle start interview - API call
-  const handleStartInterview = async () => {
+  // Handle continue - save to local state only
+  const handleContinue = async () => {
+    if (!experience || !difficulty || skills.length === 0) return;
     try {
       clearError();
-      
-      // 1. Start interview session on backend
-      await startInterview();
-      
-      // 2. Save quick setup data
-      if (experience && difficulty) {
-        await saveQuickSetup(experience, difficulty, skills);
-      }
-      
-      // 3. Navigate to next step
+      // Save to local state only
+      saveQuickSetup(experience, difficulty, skills);
+      // Navigate to next step
       navigate("/interview/select-role");
     } catch (err) {
-      console.error("Error starting interview:", err);
-      // Error is already set in context
+      console.error("Error saving quick setup:", err);
     }
   };
 
@@ -429,7 +422,7 @@ export default function QuickSetupPage() {
             whileHover={canContinue && !isLoading ? { scale: 1.04 } : {}}
             whileTap={canContinue && !isLoading ? { scale: 0.97 } : {}}
             disabled={!canContinue || isLoading}
-            onClick={handleStartInterview}
+            onClick={handleContinue}
             className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm text-white shadow-lg transition bg-gradient-to-r from-violet-600 to-cyan-600 ${
               canContinue && !isLoading ? "hover:shadow-xl cursor-pointer" : "opacity-40 cursor-not-allowed"
             }`}
@@ -437,11 +430,11 @@ export default function QuickSetupPage() {
             {isLoading ? (
               <>
                 <Loader size={16} className="animate-spin" />
-                Starting...
+                Loading...
               </>
             ) : (
               <>
-                Start Interview
+                Continue
                 <ChevronRight size={16} />
               </>
             )}

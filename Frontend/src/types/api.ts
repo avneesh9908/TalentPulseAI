@@ -38,6 +38,39 @@ export interface AuthResponse {
 // INTERVIEW API TYPES
 // ============================================
 
+/**
+ * Unified Interview Setup Request
+ * Combines Quick-Setup, Select-Role, and Select-Profile into ONE payload
+ * This is the primary setup endpoint for initializing an interview session
+ */
+export interface InterviewSetupRequest {
+  setup_id: number;           // Identifier for setup (typically 0 for new)
+  experience: string;         // "0-1" | "1-3" | "3-5" | "5-8" | "8+"
+  difficulty: string;         // "easy" | "medium" | "hard"
+  skills: string[];           // Array of selected skills
+  role: string;               // "frontend" | "backend" | "fullstack" | "ml" | "data" | "mobile" | "devops"
+  profile_option: string;     // "existing" | "upload"
+  profile_id?: string;        // Optional: existing profile ID if using existing
+}
+
+/**
+ * Unified Interview Setup Response
+ * Returns interview session initialization confirmation
+ */
+export interface InterviewSetupResponse {
+  interview_id: string;
+  setup_id: number;
+  user_id: string;
+  role: string;
+  experience: string;
+  difficulty: string;
+  skills: string[];
+  profile_option: string;
+  status: "initialized" | "in_progress" | "completed" | "failed" | "submitted";
+  started_at: string;
+  message: string;
+}
+
 export interface InterviewStartRequest {
   user_id: string;
   role: string;

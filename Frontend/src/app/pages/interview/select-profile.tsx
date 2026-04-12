@@ -25,7 +25,7 @@ type ProfileOption = "existing" | "upload" | null;
 // Option Card
 // ─────────────────────────────────────────
 function ProfileOptionCard({
-  id,
+  id: _id,
   icon: Icon,
   title,
   description,
@@ -274,7 +274,7 @@ function UploadZone({
 export default function SelectProfilePage() {
   const { isDark } = useTheme();
   const navigate = useNavigate();
-  const { saveProfile, isLoading, error, clearError } = useInterview();
+  const { saveProfile, submitInterviewSetup, isLoading, error, clearError } = useInterview();
 
   const [selected, setSelected] = useState<ProfileOption>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -282,17 +282,22 @@ export default function SelectProfilePage() {
   const canContinue =
     selected === "existing" || (selected === "upload" && file !== null);
 
-  // Handle continue - API call
+  // Handle continue - save to local state and submit interview setup
   const handleContinue = async () => {
     if (!selected) return;
     try {
       clearError();
-      // Save profile option to backend
-      await saveProfile(selected);
-      // Navigate to next step
-      navigate("/interview/quick-setup");
+
+      // 1. Save profile option to local state
+      saveProfile(selected);
+
+      // 2. Submit interview setup (single API call with all collected data)
+      await submitInterviewSetup();
+
+      // 3. Navigate to interview start page
+      navigate("/interview/start");
     } catch (err) {
-      console.error("Error saving profile:", err);
+      console.error("Error setting up interview:", err);
       // Error is already set in context
     }
   };
@@ -542,11 +547,11 @@ export default function SelectProfilePage() {
             {isLoading ? (
               <>
                 <Loader size={16} className="animate-spin" />
-                Saving...
+                Submitting...
               </>
             ) : (
               <>
-                Continue to Quick Setup
+                Start Interview
                 <ChevronRight size={16} />
               </>
             )}

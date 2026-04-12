@@ -7,12 +7,30 @@ import { httpClient } from "../lib/httpClient";
 import { config, buildUrl } from "../lib/config";
 import type {
   InterviewResponse,
+  InterviewSetupRequest,
+  InterviewSetupResponse,
   InterviewStartRequest,
   InterviewSubmitRequest,
   ApiError,
 } from "../types/api";
 
 class InterviewService {
+  /**
+   * Setup a new interview with unified payload (combining 3 steps)
+   * This is the primary endpoint for initializing an interview session
+   */
+  async setupInterview(payload: InterviewSetupRequest): Promise<InterviewSetupResponse> {
+    try {
+      const response = await httpClient.post<InterviewSetupResponse>(
+        config.ENDPOINTS.INTERVIEW.SETUP,
+        payload
+      );
+      return response;
+    } catch (error) {
+      const apiError = error as ApiError;
+      throw new Error(apiError.detail || "Failed to setup interview");
+    }
+  }
   /**
    * Start a new interview session
    */

@@ -6,29 +6,33 @@
 import React, { createContext, useContext, useState, useCallback } from "react";
 import { interviewService } from "@/services/interviewService";
 import { authService } from "@/services/authService";
-import type { InterviewResponse } from "@/types/api";
+import type { InterviewSetupResponse } from "@/types/api";
 
 interface InterviewContextType {
   // Interview Session State
   interviewId: string | null;
-  interview: InterviewResponse | null;
-  
+  interviewSetup: InterviewSetupResponse | null;
+
   // Interview Data
   experience: string | null;
   difficulty: string | null;
   skills: string[];
   selectedRole: string | null;
   profileOption: "existing" | "upload" | null;
-  
+
   // UI State
   isLoading: boolean;
   error: string | null;
-  
-  // Actions
-  startInterview: () => Promise<void>;
-  saveQuickSetup: (experience: string, difficulty: string, skills: string[]) => Promise<void>;
-  saveRole: (role: string) => Promise<void>;
-  saveProfile: (profileOption: "existing" | "upload") => Promise<void>;
+
+  // Actions (local state only)
+  saveQuickSetup: (experience: string, difficulty: string, skills: string[]) => void;
+  saveRole: (role: string) => void;
+  saveProfile: (profileOption: "existing" | "upload") => void;
+
+  // Final submission (single API call)
+  submitInterviewSetup: () => Promise<void>;
+
+  // Utilities
   clearError: () => void;
   resetInterview: () => void;
 }
@@ -46,7 +50,7 @@ export const useInterview = () => {
 export const InterviewProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Interview Session State
   const [interviewId, setInterviewId] = useState<string | null>(null);
-  const [interview, setInterview] = useState<InterviewResponse | null>(null);
+  const [interviewSetup, setInterviewSetup] = useState<InterviewSetupResponse | null>(null);
 
   // Interview Data
   const [experience, setExperience] = useState<string | null>(null);
@@ -60,134 +64,86 @@ export const InterviewProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [error, setError] = useState<string | null>(null);
 
   /**
-   * Start a new interview session
+   * Save quick setup data — local state only
    */
-  const startInterview = useCallback(async () => {
+  const saveQuickSetup = useCallback(
+    (exp: string, diff: string, skillsList: string[]) => {
+      setExperience(exp);
+      setDifficulty(diff);
+      setSkills(skillsList);
+      console.log("✅ Quick setup saved to context");
+    },
+    []
+  );
+
+  /**
+   * Save selected role — local state only
+   */
+  const saveRole = useCallback((role: string) => {
+    setSelectedRole(role);
+    console.log("✅ Role saved to context:", role);
+  }, []);
+
+  /**
+   * Save profile selection — local state only
+   */
+  const saveProfile = useCallback((option: "existing" | "upload") => {
+    setProfileOption(option);
+    console.log("✅ Profile option saved to context:", option);
+  }, []);
+
+  /**
+   * Submit interview setup — single API call with all collected data
+   */
+  const submitInterviewSetup = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
 
+      // Validate all required fields are present
+      if (!experience || !difficulty || !selectedRole || !profileOption) {
+        throw new Error(
+          "Missing required fields. Please complete all steps."
+        );
+      }
+
+      if (skills.length === 0) {
+        throw new Error("Please select at least one skill.");
+      }
+
+      // Get user ID
       const userId = authService.getUserId();
       if (!userId) {
         throw new Error("User not authenticated");
       }
 
-      // Call backend to create interview session
-      const newInterview = await interviewService.startInterview({
-        user_id: userId,
-        role: selectedRole || "general",
-      });
+      // Prepare the unified payload
+      const payload = {
+        setup_id: 0,
+        experience,
+        difficulty,
+        skills,
+        role: selectedRole,
+        profile_option: profileOption,
+      };
 
-      setInterviewId(newInterview.id);
-      setInterview(newInterview);
+      // Call backend with single unified payload
+      const response = await interviewService.setupInterview(payload);
 
-      console.log("✅ Interview started:", newInterview.id);
+      // Store interview setup data and ID
+      setInterviewId(response.interview_id);
+      setInterviewSetup(response);
+
+      console.log("✅ Interview setup submitted successfully:", response.interview_id);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to start interview";
+      const message = err instanceof Error ? err.message : "Failed to setup interview";
       setError(message);
-      console.error("❌ Start interview error:", message);
+      console.error("❌ Setup interview error:", message);
+      throw err; // Re-throw so component can handle navigation
     } finally {
       setIsLoading(false);
     }
-  }, [selectedRole]);
-
-  /**
-   * Save quick setup data (experience, difficulty, skills)
-   */
-  const saveQuickSetup = useCallback(
-    async (exp: string, diff: string, skillsList: string[]) => {
-      try {
-        setIsLoading(true);
-        setError(null);
-
-        // Update local state
-        setExperience(exp);
-        setDifficulty(diff);
-        setSkills(skillsList);
-
-        // Save to backend if interview exists
-        if (interviewId) {
-          await interviewService.saveProgress(interviewId, {
-            step: 1,
-            experience: exp,
-            difficulty: diff,
-            skills: skillsList,
-            timestamp: new Date().toISOString(),
-          });
-          console.log("✅ Quick setup saved");
-        }
-      } catch (err) {
-        const message = err instanceof Error ? err.message : "Failed to save quick setup";
-        setError(message);
-        console.error("❌ Save quick setup error:", message);
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [interviewId]
-  );
-
-  /**
-   * Save selected role
-   */
-  const saveRole = useCallback(
-    async (role: string) => {
-      try {
-        setIsLoading(true);
-        setError(null);
-
-        setSelectedRole(role);
-
-        // Save to backend if interview exists
-        if (interviewId) {
-          await interviewService.saveProgress(interviewId, {
-            step: 2,
-            role: role,
-            timestamp: new Date().toISOString(),
-          });
-          console.log("✅ Role saved:", role);
-        }
-      } catch (err) {
-        const message = err instanceof Error ? err.message : "Failed to save role";
-        setError(message);
-        console.error("❌ Save role error:", message);
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [interviewId]
-  );
-
-  /**
-   * Save profile selection
-   */
-  const saveProfile = useCallback(
-    async (option: "existing" | "upload") => {
-      try {
-        setIsLoading(true);
-        setError(null);
-
-        setProfileOption(option);
-
-        // Save to backend if interview exists
-        if (interviewId) {
-          await interviewService.saveProgress(interviewId, {
-            step: 3,
-            profile_option: option,
-            timestamp: new Date().toISOString(),
-          });
-          console.log("✅ Profile option saved:", option);
-        }
-      } catch (err) {
-        const message = err instanceof Error ? err.message : "Failed to save profile";
-        setError(message);
-        console.error("❌ Save profile error:", message);
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [interviewId]
-  );
+  }, [experience, difficulty, skills, selectedRole, profileOption]);
 
   /**
    * Clear error message
@@ -201,7 +157,7 @@ export const InterviewProvider: React.FC<{ children: React.ReactNode }> = ({ chi
    */
   const resetInterview = useCallback(() => {
     setInterviewId(null);
-    setInterview(null);
+    setInterviewSetup(null);
     setExperience(null);
     setDifficulty(null);
     setSkills([]);
@@ -212,7 +168,7 @@ export const InterviewProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const value: InterviewContextType = {
     interviewId,
-    interview,
+    interviewSetup,
     experience,
     difficulty,
     skills,
@@ -220,10 +176,10 @@ export const InterviewProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     profileOption,
     isLoading,
     error,
-    startInterview,
     saveQuickSetup,
     saveRole,
     saveProfile,
+    submitInterviewSetup,
     clearError,
     resetInterview,
   };

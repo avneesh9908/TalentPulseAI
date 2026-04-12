@@ -22,11 +22,12 @@ export const config = {
     
     // Interview management endpoints
     INTERVIEW: {
+      SETUP: "/interview/setup",     // NEW: Unified setup endpoint (combines 3 steps)
       START: "/interview/start",
-      SAVE: "/interview/save",
+      SAVE: "/interview/:id/progress",
       GET: "/interview/:id",
       LIST: "/interview/list",
-      SUBMIT: "/interview/submit",
+      SUBMIT: "/interview/:id/submit",
       RESULTS: "/interview/:id/results",
     },
     

@@ -226,7 +226,6 @@ export default function SelectRolePage() {
 
   const [selected, setSelected] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [hoveredRole, setHoveredRole] = useState<string | null>(null);
 
   const filtered = roles.filter(
     (r) =>
@@ -236,18 +235,17 @@ export default function SelectRolePage() {
 
   const selectedRole = roles.find((r) => r.id === selected);
 
-  // Handle continue - API call
+  // Handle continue - save to local state only
   const handleContinue = async () => {
     if (!selected) return;
     try {
       clearError();
-      // Save role to backend
-      await saveRole(selected);
+      // Save role to local state only
+      saveRole(selected);
       // Navigate to next step
       navigate("/interview/select-profile");
     } catch (err) {
       console.error("Error saving role:", err);
-      // Error is already set in context
     }
   };
 
@@ -407,8 +405,6 @@ export default function SelectRolePage() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.9 }}
                 transition={{ delay: i * 0.05 }}
-                onHoverStart={() => setHoveredRole(role.id)}
-                onHoverEnd={() => setHoveredRole(null)}
               >
                 <RoleCard
                   role={role}
