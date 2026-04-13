@@ -48,7 +48,7 @@ export interface InterviewSetupRequest {
   experience: string;         // "0-1" | "1-3" | "3-5" | "5-8" | "8+"
   difficulty: string;         // "easy" | "medium" | "hard"
   skills: string[];           // Array of selected skills
-  role: string;               // "frontend" | "backend" | "fullstack" | "ml" | "data" | "mobile" | "devops"
+  role: string;               // "frontend" | "backend" | "fullstack" | "ml" | "data" | "mobile" | "devops" | "security" | "general"
   profile_option: string;     // "existing" | "upload"
   profile_id?: string;        // Optional: existing profile ID if using existing
 }
@@ -60,7 +60,7 @@ export interface InterviewSetupRequest {
 export interface InterviewSetupResponse {
   interview_id: string;
   setup_id: number;
-  user_id: string;
+  user_id: string | number;
   role: string;
   experience: string;
   difficulty: string;

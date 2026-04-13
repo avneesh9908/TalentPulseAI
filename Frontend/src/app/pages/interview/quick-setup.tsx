@@ -152,7 +152,7 @@ export default function QuickSetupPage() {
     ? "bg-slate-800/60 border-white/[0.08] text-white placeholder-slate-500 focus:border-violet-500/40"
     : "bg-gray-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-violet-400";
 
-  const STEPS = ["Select Role", "Setup Profile", "Quick Setup", "Interview"];
+  const STEPS = ["Select Role", "Setup Profile", "Quick Search", "Interview Now"];
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${pageBg}`}>
@@ -184,7 +184,7 @@ export default function QuickSetupPage() {
               <span className="text-xs font-semibold text-violet-400 tracking-wide uppercase">Step 3 of 4</span>
             </div>
           </div>
-          <h1 className={`text-4xl font-bold mb-2 tracking-tight ${textMain}`}>Quick Setup</h1>
+          <h1 className={`text-4xl font-bold mb-2 tracking-tight ${textMain}`}>Quick Search</h1>
           <p className={`text-base ${subText}`}>Help us tailor the interview to your background and goals.</p>
         </motion.div>
 
@@ -439,7 +439,7 @@ export default function QuickSetupPage() {
               </>
             ) : (
               <>
-                Start Interview
+                Continue to Interview Now
                 <ChevronRight size={16} />
               </>
             )}

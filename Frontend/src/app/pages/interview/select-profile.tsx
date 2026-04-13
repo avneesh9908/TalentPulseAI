@@ -399,7 +399,7 @@ export default function SelectProfilePage() {
           transition={{ delay: 0.1 }}
           className="flex items-center gap-2 mb-10"
         >
-          {["Select Role", "Setup Profile", "Quick Setup", "Interview"].map(
+          {["Select Role", "Setup Profile", "Quick Search", "Interview Now"].map(
             (step, i) => (
               <div key={step} className="flex items-center gap-2">
                 <div

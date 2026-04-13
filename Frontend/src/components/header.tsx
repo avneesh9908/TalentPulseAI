@@ -36,7 +36,7 @@ export default function Header() {
   ];
 
   const handleQuickInterview = () => {
-    navigate("/interview/quick-setup");
+    navigate("/interview/select-role");
     setMobileMenuOpen(false);
     setDropdownOpen(false);
   };

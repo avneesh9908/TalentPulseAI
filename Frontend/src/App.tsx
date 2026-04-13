@@ -19,6 +19,7 @@ import UserProfile from "./app/pages/userProfile";
 import SelectRole from "@/app/pages/interview/select-role";
 import SelectProfile from "@/app/pages/interview/select-profile";
 import QuickSetup from "@/app/pages/interview/quick-setup";
+import InterviewNow from "@/app/pages/interview/interview-now";
 import Profile from "@/app/pages/profile/profile";
 // import InterviewSession from "@/app/pages/interview/session";
 // import InterviewResult from "@/app/pages/interview/result";
@@ -73,13 +74,13 @@ function App() {
             </Route>
 
             {/* INTERVIEW FLOW - PROTECTED ROUTES */}
-            {/* Entry point: Quick-Setup */}
+            {/* Entry point: Select Role */}
             <Route
               path="/interview"
               element={
                 <ProtectedRoute>
                   <ProtectedLayout>
-                    <QuickSetup />
+                    <SelectRole />
                   </ProtectedLayout>
                 </ProtectedRoute>
               }
@@ -91,6 +92,17 @@ function App() {
                 <ProtectedRoute>
                   <ProtectedLayout>
                     <QuickSetup />
+                  </ProtectedLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/interview/start"
+              element={
+                <ProtectedRoute>
+                  <ProtectedLayout>
+                    <InterviewNow />
                   </ProtectedLayout>
                 </ProtectedRoute>
               }

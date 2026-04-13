@@ -50,7 +50,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem("access_token", data.access_token);
     setToken(data.access_token);
     // Redirect to interview flow after login
-    navigate("/interview/quick-setup");
+    navigate("/interview/select-role");
   };
 
   const register = async (name: string, email: string, phone: string, password: string) => {
