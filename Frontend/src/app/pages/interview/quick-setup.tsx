@@ -134,7 +134,7 @@ export default function QuickSetupPage() {
       // Navigate to interview start page
       navigate("/interview/start");
     } catch (err) {
-      console.error("Error starting interview:", err);
+      console.error("Error submitting interview setup:", err);
       // Error is already set in context
     }
   };

@@ -110,7 +110,7 @@ class AuthService {
       await httpClient.post(config.ENDPOINTS.AUTH.LOGOUT);
     } catch (error) {
       // Logout always succeeds locally even if API fails
-      console.warn("Logout API call failed, but clearing local session");
+      console.warn("Logout API call failed, but clearing local session",error);
     } finally {
       this.clearAuth();
     }
@@ -202,7 +202,7 @@ class AuthService {
   /**
    * Set current user in storage
    */
-  setUser(user: UserProfile): void {
+  setUser(user: UserProfile): void { 
     localStorage.setItem(this.userKey, JSON.stringify(user));
   }
 
