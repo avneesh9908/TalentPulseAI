@@ -11,6 +11,7 @@ import type {
   InterviewSetupResponse,
   InterviewStartRequest,
   InterviewSubmitRequest,
+  InterviewSetupRequest,
   ApiError,
 } from "../types/api";
 
@@ -122,6 +123,23 @@ class InterviewService {
     } catch (error) {
       const apiError = error as ApiError;
       throw new Error(apiError.detail || "Failed to fetch results");
+    }
+  }
+
+  /**
+   * Submit complete interview setup (all 3 steps combined)
+   * Collects data from: role, profile, quick-setup and sends to single endpoint
+   */
+  async submitSetup(setupData: InterviewSetupRequest): Promise<InterviewResponse> {
+    try {
+      const response = await httpClient.post<InterviewResponse>(
+        config.ENDPOINTS.INTERVIEW.SETUP,
+        setupData
+      );
+      return response;
+    } catch (error) {
+      const apiError = error as ApiError;
+      throw new Error(apiError.detail || "Failed to submit interview setup");
     }
   }
 

@@ -572,7 +572,7 @@ export default function LandingPage() {
             isDark ? "border-white/10" : "border-slate-200"
           }`}>
             <p>© {new Date().getFullYear()} TalentPulseAI. All rights reserved.</p>
-            <p>Made with ❤️ for aspiring developers</p>
+            <p>Made with   for aspiring developers</p>
           </div>
         </div>
       </footer>

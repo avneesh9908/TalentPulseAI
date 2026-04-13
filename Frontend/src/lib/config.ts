@@ -29,6 +29,7 @@ export const config = {
       LIST: "/interview/list",
       SUBMIT: "/interview/:id/submit",
       RESULTS: "/interview/:id/results",
+      SETUP: "/interviewSetup",
     },
     
     // User profile endpoints

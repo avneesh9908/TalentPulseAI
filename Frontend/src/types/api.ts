@@ -77,6 +77,15 @@ export interface InterviewStartRequest {
   profile_id?: string;
 }
 
+export interface InterviewSetupRequest {
+  user_id: string;
+  role: string;
+  profile_option: "existing" | "upload";
+  experience: string;
+  difficulty: string;
+  skills: string[];
+}
+
 export interface InterviewProgress {
   step: number;
   data: Record<string, unknown>;
