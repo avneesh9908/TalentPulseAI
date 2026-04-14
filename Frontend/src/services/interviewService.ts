@@ -11,7 +11,6 @@ import type {
   InterviewSetupResponse,
   InterviewStartRequest,
   InterviewSubmitRequest,
-  InterviewSetupRequest,
   ApiError,
 } from "../types/api";
 

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useTheme } from "@/App";
+import { useTheme } from "@/contexts/use-theme";
 import { motion } from "framer-motion";
 import { 
   Menu, X, ArrowRight, CheckCircle2, Sparkles, Mic, BarChart3, 

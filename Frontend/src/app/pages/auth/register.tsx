@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { useTheme } from "@/App";
+import { useTheme } from "@/contexts/use-theme";
 import { useAuth } from "@/contexts/auth-context";
 import { Mail, Phone, Lock, User, AlertCircle, Loader2 } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";

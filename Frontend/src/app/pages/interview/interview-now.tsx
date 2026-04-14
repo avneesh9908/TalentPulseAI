@@ -1,8 +1,8 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useTheme } from "@/App";
-import { useInterview } from "@/contexts/interview-context";
+import { useTheme } from "@/contexts/use-theme";
+import { useInterview } from "@/contexts/use-interview";
 import { ArrowLeft, PlayCircle, CheckCircle2 } from "lucide-react";
 
 export default function InterviewNowPage() {

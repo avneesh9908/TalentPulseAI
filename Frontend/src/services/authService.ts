@@ -181,6 +181,12 @@ class AuthService {
     localStorage.removeItem(this.tokenKey);
   }
 
+  /** Remove access token and cached user (logout / session reset). */
+  clearClientSession(): void {
+    localStorage.removeItem(this.tokenKey);
+    localStorage.removeItem(this.userKey);
+  }
+
   // ============================================
   // USER MANAGEMENT
   // ============================================

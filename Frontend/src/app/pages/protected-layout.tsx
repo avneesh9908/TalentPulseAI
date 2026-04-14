@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { useTheme } from "@/App";
+import { useTheme } from "@/contexts/use-theme";
 import Header from "@/components/header";
 
 interface ProtectedLayoutProps {

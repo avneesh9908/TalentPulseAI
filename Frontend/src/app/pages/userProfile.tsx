@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useTheme } from "@/App";
+import { useTheme } from "@/contexts/use-theme";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   RadarChart,

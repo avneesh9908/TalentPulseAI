@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { useTheme } from "@/App";
-import { useInterview } from "@/contexts/interview-context";
+import { useTheme } from "@/contexts/use-theme";
+import { useInterview } from "@/contexts/use-interview";
 import {
   ArrowLeft,
   ChevronRight,
@@ -93,7 +93,7 @@ function SectionLabel({ icon: Icon, label, isDark }: SectionLabelProps) {
 export default function QuickSetupPage() {
   const { isDark } = useTheme();
   const navigate = useNavigate();
-  const { saveQuickSetup, submitInterviewSetup, isLoading, error, clearError } = useInterview();
+  const { submitInterviewSetup, isLoading, error, clearError } = useInterview();
 
   const [experience, setExperience] = useState<string | null>(null);
   const [difficulty, setDifficulty] = useState<string | null>(null);
@@ -125,11 +125,13 @@ export default function QuickSetupPage() {
     if (!experience || !difficulty || skills.length === 0) return;
     try {
       clearError();
-      // Save quick setup to local state
-      saveQuickSetup(experience, difficulty, skills);
-
-      // Submit interview setup (single API call with all collected data)
-      await submitInterviewSetup();
+      // Pass values: context state from prior steps is updated asynchronously, so submit
+      // must receive experience/difficulty/skills or it would read stale nulls.
+      await submitInterviewSetup({
+        experience,
+        difficulty,
+        skills,
+      });
 
       // Navigate to interview start page
       navigate("/interview/start");

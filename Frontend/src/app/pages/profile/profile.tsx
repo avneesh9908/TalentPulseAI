@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { useTheme } from "@/App";
+import { useTheme } from "@/contexts/use-theme";
 import {
   User,
   Mail,

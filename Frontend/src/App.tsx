@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { createContext, useContext, useEffect, useState } from "react";
 import { AuthProvider } from "@/contexts/auth-context";
-import { InterviewProvider } from "@/contexts/interview-context";
+import { InterviewProvider } from "@/contexts/interview-provider";
+import { ThemeProvider } from "@/contexts/theme-provider";
 import ProtectedRoute from "@/app/pages/auth/protected-route";
 
 // Layouts
@@ -24,45 +24,13 @@ import Profile from "@/app/pages/profile/profile";
 // import InterviewSession from "@/app/pages/interview/session";
 // import InterviewResult from "@/app/pages/interview/result";
 
-// ─── Theme Context ────────────────────────────────────────────────
-interface ThemeContextType {
-  isDark: boolean;
-  toggleTheme: () => void;
-}
-
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
-
-export const useTheme  = () => {
-  const context = useContext(ThemeContext);
-  if (!context) throw new Error("useTheme must be used within ThemeProvider");
-  return context;
-};
-
-// ─── App ──────────────────────────────────────────────────────────
 function App() {
-  const [isDark, setIsDark] = useState<boolean>(() => {
-    const savedTheme = localStorage.getItem("theme");
-    if (savedTheme) return savedTheme === "dark";
-    return window.matchMedia("(prefers-color-scheme: dark)").matches;
-  });
-
-  useEffect(() => {
-    if (isDark) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-    localStorage.setItem("theme", isDark ? "dark" : "light");
-  }, [isDark]);
-
-  const toggleTheme = () => setIsDark((prev) => !prev);
-
   return (
     // ⚠️ AuthProvider must be INSIDE BrowserRouter (needs useNavigate)
     <BrowserRouter>
       <AuthProvider>
         <InterviewProvider>
-          <ThemeContext.Provider value={{ isDark, toggleTheme }}>
+          <ThemeProvider>
             <Routes>
             {/* LANDING PAGE - ENTRY POINT */}
             <Route path="/" element={<LandingPage />} />
@@ -187,7 +155,7 @@ function App() {
             {/* FALLBACK */}
             <Route path="*" element={<Navigate to="/auth/login" replace />} />
           </Routes>
-        </ThemeContext.Provider>
+        </ThemeProvider>
         </InterviewProvider>
       </AuthProvider>
     </BrowserRouter>

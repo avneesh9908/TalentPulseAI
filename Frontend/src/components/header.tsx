@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { useTheme } from "@/App";
+import { useTheme } from "@/contexts/use-theme";
 import { useAuth } from "@/contexts/auth-context";
 import {
   Menu,
