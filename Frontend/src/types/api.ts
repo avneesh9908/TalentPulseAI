@@ -71,6 +71,45 @@ export interface InterviewSetupResponse {
   message: string;
 }
 
+export interface ResumePayload {
+  source: "upload" | "existing" | "text";
+  file_name?: string;
+  mime_type?: string;
+  text?: string;
+  base64_pdf?: string;
+}
+
+export interface ResumeChunkingConfig {
+  chunk_size?: number;
+  chunk_overlap?: number;
+}
+
+export interface ResumeEmbeddingConfig {
+  provider?: "cursor";
+  model?: string;
+}
+
+export interface ResumeIndexRequest {
+  interview_id: string;
+  setup_id: number;
+  role: string;
+  experience: string;
+  difficulty: string;
+  skills: string[];
+  profile_option: "existing" | "upload";
+  resume: ResumePayload;
+  chunking?: ResumeChunkingConfig;
+  embedding?: ResumeEmbeddingConfig;
+}
+
+export interface ResumeIndexResponse {
+  interview_id: string;
+  resume_id: number;
+  chunks_indexed: number;
+  vector_collection: string;
+  status: string;
+}
+
 export interface InterviewStartRequest {
   user_id: string;
   role: string;

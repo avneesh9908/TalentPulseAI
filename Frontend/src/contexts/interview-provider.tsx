@@ -8,7 +8,11 @@ import { useLocation } from "react-router-dom";
 import { interviewService } from "@/services/interviewService";
 import { authService } from "@/services/authService";
 import type { InterviewSetupResponse } from "@/types/api";
-import { InterviewContext, type InterviewContextType } from "./interview-context";
+import {
+  InterviewContext,
+  type InterviewContextType,
+  type ResumeUploadDraft,
+} from "./interview-context";
 import {
   loadInterviewDraft,
   patchInterviewDraft,
@@ -29,6 +33,7 @@ export const InterviewProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [profileOption, setProfileOption] = useState<"existing" | "upload" | null>(
     initialDraft.profileOption
   );
+  const [resumeUpload, setResumeUpload] = useState<ResumeUploadDraft | null>(null);
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -66,12 +71,21 @@ export const InterviewProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     console.log("Profile option saved to context:", option);
   }, []);
 
+  const saveResumeUpload = useCallback((resume: ResumeUploadDraft) => {
+    setResumeUpload(resume);
+    console.log("Resume upload saved to context:", resume.fileName);
+  }, []);
+
+  const clearResumeUpload = useCallback(() => {
+    setResumeUpload(null);
+  }, []);
+
   const submitInterviewSetup = useCallback(
     async (quickSetup?: {
       experience: string;
       difficulty: string;
       skills: string[];
-    }) => {
+    }): Promise<InterviewSetupResponse> => {
       try {
         setIsLoading(true);
         setError(null);
@@ -125,7 +139,40 @@ export const InterviewProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setInterviewId(response.interview_id);
         setInterviewSetup(response);
 
+        // Wire RAG indexing immediately after setup when resume upload exists.
+        if (prof === "upload" && resumeUpload?.base64Pdf) {
+          try {
+            await interviewService.indexResume({
+              interview_id: response.interview_id,
+              setup_id: payload.setup_id,
+              role,
+              experience: exp,
+              difficulty: diff,
+              skills: sk,
+              profile_option: prof,
+              resume: {
+                source: "upload",
+                file_name: resumeUpload.fileName,
+                mime_type: resumeUpload.mimeType,
+                base64_pdf: resumeUpload.base64Pdf,
+              },
+              chunking: {
+                chunk_size: 700,
+                chunk_overlap: 120,
+              },
+              embedding: {
+                provider: "cursor",
+              },
+            });
+            console.log("Resume indexed for retrieval pipeline");
+          } catch (ragErr) {
+            // Don't block interview start if indexing fails; can retry later.
+            console.warn("Resume indexing failed:", ragErr);
+          }
+        }
+
         console.log("Interview setup submitted successfully:", response.interview_id);
+        return response;
       } catch (err) {
         const message = err instanceof Error ? err.message : "Failed to setup interview";
         setError(message);
@@ -135,7 +182,7 @@ export const InterviewProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setIsLoading(false);
       }
     },
-    [experience, difficulty, skills, selectedRole, profileOption]
+    [experience, difficulty, skills, selectedRole, profileOption, resumeUpload]
   );
 
   const clearError = useCallback(() => {
@@ -150,6 +197,7 @@ export const InterviewProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setSkills([]);
     setSelectedRole(null);
     setProfileOption(null);
+    setResumeUpload(null);
     setError(null);
     clearInterviewDraft();
   }, []);
@@ -167,6 +215,8 @@ export const InterviewProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     saveQuickSetup,
     saveRole,
     saveProfile,
+    saveResumeUpload,
+    clearResumeUpload,
     submitInterviewSetup,
     clearError,
     resetInterview,

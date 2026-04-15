@@ -23,6 +23,8 @@ export const config = {
     // Interview management endpoints
     INTERVIEW: {
       SETUP: "/interview/setup",     // NEW: Unified setup endpoint (combines 3 steps)
+      RESUME_INDEX: "/interview/resume/index",
+      CONTEXT_RETRIEVE: "/interview/context/retrieve",
       START: "/interview/start",
       SAVE: "/interview/:id/progress",
       GET: "/interview/:id",

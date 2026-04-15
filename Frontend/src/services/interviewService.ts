@@ -9,6 +9,8 @@ import type {
   InterviewResponse,
   InterviewSetupRequest,
   InterviewSetupResponse,
+  ResumeIndexRequest,
+  ResumeIndexResponse,
   InterviewStartRequest,
   InterviewSubmitRequest,
   ApiError,
@@ -29,6 +31,22 @@ class InterviewService {
     } catch (error) {
       const apiError = error as ApiError;
       throw new Error(apiError.detail || "Failed to setup interview");
+    }
+  }
+
+  /**
+   * Index resume for RAG pipeline (parse + chunk + embed + store)
+   */
+  async indexResume(payload: ResumeIndexRequest): Promise<ResumeIndexResponse> {
+    try {
+      const response = await httpClient.post<ResumeIndexResponse>(
+        config.ENDPOINTS.INTERVIEW.RESUME_INDEX,
+        payload
+      );
+      return response;
+    } catch (error) {
+      const apiError = error as ApiError;
+      throw new Error(apiError.detail || "Failed to index resume");
     }
   }
   /**
@@ -83,10 +101,13 @@ class InterviewService {
   /**
    * List all interviews for current user
    */
-  async listInterviews(page = 1, pageSize = 10): Promise<any> {
+  async listInterviews(
+    page = 1,
+    pageSize = 10
+  ): Promise<Record<string, unknown>> {
     try {
       const endpoint = `${config.ENDPOINTS.INTERVIEW.LIST}?page=${page}&page_size=${pageSize}`;
-      const response = await httpClient.get<any>(endpoint);
+      const response = await httpClient.get<Record<string, unknown>>(endpoint);
       return response;
     } catch (error) {
       const apiError = error as ApiError;
@@ -114,10 +135,10 @@ class InterviewService {
   /**
    * Get interview results
    */
-  async getResults(interviewId: string): Promise<any> {
+  async getResults(interviewId: string): Promise<Record<string, unknown>> {
     try {
       const endpoint = buildUrl(config.ENDPOINTS.INTERVIEW.RESULTS, { id: interviewId });
-      const response = await httpClient.get<any>(endpoint);
+      const response = await httpClient.get<Record<string, unknown>>(endpoint);
       return response;
     } catch (error) {
       const apiError = error as ApiError;

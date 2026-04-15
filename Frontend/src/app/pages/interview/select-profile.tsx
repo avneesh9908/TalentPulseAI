@@ -21,11 +21,27 @@ import {
 // ─────────────────────────────────────────
 type ProfileOption = "existing" | "upload" | null;
 
+const fileToBase64 = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const value = reader.result;
+      if (typeof value !== "string") {
+        reject(new Error("Failed to read selected file"));
+        return;
+      }
+      const commaIndex = value.indexOf(",");
+      resolve(commaIndex >= 0 ? value.slice(commaIndex + 1) : value);
+    };
+    reader.onerror = () => reject(new Error("Failed to read selected file"));
+    reader.readAsDataURL(file);
+  });
+
 // ─────────────────────────────────────────
 // Option Card
 // ─────────────────────────────────────────
 function ProfileOptionCard({
-  id: _id,
+  id,
   icon: Icon,
   title,
   description,
@@ -37,7 +53,7 @@ function ProfileOptionCard({
   isDark,
 }: {
   id: ProfileOption;
-  icon: any;
+  icon: React.ElementType;
   title: string;
   description: string;
   badge?: string;
@@ -49,6 +65,7 @@ function ProfileOptionCard({
 }) {
   return (
     <motion.div
+      data-option-id={id ?? undefined}
       whileHover={!disabled ? { y: -4, scale: 1.02 } : {}}
       whileTap={!disabled ? { scale: 0.98 } : {}}
       onClick={!disabled ? onClick : undefined}
@@ -274,13 +291,38 @@ function UploadZone({
 export default function SelectProfilePage() {
   const { isDark } = useTheme();
   const navigate = useNavigate();
-  const { saveProfile, isLoading, error, clearError } = useInterview();
+  const {
+    saveProfile,
+    saveResumeUpload,
+    clearResumeUpload,
+    isLoading,
+    error,
+    clearError,
+  } = useInterview();
 
   const [selected, setSelected] = useState<ProfileOption>(null);
   const [file, setFile] = useState<File | null>(null);
 
   const canContinue =
     selected === "existing" || (selected === "upload" && file !== null);
+
+  const handleFileSelected = async (selectedFile: File) => {
+    if (selectedFile.type !== "application/pdf") {
+      return;
+    }
+    const base64Pdf = await fileToBase64(selectedFile);
+    setFile(selectedFile);
+    saveResumeUpload({
+      fileName: selectedFile.name,
+      mimeType: selectedFile.type || "application/pdf",
+      base64Pdf,
+    });
+  };
+
+  const handleFileCleared = () => {
+    setFile(null);
+    clearResumeUpload();
+  };
 
   // Handle continue - save to local state only
   const handleContinue = async () => {
@@ -458,7 +500,9 @@ export default function SelectProfilePage() {
               onClick={() => {
                 if (!opt.disabled) {
                   setSelected(opt.id);
-                  setFile(null);
+                  if (opt.id !== "upload") {
+                    handleFileCleared();
+                  }
                 }
               }}
               isDark={isDark}
@@ -478,8 +522,8 @@ export default function SelectProfilePage() {
               <UploadZone
                 isDark={isDark}
                 file={file}
-                onFile={setFile}
-                onClear={() => setFile(null)}
+                onFile={handleFileSelected}
+                onClear={handleFileCleared}
               />
 
               {/* Info note */}

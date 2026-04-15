@@ -6,6 +6,12 @@
 import { createContext } from "react";
 import type { InterviewSetupResponse } from "@/types/api";
 
+export interface ResumeUploadDraft {
+  fileName: string;
+  mimeType: string;
+  base64Pdf: string;
+}
+
 export interface InterviewContextType {
   interviewId: string | null;
   interviewSetup: InterviewSetupResponse | null;
@@ -22,12 +28,14 @@ export interface InterviewContextType {
   saveQuickSetup: (experience: string, difficulty: string, skills: string[]) => void;
   saveRole: (role: string) => void;
   saveProfile: (profileOption: "existing" | "upload") => void;
+  saveResumeUpload: (resume: ResumeUploadDraft) => void;
+  clearResumeUpload: () => void;
 
   submitInterviewSetup: (quickSetup?: {
     experience: string;
     difficulty: string;
     skills: string[];
-  }) => Promise<void>;
+  }) => Promise<InterviewSetupResponse>;
 
   clearError: () => void;
   resetInterview: () => void;
