@@ -5,7 +5,8 @@
 
 import React, { useState, useCallback, useEffect } from "react";
 import { useLocation } from "react-router-dom";
-import { interviewService } from "@/services/interviewService";
+import { indexResume, setupInterview } from "@/api/interviewService";
+import { useApi } from "@/hooks/useApi";
 import { authService } from "@/services/authService";
 import type { InterviewSetupResponse } from "@/types/api";
 import {
@@ -35,14 +36,13 @@ export const InterviewProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   );
   const [resumeUpload, setResumeUpload] = useState<ResumeUploadDraft | null>(null);
 
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { request, loading: isLoading, error, setError } = useApi();
 
   // Stale API errors (e.g. "User not authenticated") must not persist across navigations
   // such as login → /interview/select-role; error is only for the current screen.
   useEffect(() => {
     setError(null);
-  }, [location.pathname]);
+  }, [location.pathname, setError]);
 
   const saveQuickSetup = useCallback(
     (exp: string, diff: string, skillsList: string[]) => {
@@ -87,7 +87,6 @@ export const InterviewProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       skills: string[];
     }): Promise<InterviewSetupResponse> => {
       try {
-        setIsLoading(true);
         setError(null);
 
         if (quickSetup) {
@@ -119,8 +118,7 @@ export const InterviewProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           throw new Error("Please select at least one skill.");
         }
 
-        // Login stores access_token but not current_user; getUserId() would be null.
-        // Interview API uses Bearer token (see httpClient); no client user id required.
+        // Interview APIs authenticate via Bearer token injected by axios interceptors.
         if (!authService.getToken()) {
           throw new Error("User not authenticated");
         }
@@ -134,7 +132,7 @@ export const InterviewProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           profile_option: prof,
         };
 
-        const response = await interviewService.setupInterview(payload);
+        const response = await request(setupInterview, payload);
 
         setInterviewId(response.interview_id);
         setInterviewSetup(response);
@@ -142,7 +140,7 @@ export const InterviewProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         // Wire RAG indexing immediately after setup when resume upload exists.
         if (prof === "upload" && resumeUpload?.base64Pdf) {
           try {
-            await interviewService.indexResume({
+            await request(indexResume, {
               interview_id: response.interview_id,
               setup_id: payload.setup_id,
               role,
@@ -178,16 +176,14 @@ export const InterviewProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setError(message);
         console.error("Setup interview error:", message);
         throw err;
-      } finally {
-        setIsLoading(false);
       }
     },
-    [experience, difficulty, skills, selectedRole, profileOption, resumeUpload]
+    [experience, difficulty, skills, selectedRole, profileOption, request, resumeUpload, setError]
   );
 
   const clearError = useCallback(() => {
     setError(null);
-  }, []);
+  }, [setError]);
 
   const resetInterview = useCallback(() => {
     setInterviewId(null);
@@ -200,7 +196,7 @@ export const InterviewProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setResumeUpload(null);
     setError(null);
     clearInterviewDraft();
-  }, []);
+  }, [setError]);
 
   const value: InterviewContextType = {
     interviewId,

@@ -14,6 +14,7 @@ import Register from "@/app/pages/auth/register";
 import Dashboard from "@/app/pages/dashboard/dashboard";
 import LandingPage from "@/app/pages/landing";
 import UserProfile from "./app/pages/userProfile"; 
+import UsersPage from "@/app/pages/users/users";
 
 // Interview Pages
 import SelectRole from "@/app/pages/interview/select-role";
@@ -107,6 +108,16 @@ function App() {
                 <ProtectedRoute>
                   <ProtectedLayout>
                     <Dashboard />
+                  </ProtectedLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/users"
+              element={
+                <ProtectedRoute>
+                  <ProtectedLayout>
+                    <UsersPage />
                   </ProtectedLayout>
                 </ProtectedRoute>
               }

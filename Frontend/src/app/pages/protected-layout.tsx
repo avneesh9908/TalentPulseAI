@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 import { useTheme } from "@/contexts/use-theme";
 import Header from "@/components/header";
 

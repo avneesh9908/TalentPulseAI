@@ -3,14 +3,18 @@
  * @description Authentication service - handles login, register, logout, and token management
  */
 
-import { httpClient } from "../lib/httpClient";
-import { config, buildUrl } from "../lib/config";
+import {
+  fetchCurrentUser,
+  loginUser,
+  logoutUser,
+  refreshUserToken,
+  registerUser,
+} from "@/api/authService";
 import type {
   AuthResponse,
   LoginRequest,
   RegisterRequest,
   UserProfile,
-  ApiError,
 } from "../types/api";
 
 class AuthService {
@@ -22,10 +26,7 @@ class AuthService {
    */
   async login(credentials: LoginRequest): Promise<AuthResponse> {
     try {
-      const response = await httpClient.post<AuthResponse>(
-        config.ENDPOINTS.AUTH.LOGIN,
-        credentials
-      );
+      const response = await loginUser(credentials);
       
       if (response?.access_token) {
         this.setToken(response.access_token);
@@ -36,8 +37,7 @@ class AuthService {
       
       return response;
     } catch (error) {
-      const apiError = error as ApiError;
-      throw new Error(apiError.detail || "Login failed");
+      throw new Error(this.extractErrorMessage(error, "Login failed"));
     }
   }
 
@@ -46,10 +46,7 @@ class AuthService {
    */
   async register(data: RegisterRequest): Promise<AuthResponse> {
     try {
-      const response = await httpClient.post<AuthResponse>(
-        config.ENDPOINTS.AUTH.REGISTER,
-        data
-      );
+      const response = await registerUser(data);
       
       if (response?.access_token) {
         this.setToken(response.access_token);
@@ -60,8 +57,7 @@ class AuthService {
       
       return response;
     } catch (error) {
-      const apiError = error as ApiError;
-      throw new Error(apiError.detail || "Registration failed");
+      throw new Error(this.extractErrorMessage(error, "Registration failed"));
     }
   }
 
@@ -70,9 +66,7 @@ class AuthService {
    */
   async refreshToken(): Promise<AuthResponse> {
     try {
-      const response = await httpClient.post<AuthResponse>(
-        config.ENDPOINTS.AUTH.REFRESH
-      );
+      const response = await refreshUserToken();
       
       if (response?.access_token) {
         this.setToken(response.access_token);
@@ -90,14 +84,13 @@ class AuthService {
    */
   async getCurrentUser(): Promise<UserProfile> {
     try {
-      const response = await httpClient.get<UserProfile>(config.ENDPOINTS.AUTH.ME);
+      const response = await fetchCurrentUser();
       if (response) {
         this.setUser(response);
       }
       return response;
     } catch (error) {
-      const apiError = error as ApiError;
-      throw new Error(apiError.detail || "Failed to fetch user");
+      throw new Error(this.extractErrorMessage(error, "Failed to fetch user"));
     }
   }
 
@@ -106,8 +99,7 @@ class AuthService {
    */
   async logout(): Promise<void> {
     try {
-      // Try to notify backend of logout
-      await httpClient.post(config.ENDPOINTS.AUTH.LOGOUT);
+      await logoutUser();
     } catch (error) {
       // Logout always succeeds locally even if API fails
       console.warn("Logout API call failed, but clearing local session",error);
@@ -242,6 +234,13 @@ class AuthService {
    */
   getUserEmail(): string | null {
     return this.getCurrentUserFromStorage()?.email || null;
+  }
+
+  private extractErrorMessage(error: unknown, fallback: string): string {
+    if (error instanceof Error && error.message) {
+      return error.message;
+    }
+    return fallback;
   }
 }
 

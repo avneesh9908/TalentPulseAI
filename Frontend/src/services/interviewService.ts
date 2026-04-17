@@ -3,7 +3,7 @@
  * @description Interview service - handles interview CRUD operations, progress tracking, and submission
  */
 
-import { httpClient } from "../lib/httpClient";
+import axiosInstance from "@/api/axiosInstance";
 import { config, buildUrl } from "../lib/config";
 import type {
   InterviewResponse,
@@ -23,7 +23,7 @@ class InterviewService {
    */
   async setupInterview(payload: InterviewSetupRequest): Promise<InterviewSetupResponse> {
     try {
-      const response = await httpClient.post<InterviewSetupResponse>(
+      const { data: response } = await axiosInstance.post<InterviewSetupResponse>(
         config.ENDPOINTS.INTERVIEW.SETUP,
         payload
       );
@@ -39,7 +39,7 @@ class InterviewService {
    */
   async indexResume(payload: ResumeIndexRequest): Promise<ResumeIndexResponse> {
     try {
-      const response = await httpClient.post<ResumeIndexResponse>(
+      const { data: response } = await axiosInstance.post<ResumeIndexResponse>(
         config.ENDPOINTS.INTERVIEW.RESUME_INDEX,
         payload
       );
@@ -54,7 +54,7 @@ class InterviewService {
    */
   async startInterview(payload: InterviewStartRequest): Promise<InterviewResponse> {
     try {
-      const response = await httpClient.post<InterviewResponse>(
+      const { data: response } = await axiosInstance.post<InterviewResponse>(
         config.ENDPOINTS.INTERVIEW.START,
         payload
       );
@@ -74,7 +74,7 @@ class InterviewService {
   ): Promise<InterviewResponse> {
     try {
       const endpoint = buildUrl(config.ENDPOINTS.INTERVIEW.SAVE, { id: interviewId });
-      const response = await httpClient.put<InterviewResponse>(endpoint, { data });
+      const { data: response } = await axiosInstance.put<InterviewResponse>(endpoint, { data });
       return response;
     } catch (error) {
       const apiError = error as ApiError;
@@ -90,7 +90,7 @@ class InterviewService {
   async getInterview(interviewId: string): Promise<InterviewResponse> {
     try {
       const endpoint = buildUrl(config.ENDPOINTS.INTERVIEW.GET, { id: interviewId });
-      const response = await httpClient.get<InterviewResponse>(endpoint);
+      const { data: response } = await axiosInstance.get<InterviewResponse>(endpoint);
       return response;
     } catch (error) {
       const apiError = error as ApiError;
@@ -107,7 +107,7 @@ class InterviewService {
   ): Promise<Record<string, unknown>> {
     try {
       const endpoint = `${config.ENDPOINTS.INTERVIEW.LIST}?page=${page}&page_size=${pageSize}`;
-      const response = await httpClient.get<Record<string, unknown>>(endpoint);
+      const { data: response } = await axiosInstance.get<Record<string, unknown>>(endpoint);
       return response;
     } catch (error) {
       const apiError = error as ApiError;
@@ -124,7 +124,7 @@ class InterviewService {
   ): Promise<InterviewResponse> {
     try {
       const endpoint = buildUrl(config.ENDPOINTS.INTERVIEW.SUBMIT, { id: interviewId });
-      const response = await httpClient.post<InterviewResponse>(endpoint, payload);
+      const { data: response } = await axiosInstance.post<InterviewResponse>(endpoint, payload);
       return response;
     } catch (error) {
       const apiError = error as ApiError;
@@ -138,7 +138,7 @@ class InterviewService {
   async getResults(interviewId: string): Promise<Record<string, unknown>> {
     try {
       const endpoint = buildUrl(config.ENDPOINTS.INTERVIEW.RESULTS, { id: interviewId });
-      const response = await httpClient.get<Record<string, unknown>>(endpoint);
+      const { data: response } = await axiosInstance.get<Record<string, unknown>>(endpoint);
       return response;
     } catch (error) {
       const apiError = error as ApiError;
@@ -152,7 +152,7 @@ class InterviewService {
    */
   async submitSetup(setupData: InterviewSetupRequest): Promise<InterviewResponse> {
     try {
-      const response = await httpClient.post<InterviewResponse>(
+      const { data: response } = await axiosInstance.post<InterviewResponse>(
         config.ENDPOINTS.INTERVIEW.SETUP,
         setupData
       );

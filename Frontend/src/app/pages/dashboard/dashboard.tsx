@@ -958,11 +958,10 @@
 //   );
 // }
 
-import { useState } from "react";
+import { useState, type ComponentType, type ReactNode } from "react";
 import { useTheme } from "@/contexts/use-theme";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  LineChart,
   Line,
   XAxis,
   YAxis,
@@ -973,8 +972,6 @@ import {
   PolarAngleAxis,
   PolarRadiusAxis,
   Radar,
-  BarChart,
-  Bar,
   CartesianGrid,
   Area,
   AreaChart,
@@ -1029,7 +1026,13 @@ const achievements = [
 ];
 
 // ---------- Small UI Components ----------
-function IconButton({ children, onClick, className = "" }: any) {
+interface IconButtonProps {
+  children: ReactNode;
+  onClick?: () => void;
+  className?: string;
+}
+
+function IconButton({ children, onClick, className = "" }: IconButtonProps) {
   return (
     <motion.button
       whileHover={{ scale: 1.05 }}
@@ -1042,7 +1045,15 @@ function IconButton({ children, onClick, className = "" }: any) {
   );
 }
 
-function StatCard({ title, value, change, icon: Icon, color }: any) {
+interface StatCardProps {
+  title: string;
+  value: string | number;
+  change: string;
+  icon: ComponentType<{ className?: string; size?: number | string }>;
+  color: string;
+}
+
+function StatCard({ title, value, change, icon: Icon, color }: StatCardProps) {
   const isPositive = change.startsWith("+");
   return (
     <motion.div
@@ -1066,7 +1077,13 @@ function StatCard({ title, value, change, icon: Icon, color }: any) {
   );
 }
 
-function GlassCard({ children, className = "", isDark = true }: any) {
+interface GlassCardProps {
+  children: ReactNode;
+  className?: string;
+  isDark?: boolean;
+}
+
+function GlassCard({ children, className = "", isDark = true }: GlassCardProps) {
   return (
     <div className={`${
       isDark 
@@ -1082,7 +1099,6 @@ function GlassCard({ children, className = "", isDark = true }: any) {
 export default function UserDashboardPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [activeTab, setActiveTab] = useState("overview");
    const { isDark, toggleTheme } = useTheme();
  
 
@@ -1601,7 +1617,7 @@ export default function UserDashboardPage() {
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
-                      {achievements.map((ach, i) => (
+                      {achievements.map((ach) => (
                         <motion.div
                           key={ach.id}
                           whileHover={{ scale: ach.unlocked ? 1.05 : 1 }}

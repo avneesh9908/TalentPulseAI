@@ -110,6 +110,33 @@ export interface ResumeIndexResponse {
   status: string;
 }
 
+export interface RetrievedContextChunk {
+  chunk_id: number;
+  section?: string | null;
+  score: number;
+  text: string;
+  metadata: Record<string, unknown>;
+}
+
+export interface ContextRetrieveRequest {
+  interview_id: string;
+  setup_id: number;
+  role: string;
+  experience: string;
+  difficulty: string;
+  skills: string[];
+  profile_option: "existing" | "upload";
+  query: string;
+  top_k?: number;
+  min_score?: number;
+}
+
+export interface ContextRetrieveResponse {
+  interview_id: string;
+  retrieved_count: number;
+  context_pack: RetrievedContextChunk[];
+}
+
 export interface InterviewStartRequest {
   user_id: string;
   role: string;

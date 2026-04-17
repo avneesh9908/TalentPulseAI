@@ -1,7 +1,6 @@
 import { motion } from "framer-motion";
 import { useTheme } from "@/contexts/use-theme";
 import {
-  User,
   Mail,
   Phone,
   Briefcase,
