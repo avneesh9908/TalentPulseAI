@@ -4,6 +4,7 @@ import type {
   ContextRetrieveRequest,
   ContextRetrieveResponse,
   InterviewResponse,
+  InterviewSubmitResponse,
   InterviewSetupRequest,
   InterviewSetupResponse,
   ResumeIndexRequest,
@@ -59,9 +60,9 @@ export const saveInterviewProgress = async (
 export const submitInterview = async (
   interviewId: string,
   payload: InterviewSubmitRequest
-): Promise<InterviewResponse> => {
+): Promise<InterviewSubmitResponse> => {
   const endpoint = buildUrl(config.ENDPOINTS.INTERVIEW.SUBMIT, { id: interviewId });
-  const { data } = await axiosInstance.post<InterviewResponse>(endpoint, payload);
+  const { data } = await axiosInstance.post<InterviewSubmitResponse>(endpoint, payload);
   return data;
 };
 

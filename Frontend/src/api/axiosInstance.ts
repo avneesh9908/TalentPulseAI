@@ -1,5 +1,7 @@
 import axios from "axios";
 import { toast } from "react-hot-toast";
+import { AUTH_SESSION_INVALID_EVENT } from "@/lib/auth-events";
+import { authService } from "@/services/authService";
 
 const axiosInstance = axios.create({
   baseURL:
@@ -27,13 +29,23 @@ axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
     const status = error.response?.status;
+    const requestUrl = String(error.config?.url ?? "");
+    const isAuthAttempt =
+      requestUrl.includes("/auth/login") || requestUrl.includes("/auth/register");
+
+    if (status === 401 && !isAuthAttempt) {
+      authService.clearClientSession();
+      window.dispatchEvent(new Event(AUTH_SESSION_INVALID_EVENT));
+      console.warn("[API] Session cleared after 401", { url: requestUrl });
+      return Promise.reject(error);
+    }
+
     const detail: string =
       error.response?.data?.detail ||
       error.response?.data?.message ||
       error.message ||
       "Something went wrong";
 
-    // Centralized global error logging
     console.error("[API Error]", { status, detail, url: error.config?.url });
     toast.error(detail);
 

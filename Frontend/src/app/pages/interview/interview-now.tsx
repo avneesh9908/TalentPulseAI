@@ -5,7 +5,7 @@ import { useTheme } from "@/contexts/use-theme";
 import { useInterview } from "@/contexts/use-interview";
 import { ArrowLeft, CheckCircle2, Loader2, Mic, MicOff, Timer, Video, Volume2 } from "lucide-react";
 import { retrieveInterviewContext, submitInterview } from "@/api/interviewService";
-import type { RetrievedContextChunk } from "@/types/api";
+import type { InterviewSubmitResponse, RetrievedContextChunk } from "@/types/api";
 
 type SpeechRecognitionLike = {
   continuous: boolean;
@@ -276,15 +276,25 @@ export default function InterviewNowPage() {
     try {
       setIsSubmittingInterview(true);
       setSubmitMessage(null);
-      await submitInterview(interviewId, { answers, completed_at: new Date().toISOString() });
+      const response: InterviewSubmitResponse = await submitInterview(interviewId, {
+        answers,
+        completed_at: new Date().toISOString(),
+      });
       setInterviewSubmitted(true);
-      setSubmitMessage("Interview submitted successfully.");
+      setSubmitMessage("Interview submitted successfully. Redirecting to your report...");
+      navigate("/interview/result", {
+        state: {
+          result: response,
+          totalQuestions: questions.length,
+          answeredQuestions: Object.keys(answers).length,
+        },
+      });
     } catch (err) {
       setSubmitMessage(err instanceof Error ? err.message : "Failed to submit interview.");
     } finally {
       setIsSubmittingInterview(false);
     }
-  }, [finalizedAnswers, interviewId]);
+  }, [finalizedAnswers, interviewId, navigate, questions.length]);
 
   useEffect(() => {
     void ensureMediaReady();
@@ -339,9 +349,9 @@ export default function InterviewNowPage() {
           top_k: 6,
         });
         setQuestions(buildQuestionsFromContext(response.context_pack || [], selectedRole, difficulty, skills));
-      } catch (err) {
+      } catch {
         setQuestions(buildQuestionsFromContext([], selectedRole, difficulty, skills));
-        setQuestionError(`${err instanceof Error ? err.message : "Failed to load context questions"} Using fallback question set.`);
+        setQuestionError("Resume context is unavailable right now. Using a fallback question set.");
       } finally {
         setIsGeneratingQuestions(false);
       }

@@ -154,6 +154,31 @@ export interface InterviewSubmitRequest {
   completed_at: string;
 }
 
+export interface InterviewQuestionFeedback {
+  question_id: string;
+  score: number;
+  feedback: string;
+  word_count: number;
+}
+
+export interface InterviewFeedbackReport {
+  score: number;
+  strengths: string[];
+  improvements: string[];
+  overall_feedback: string;
+  question_feedback: InterviewQuestionFeedback[];
+  next_steps: string[];
+}
+
+export interface InterviewSubmitResponse {
+  interview_id: string;
+  status: "submitted";
+  score: number;
+  completed_at: string;
+  message: string;
+  feedback: InterviewFeedbackReport;
+}
+
 export interface InterviewResponse {
   id: string;
   user_id: string;

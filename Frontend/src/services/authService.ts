@@ -113,6 +113,7 @@ class AuthService {
    */
   private clearAuth(): void {
     localStorage.removeItem(this.tokenKey);
+    localStorage.removeItem("token");
     localStorage.removeItem(this.userKey);
   }
 
@@ -124,7 +125,7 @@ class AuthService {
    * Get stored access token
    */
   getToken(): string | null {
-    return localStorage.getItem(this.tokenKey);
+    return localStorage.getItem(this.tokenKey) ?? localStorage.getItem("token");
   }
 
   /**
@@ -171,11 +172,13 @@ class AuthService {
    */
   clearToken(): void {
     localStorage.removeItem(this.tokenKey);
+    localStorage.removeItem("token");
   }
 
   /** Remove access token and cached user (logout / session reset). */
   clearClientSession(): void {
     localStorage.removeItem(this.tokenKey);
+    localStorage.removeItem("token");
     localStorage.removeItem(this.userKey);
   }
 

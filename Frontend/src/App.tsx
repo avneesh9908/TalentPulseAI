@@ -21,6 +21,7 @@ import SelectRole from "@/app/pages/interview/select-role";
 import SelectProfile from "@/app/pages/interview/select-profile";
 import QuickSetup from "@/app/pages/interview/quick-setup";
 import InterviewNow from "@/app/pages/interview/interview-now";
+import InterviewResult from "@/app/pages/interview/interview-result";
 import Profile from "@/app/pages/profile/profile";
 // import InterviewSession from "@/app/pages/interview/session";
 // import InterviewResult from "@/app/pages/interview/result";
@@ -72,6 +73,17 @@ function App() {
                 <ProtectedRoute>
                   <ProtectedLayout>
                     <InterviewNow />
+                  </ProtectedLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/interview/result"
+              element={
+                <ProtectedRoute>
+                  <ProtectedLayout>
+                    <InterviewResult />
                   </ProtectedLayout>
                 </ProtectedRoute>
               }
