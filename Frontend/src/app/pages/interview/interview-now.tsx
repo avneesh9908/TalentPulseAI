@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useTheme } from "@/contexts/use-theme";
 import { useInterview } from "@/contexts/use-interview";
-import { ArrowLeft, CheckCircle2, Loader2, Mic, MicOff, Timer, Video, Volume2 } from "lucide-react";
+import { ArrowLeft, Loader2, Mic, MicOff, Timer, Video, Volume2 } from "lucide-react";
 import { retrieveInterviewContext, submitInterview } from "@/api/interviewService";
 import type { InterviewSubmitResponse, RetrievedContextChunk } from "@/types/api";
 
@@ -104,11 +104,6 @@ export default function InterviewNowPage() {
   const recognitionSupported = useMemo(() => Boolean(window.SpeechRecognition || window.webkitSpeechRecognition), []);
   const currentQuestion = questions[currentQuestionIdx] || "";
   const isLastQuestion = currentQuestionIdx >= questions.length - 1;
-
-  const payloadPreview = useMemo(
-    () => ({ setup_id: 0, role: selectedRole, profile_option: profileOption, experience, difficulty, skills }),
-    [selectedRole, profileOption, experience, difficulty, skills]
-  );
 
   const clearSilenceTimer = useCallback(() => {
     if (silenceTimerRef.current) {
@@ -360,107 +355,82 @@ export default function InterviewNowPage() {
   }, [interviewId, selectedRole, experience, difficulty, profileOption, skills, questions.length]);
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${isDark ? "bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950" : "bg-gradient-to-br from-gray-50 via-white to-gray-100"}`}>
-      <div className="relative z-10 w-full max-w-5xl mx-auto px-6 py-10">
-        <motion.button initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} whileHover={{ x: -3 }} onClick={() => navigate("/interview/quick-setup")} className={`flex items-center gap-2 text-sm mb-8 transition ${isDark ? "text-slate-400 hover:text-white" : "text-slate-500 hover:text-slate-900"}`}>
+    <div className={`h-[calc(100vh-4rem)] overflow-hidden transition-colors duration-300 ${isDark ? "bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950" : "bg-gradient-to-br from-gray-50 via-white to-gray-100"}`}>
+      <div className="relative z-10 w-full h-full px-4 lg:px-8 py-3 flex flex-col min-h-0">
+        <motion.button initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} whileHover={{ x: -3 }} onClick={() => navigate("/interview/quick-setup")} className={`flex items-center gap-2 text-xs mb-2 transition ${isDark ? "text-slate-400 hover:text-white" : "text-slate-500 hover:text-slate-900"}`}>
           <ArrowLeft size={16} />Back to Quick Search
         </motion.button>
 
-        <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="mb-8">
-          <h1 className={`text-4xl font-bold mb-2 tracking-tight ${isDark ? "text-white" : "text-slate-900"}`}>Interview Now</h1>
-          <p className={`${isDark ? "text-slate-400" : "text-slate-600"}`}>One-by-one questions with timer, live transcript, editable verification, and per-question recordings.</p>
+        <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="mb-3">
+          <h1 className={`text-2xl lg:text-3xl font-bold tracking-tight ${isDark ? "text-white" : "text-slate-900"}`}>Interview Now</h1>
         </motion.div>
 
-        <div className={`rounded-2xl p-6 border mb-5 ${isDark ? "bg-slate-900/60 border-white/[0.08]" : "bg-white border-slate-200 shadow-sm"}`}>
-          <div className="flex items-center gap-2 mb-2"><CheckCircle2 size={18} className={isDark ? "text-emerald-400" : "text-emerald-600"} /><h2 className={`text-lg font-semibold ${isDark ? "text-white" : "text-slate-900"}`}>Setup Saved</h2></div>
-          <p className={`text-sm ${isDark ? "text-slate-300" : "text-slate-600"}`}>Interview ID: <span className={`font-semibold ${isDark ? "text-cyan-300" : "text-cyan-700"}`}>{interviewId || "Not available"}</span></p>
-          <p className={`text-sm mt-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>Status: {interviewSetup?.status || "initialized"}</p>
-        </div>
-
-        <div className="grid gap-5 lg:grid-cols-2">
-          <div className={`rounded-2xl p-6 border ${isDark ? "bg-slate-900/60 border-white/[0.08]" : "bg-white border-slate-200 shadow-sm"}`}>
-            <h3 className={`text-base font-semibold mb-3 ${isDark ? "text-white" : "text-slate-900"}`}>Saved Payload JSON</h3>
-            <pre className={`text-xs p-4 rounded-xl overflow-x-auto ${isDark ? "bg-slate-950 text-slate-300" : "bg-slate-50 text-slate-700"}`}>{JSON.stringify(payloadPreview, null, 2)}</pre>
-          </div>
-          <div className={`rounded-2xl p-6 border ${isDark ? "bg-slate-900/60 border-white/[0.08]" : "bg-white border-slate-200 shadow-sm"}`}>
-            <div className="flex items-center justify-between mb-2"><h3 className={`text-base font-semibold ${isDark ? "text-white" : "text-slate-900"}`}>Camera + Audio</h3><span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}><Video size={14} className="inline mr-1" />{cameraReady ? "Ready" : "Initializing"}</span></div>
-            <video ref={videoRef} autoPlay muted playsInline className={`w-full h-44 object-cover rounded-xl ${isDark ? "bg-slate-950" : "bg-slate-100"}`} />
+        <div className="grid gap-4 lg:grid-cols-2 flex-1 min-h-0">
+          <div className={`rounded-2xl p-4 lg:p-5 border h-full flex flex-col min-h-0 ${isDark ? "bg-slate-900/60 border-white/[0.08]" : "bg-white border-slate-200 shadow-sm"}`}>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className={`text-base font-semibold ${isDark ? "text-white" : "text-slate-900"}`}>Camera Recording</h3>
+              <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                <Video size={14} className="inline mr-1" />
+                {cameraReady ? "Ready" : "Initializing"}
+              </span>
+            </div>
+            <video ref={videoRef} autoPlay muted playsInline className={`w-full flex-1 min-h-[260px] object-cover rounded-xl ${isDark ? "bg-slate-950" : "bg-slate-100"}`} />
             {mediaError ? <p className={`text-xs mt-2 ${isDark ? "text-amber-300" : "text-amber-700"}`}>{mediaError}</p> : null}
-          </div>
-        </div>
-
-        <div className={`rounded-2xl p-6 border mt-5 ${isDark ? "bg-slate-900/60 border-white/[0.08]" : "bg-white border-slate-200 shadow-sm"}`}>
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-            <h3 className={`text-lg font-semibold ${isDark ? "text-white" : "text-slate-900"}`}>Live Interview</h3>
-            <div className="flex items-center gap-4">
-              <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>Question {Math.min(currentQuestionIdx + 1, Math.max(questions.length, 1))} / {Math.max(questions.length, 1)}</p>
-              <p className={`text-sm font-semibold ${questionTimeLeft <= 20 ? "text-rose-500" : isDark ? "text-cyan-300" : "text-cyan-700"}`}><Timer size={14} className="inline mr-1" />{formatTimer(questionTimeLeft)}</p>
+            <div className="flex flex-wrap gap-3 mt-4">
+              <button onClick={isListening ? stopListening : () => void startListening()} disabled={interviewSubmitted} className={`px-4 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-50 flex items-center gap-2 ${isListening ? "bg-rose-600 hover:bg-rose-700" : "bg-emerald-600 hover:bg-emerald-700"}`}>{isListening ? <MicOff size={16} /> : <Mic size={16} />}{isListening ? "Stop Recording" : "Start Recording"}</button>
+              <button onClick={() => speakText(currentQuestion)} disabled={!currentQuestion} className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-2"><Volume2 size={16} />Speak Question</button>
             </div>
+            <p className={`text-xs mt-3 ${isDark ? "text-slate-400" : "text-slate-500"}`}>Interview ID: {interviewId || "Not available"} · Status: {interviewSetup?.status || "initialized"}</p>
           </div>
 
-          {isGeneratingQuestions ? (
-            <div className={`rounded-xl p-4 flex items-center gap-2 ${isDark ? "bg-slate-950 text-slate-300" : "bg-slate-50 text-slate-700"}`}><Loader2 size={16} className="animate-spin" />Generating interview questions from context...</div>
-          ) : (
-            <>
-              <div className={`rounded-xl p-4 mb-4 ${isDark ? "bg-slate-950 text-slate-200" : "bg-slate-50 text-slate-800"}`}>
-                <p className="text-xs uppercase tracking-wider opacity-70 mb-2">Current Question</p>
-                <p className="text-sm leading-relaxed">{currentQuestion || "No question available yet."}</p>
+          <div className={`rounded-2xl p-4 lg:p-5 border h-full flex flex-col min-h-0 ${isDark ? "bg-slate-900/60 border-white/[0.08]" : "bg-white border-slate-200 shadow-sm"}`}>
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+              <h3 className={`text-lg font-semibold ${isDark ? "text-white" : "text-slate-900"}`}>Question Panel</h3>
+              <div className="flex items-center gap-4">
+                <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>Question {Math.min(currentQuestionIdx + 1, Math.max(questions.length, 1))} / {Math.max(questions.length, 1)}</p>
+                <p className={`text-sm font-semibold ${questionTimeLeft <= 20 ? "text-rose-500" : isDark ? "text-cyan-300" : "text-cyan-700"}`}><Timer size={14} className="inline mr-1" />{formatTimer(questionTimeLeft)}</p>
               </div>
-
-              <div className="flex flex-wrap gap-3 mb-4">
-                <button onClick={() => speakText(currentQuestion)} disabled={!currentQuestion} className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-2"><Volume2 size={16} />Speak Question</button>
-                <button onClick={isListening ? stopListening : () => void startListening()} disabled={interviewSubmitted} className={`px-4 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-50 flex items-center gap-2 ${isListening ? "bg-rose-600 hover:bg-rose-700" : "bg-emerald-600 hover:bg-emerald-700"}`}>{isListening ? <MicOff size={16} /> : <Mic size={16} />}{isListening ? "Stop Listening" : "Start Listening"}</button>
-                <button onClick={() => handleAdvanceQuestion()} disabled={isGeneratingQuestions || interviewSubmitted || questions.length === 0} className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50">Next Question</button>
-              </div>
-
-              <div className={`rounded-xl p-4 mb-4 ${isDark ? "bg-slate-950 text-slate-200" : "bg-slate-50 text-slate-800"}`}>
-                <p className="text-xs uppercase tracking-wider opacity-70 mb-2">Live Transcript</p>
-                <p className="text-sm min-h-10 whitespace-pre-wrap mb-2">{[answerDraft, interimTranscript].filter(Boolean).join(" ").trim() || "Start listening to see realtime transcript..."}</p>
-                <textarea
-                  value={editableTranscript}
-                  onChange={(e) => {
-                    setEditableTranscript(e.target.value);
-                    setIsTranscriptEdited(true);
-                  }}
-                  rows={4}
-                  className={`w-full rounded-lg p-3 text-sm outline-none ${isDark ? "bg-slate-900 text-slate-200 border border-slate-700" : "bg-white text-slate-800 border border-slate-200"}`}
-                  placeholder="Edit transcript for verification before save..."
-                />
-                <p className={`text-xs mt-2 ${isDark ? "text-slate-400" : "text-slate-500"}`}>Auto-advance on silence after {SILENCE_AUTO_ADVANCE_MS / 1000}s.</p>
-              </div>
-
-              <div className={`rounded-xl p-4 ${isDark ? "bg-slate-950 text-slate-200" : "bg-slate-50 text-slate-800"}`}>
-                <p className="text-xs uppercase tracking-wider opacity-70 mb-2">Captured Answers + Recordings</p>
-                {finalizedAnswers.length === 0 ? <p className="text-sm opacity-80">No finalized answer yet.</p> : (
-                  <div className="space-y-3">
-                    {finalizedAnswers.map((answer, idx) => (
-                      <div key={`ans-${idx}`} className={`text-sm p-3 rounded-lg ${isDark ? "bg-slate-900" : "bg-white border border-slate-200"}`}>
-                        <p className="font-semibold mb-1">Q{idx + 1}</p>
-                        <p className="opacity-90 whitespace-pre-wrap mb-2">{answer}</p>
-                        {questionRecordings[idx]?.url ? (
-                          <div>
-                            <audio controls src={questionRecordings[idx]?.url} />
-                            <p className="text-xs opacity-70">Recording length: {questionRecordings[idx]?.durationSec}s</p>
-                          </div>
-                        ) : null}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="flex flex-wrap items-center justify-end gap-3 mt-5">
-                <button onClick={() => void handleSubmitInterview()} disabled={isSubmittingInterview || interviewSubmitted} className="px-6 py-2 rounded-lg text-sm font-semibold text-white bg-violet-600 hover:bg-violet-700 disabled:opacity-50 flex items-center gap-2">{isSubmittingInterview ? <Loader2 size={16} className="animate-spin" /> : null}{interviewSubmitted ? "Interview Submitted" : "Submit Interview"}</button>
-                <button onClick={() => navigate("/dashboard")} className="px-6 py-2 rounded-lg text-sm font-semibold text-white bg-slate-700 hover:bg-slate-800">Go to Dashboard</button>
-              </div>
-            </>
-          )}
-
-          {(questionError || submitMessage || !recognitionSupported) ? (
-            <div className={`mt-4 text-sm ${isDark ? "text-amber-300" : "text-amber-700"}`}>
-              {questionError || submitMessage || "Speech recognition is not supported in this browser."}
             </div>
-          ) : null}
+
+            {isGeneratingQuestions ? (
+              <div className={`rounded-xl p-4 flex items-center gap-2 ${isDark ? "bg-slate-950 text-slate-300" : "bg-slate-50 text-slate-700"}`}><Loader2 size={16} className="animate-spin" />Generating interview questions from context...</div>
+            ) : (
+              <div className="flex-1 flex flex-col min-h-0">
+                <div className={`rounded-xl p-4 mb-4 ${isDark ? "bg-slate-950 text-slate-200" : "bg-slate-50 text-slate-800"}`}>
+                  <p className="text-xs uppercase tracking-wider opacity-70 mb-2">Current Question</p>
+                  <p className="text-sm leading-relaxed">{currentQuestion || "No question available yet."}</p>
+                </div>
+
+                <div className={`rounded-xl p-4 mb-3 flex-1 flex flex-col min-h-0 ${isDark ? "bg-slate-950 text-slate-200" : "bg-slate-50 text-slate-800"}`}>
+                  <p className="text-xs uppercase tracking-wider opacity-70 mb-2">Write Your Answer</p>
+                  <p className="text-sm min-h-10 whitespace-pre-wrap mb-2">{[answerDraft, interimTranscript].filter(Boolean).join(" ").trim() || "Start recording to see realtime transcript..."}</p>
+                  <textarea
+                    value={editableTranscript}
+                    onChange={(e) => {
+                      setEditableTranscript(e.target.value);
+                      setIsTranscriptEdited(true);
+                    }}
+                    rows={8}
+                    className={`w-full rounded-lg p-3 text-sm outline-none flex-1 min-h-0 ${isDark ? "bg-slate-900 text-slate-200 border border-slate-700" : "bg-white text-slate-800 border border-slate-200"}`}
+                    placeholder="Write or edit your answer here..."
+                  />
+                  <p className={`text-xs mt-2 ${isDark ? "text-slate-400" : "text-slate-500"}`}>Auto-advance on silence after {SILENCE_AUTO_ADVANCE_MS / 1000}s.</p>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-end gap-3 mt-3">
+                  <button onClick={() => handleAdvanceQuestion()} disabled={isGeneratingQuestions || interviewSubmitted || questions.length === 0} className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50">Next Question</button>
+                  <button onClick={() => void handleSubmitInterview()} disabled={isSubmittingInterview || interviewSubmitted} className="px-6 py-2 rounded-lg text-sm font-semibold text-white bg-violet-600 hover:bg-violet-700 disabled:opacity-50 flex items-center gap-2">{isSubmittingInterview ? <Loader2 size={16} className="animate-spin" /> : null}{interviewSubmitted ? "Interview Submitted" : "Submit Interview"}</button>
+                  <button onClick={() => navigate("/dashboard")} className="px-6 py-2 rounded-lg text-sm font-semibold text-white bg-slate-700 hover:bg-slate-800">Go to Dashboard</button>
+                </div>
+              </div>
+            )}
+
+            {(questionError || submitMessage || !recognitionSupported) ? (
+              <div className={`mt-4 text-sm ${isDark ? "text-amber-300" : "text-amber-700"}`}>
+                {questionError || submitMessage || "Speech recognition is not supported in this browser."}
+              </div>
+            ) : null}
+          </div>
         </div>
       </div>
     </div>
