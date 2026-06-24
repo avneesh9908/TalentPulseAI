@@ -3,6 +3,7 @@ import {
   useState,
   useCallback,
   useEffect,
+  useMemo,
   type ReactNode,
 } from "react";
 import { useNavigate } from "react-router-dom";
@@ -86,18 +87,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Server rejects expired JWTs; mirror that here so routes match API behavior.
   const isAuthenticated = Boolean(resolvedToken) && authService.hasValidToken();
 
-  return (
-    <AuthContext.Provider
-      value={{
-        token: resolvedToken,
-        isAuthenticated,
-        isLoading,
-        login,
-        register,
-        logout,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
+  const value = useMemo(
+    () => ({
+      token: resolvedToken,
+      isAuthenticated,
+      isLoading,
+      login,
+      register,
+      logout,
+    }),
+    [resolvedToken, isAuthenticated, isLoading, login, register, logout]
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

@@ -1,41 +1,51 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Loader2 } from "lucide-react";
+import ErrorBoundary from "@/components/error-boundary";
 import { AuthProvider } from "@/contexts/auth-context";
 import { InterviewProvider } from "@/contexts/interview-provider";
 import { ThemeProvider } from "@/contexts/theme-provider";
 import ProtectedRoute from "@/app/pages/auth/protected-route";
 
-// Layouts
+// Layouts (structural — kept eager)
 import AuthLayout from "@/app/pages/auth/layout";
 import ProtectedLayout from "@/app/pages/protected-layout";
 
-// Pages
-import Login from "@/app/pages/auth/login";
-import Register from "@/app/pages/auth/register";
-import Dashboard from "@/app/pages/dashboard/dashboard";
-import LandingPage from "@/app/pages/landing";
-import UserProfile from "./app/pages/userProfile"; 
-import UsersPage from "@/app/pages/users/users";
+// Pages — lazy-loaded so each route ships as its own chunk (code-splitting)
+const Login = lazy(() => import("@/app/pages/auth/login"));
+const Register = lazy(() => import("@/app/pages/auth/register"));
+const Dashboard = lazy(() => import("@/app/pages/dashboard/dashboard"));
+const LandingPage = lazy(() => import("@/app/pages/landing"));
+const UsersPage = lazy(() => import("@/app/pages/users/users"));
+const SelectRole = lazy(() => import("@/app/pages/interview/select-role"));
+const SelectProfile = lazy(() => import("@/app/pages/interview/select-profile"));
+const QuickSetup = lazy(() => import("@/app/pages/interview/quick-setup"));
+const InterviewNow = lazy(() => import("@/app/pages/interview/interview-now"));
+const InterviewResult = lazy(() => import("@/app/pages/interview/interview-result"));
+const Profile = lazy(() => import("@/app/pages/profile/profile"));
 
-// Interview Pages
-import SelectRole from "@/app/pages/interview/select-role";
-import SelectProfile from "@/app/pages/interview/select-profile";
-import QuickSetup from "@/app/pages/interview/quick-setup";
-import InterviewNow from "@/app/pages/interview/interview-now";
-import InterviewResult from "@/app/pages/interview/interview-result";
-import Profile from "@/app/pages/profile/profile";
-// import InterviewSession from "@/app/pages/interview/session";
-// import InterviewResult from "@/app/pages/interview/result";
+const PageFallback = () => (
+  <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
+    <Loader2 className="animate-spin text-violet-600" size={28} />
+  </div>
+);
 
 function App() {
   return (
-    // ⚠️ AuthProvider must be INSIDE BrowserRouter (needs useNavigate)
+    // ErrorBoundary is outermost so it also catches provider/router render errors.
+    <ErrorBoundary>
+    {/* ⚠️ AuthProvider must be INSIDE BrowserRouter (needs useNavigate) */}
     <BrowserRouter>
       <AuthProvider>
         <InterviewProvider>
           <ThemeProvider>
+            <Suspense fallback={<PageFallback />}>
             <Routes>
             {/* LANDING PAGE - ENTRY POINT */}
             <Route path="/" element={<LandingPage />} />
+
+            {/* /demo links on landing page redirect to the interview flow */}
+            <Route path="/demo" element={<Navigate to="/interview/select-role" replace />} />
 
             {/* AUTH ROUTES - NOT PROTECTED */}
             <Route path="/auth" element={<AuthLayout />}>
@@ -134,35 +144,6 @@ function App() {
                 </ProtectedRoute>
               }
             />
-                   {/* PROTECTED PROFILE */}
-            <Route
-              path="/profile"
-              element={
-                <ProtectedRoute>
-                  <UserProfile />   {/* ← capital U */}
-                </ProtectedRoute>
-              }
-            />
-
-
-            <Route
-              // path="/interview/session"
-              // element={
-              //   <ProtectedRoute>
-              //     <InterviewSession />
-              //   </ProtectedRoute>
-              // }
-            />
-
-            <Route
-              // path="/interview/result"
-              // element={
-              //   <ProtectedRoute>
-              //     <InterviewResult />
-              //   </ProtectedRoute>
-              // }
-            />
-
             {/* PROTECTED PROFILE */}
             <Route
               path="/profile"
@@ -178,10 +159,12 @@ function App() {
             {/* FALLBACK */}
             <Route path="*" element={<Navigate to="/auth/login" replace />} />
           </Routes>
+            </Suspense>
         </ThemeProvider>
         </InterviewProvider>
       </AuthProvider>
     </BrowserRouter>
+    </ErrorBoundary>
   );
 }
 

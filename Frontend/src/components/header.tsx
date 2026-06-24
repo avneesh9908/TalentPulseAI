@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "@/contexts/use-theme";
 import { useAuth } from "@/contexts/use-auth";
+import {authService} from "@/services/authService";
 import {
   Menu,
   X,
@@ -25,8 +26,9 @@ export default function Header() {
   const { logout } = useAuth();
   const navigate = useNavigate();
 
-  // Generate avatar initials (placeholder)
-  const userInitial = "U";
+  const currentUser = authService.getCurrentUserFromStorage();
+  const displayName = currentUser?.full_name ?? currentUser?.email ?? "User";
+  const userInitial = displayName.charAt(0).toUpperCase();
 
   // Sample notifications
   const notifications = [
@@ -202,6 +204,10 @@ export default function Header() {
                     } overflow-hidden`}
                   >
                     <div className="p-2">
+                      <div className={`px-3 py-2 mb-1 text-xs font-medium truncate ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                        {displayName}
+                      </div>
+                      <div className={`my-1 ${isDark ? "bg-white/10" : "bg-slate-100"} h-px`} />
                       <button
                         onClick={handleDashboard}
                         className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition ${

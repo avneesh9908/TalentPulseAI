@@ -7,10 +7,16 @@ import type {
   InterviewSubmitResponse,
   InterviewSetupRequest,
   InterviewSetupResponse,
+  QuestionGenerateRequest,
+  QuestionGenerateResponse,
   ResumeIndexRequest,
   ResumeIndexResponse,
   InterviewSubmitRequest,
 } from "@/types/api";
+
+// LLM (Gemini) generation/scoring and embedding indexing can exceed the default
+// 30s — especially on a cold start. Use a longer per-request timeout for those.
+const LLM_TIMEOUT_MS = 120_000;
 
 export const setupInterview = async (
   payload: InterviewSetupRequest
@@ -27,7 +33,8 @@ export const indexResume = async (
 ): Promise<ResumeIndexResponse> => {
   const { data } = await axiosInstance.post<ResumeIndexResponse>(
     config.ENDPOINTS.INTERVIEW.RESUME_INDEX,
-    payload
+    payload,
+    { timeout: LLM_TIMEOUT_MS }
   );
   return data;
 };
@@ -37,7 +44,19 @@ export const retrieveInterviewContext = async (
 ): Promise<ContextRetrieveResponse> => {
   const { data } = await axiosInstance.post<ContextRetrieveResponse>(
     config.ENDPOINTS.INTERVIEW.CONTEXT_RETRIEVE,
-    payload
+    payload,
+    { timeout: LLM_TIMEOUT_MS }
+  );
+  return data;
+};
+
+export const generateInterviewQuestions = async (
+  payload: QuestionGenerateRequest
+): Promise<QuestionGenerateResponse> => {
+  const { data } = await axiosInstance.post<QuestionGenerateResponse>(
+    config.ENDPOINTS.INTERVIEW.QUESTIONS_GENERATE,
+    payload,
+    { timeout: LLM_TIMEOUT_MS }
   );
   return data;
 };
@@ -62,7 +81,9 @@ export const submitInterview = async (
   payload: InterviewSubmitRequest
 ): Promise<InterviewSubmitResponse> => {
   const endpoint = buildUrl(config.ENDPOINTS.INTERVIEW.SUBMIT, { id: interviewId });
-  const { data } = await axiosInstance.post<InterviewSubmitResponse>(endpoint, payload);
+  const { data } = await axiosInstance.post<InterviewSubmitResponse>(endpoint, payload, {
+    timeout: LLM_TIMEOUT_MS,
+  });
   return data;
 };
 

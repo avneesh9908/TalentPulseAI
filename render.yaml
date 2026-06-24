@@ -1,0 +1,33 @@
+services:
+  - type: web
+    name: talentpulseai-api
+    runtime: python
+    rootDir: TalentPulseAI-fastAPI
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    plan: free
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: VECTOR_DB_URL
+        value: ""
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "60"
+      - key: EMBEDDING_PROVIDER
+        value: google
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: GOOGLE_EMBEDDING_MODEL
+        value: models/text-embedding-004
+      - key: GOOGLE_CHAT_MODEL
+        value: gemini-2.0-flash
+      - key: ENABLE_LLM_QUESTIONS
+        value: "true"
+      - key: RAG_COLLECTION
+        value: talentpulse_resume_chunks
+      - key: ALLOWED_ORIGINS
+        sync: false

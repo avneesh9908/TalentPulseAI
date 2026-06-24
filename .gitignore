@@ -1,0 +1,26 @@
+# Root .gitignore for the TalentPulseAI monorepo.
+# Subdirectories (Frontend/, TalentPulseAI-fastAPI/) keep their own .gitignore too.
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+.pytest_cache/
+.coverage
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp

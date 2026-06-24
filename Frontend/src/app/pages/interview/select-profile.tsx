@@ -292,6 +292,7 @@ export default function SelectProfilePage() {
   const { isDark } = useTheme();
   const navigate = useNavigate();
   const {
+    selectedRole,
     saveProfile,
     saveResumeUpload,
     clearResumeUpload,
@@ -299,6 +300,12 @@ export default function SelectProfilePage() {
     error,
     clearError,
   } = useInterview();
+
+  // Guard: must have completed step 1 before arriving here
+  if (!selectedRole) {
+    navigate("/interview/select-role", { replace: true });
+    return null;
+  }
 
   const [selected, setSelected] = useState<ProfileOption>(null);
   const [file, setFile] = useState<File | null>(null);

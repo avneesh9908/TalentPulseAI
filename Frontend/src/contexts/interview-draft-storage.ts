@@ -5,6 +5,7 @@
 const KEY = "talentpulse_interview_draft_v1";
 
 export type InterviewDraftPersisted = {
+  interviewId: string | null;
   selectedRole: string | null;
   profileOption: "existing" | "upload" | null;
   experience: string | null;
@@ -13,6 +14,7 @@ export type InterviewDraftPersisted = {
 };
 
 const emptyDraft = (): InterviewDraftPersisted => ({
+  interviewId: null,
   selectedRole: null,
   profileOption: null,
   experience: null,

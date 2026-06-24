@@ -1,0 +1,30 @@
+fastapi==0.110.0
+uvicorn[standard]==0.27.1
+
+# Database (SQL)
+SQLAlchemy==2.0.25
+
+# Auth & Security
+passlib[bcrypt]==1.7.4
+bcrypt==3.2.2
+python-jose==3.3.0
+
+# Validation
+pydantic==2.7.4
+# >=2.4.0 required by langchain-community; compatible with pinned pydantic 2.7.4
+pydantic-settings>=2.4.0,<3.0.0
+
+# Multipart
+python-multipart==0.0.9
+
+psycopg2-binary==2.9.9
+pypdf==5.4.0
+langchain==0.3.26
+langchain-openai==0.3.28
+langchain-google-genai==2.0.10
+langchain-postgres==0.0.16
+langchain-text-splitters==0.3.8
+# Used as a dynamic PGVector fallback in embedding_service.py when langchain-postgres
+# is unavailable. Range (not pinned) to avoid conflicting with the pinned langchain-core.
+langchain-community>=0.3.0,<0.4.0
+pgvector==0.3.6

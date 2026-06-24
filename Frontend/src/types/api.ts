@@ -84,11 +84,6 @@ export interface ResumeChunkingConfig {
   chunk_overlap?: number;
 }
 
-export interface ResumeEmbeddingConfig {
-  provider?: "cursor";
-  model?: string;
-}
-
 export interface ResumeIndexRequest {
   interview_id: string;
   setup_id: number;
@@ -99,7 +94,7 @@ export interface ResumeIndexRequest {
   profile_option: "existing" | "upload";
   resume: ResumePayload;
   chunking?: ResumeChunkingConfig;
-  embedding?: ResumeEmbeddingConfig;
+  // NOTE: embedding provider is server-controlled (EMBEDDING_PROVIDER env), not a client choice.
 }
 
 export interface ResumeIndexResponse {
@@ -137,6 +132,30 @@ export interface ContextRetrieveResponse {
   context_pack: RetrievedContextChunk[];
 }
 
+export interface QuestionGenerateRequest {
+  interview_id: string;
+  setup_id: number;
+  role: string;
+  experience: string;
+  difficulty: string;
+  skills: string[];
+  profile_option: "existing" | "upload";
+  top_k?: number;
+}
+
+export interface GeneratedQuestion {
+  question: string;
+  section: string;
+  type: string;
+  expected_signals: string[];
+}
+
+export interface QuestionGenerateResponse {
+  interview_id: string;
+  source: "llm" | "fallback";
+  questions: GeneratedQuestion[];
+}
+
 export interface InterviewStartRequest {
   user_id: string;
   role: string;
@@ -149,9 +168,16 @@ export interface InterviewProgress {
   timestamp: string;
 }
 
+export interface SubmittedQuestion {
+  question_id: string;
+  question: string;
+  expected_signals: string[];
+}
+
 export interface InterviewSubmitRequest {
   answers: Record<string, string | string[] | number | boolean>;
   completed_at: string;
+  questions?: SubmittedQuestion[];
 }
 
 export interface InterviewQuestionFeedback {

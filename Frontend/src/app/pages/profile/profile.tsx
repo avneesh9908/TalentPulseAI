@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { useTheme } from "@/contexts/use-theme";
+import {authService} from "@/services/authService";
 import {
   Mail,
   Phone,
@@ -12,14 +13,15 @@ import {
 export default function Profile() {
   const { isDark } = useTheme();
 
-  // Placeholder user data
+  const stored = authService.getCurrentUserFromStorage();
   const userData = {
-    name: "User Name",
-    email: "user@example.com",
-    phone: "+1 (555) 000-0000",
+    name: stored?.full_name ?? "User",
+    email: stored?.email ?? "—",
+    phone: stored?.phone ?? "—",
     title: "Software Engineer",
     bio: "Passionate about building great products",
   };
+  const initial = userData.name.charAt(0).toUpperCase();
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -50,7 +52,7 @@ export default function Profile() {
           {/* Profile Picture & Basic Info */}
           <div className="flex items-start gap-6 mb-8 pb-8 border-b border-white/10">
             <div className="w-24 h-24 rounded-full bg-gradient-to-br from-violet-500 to-cyan-500 flex items-center justify-center text-white text-3xl font-bold shadow-lg">
-              U
+              {initial}
             </div>
 
             <div className="flex-1">

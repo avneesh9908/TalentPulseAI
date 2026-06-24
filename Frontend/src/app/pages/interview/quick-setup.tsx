@@ -93,12 +93,22 @@ function SectionLabel({ icon: Icon, label, isDark }: SectionLabelProps) {
 export default function QuickSetupPage() {
   const { isDark } = useTheme();
   const navigate = useNavigate();
-  const { submitInterviewSetup, isLoading, error, clearError } = useInterview();
+  const { selectedRole, profileOption, submitInterviewSetup, isLoading, error, clearError } = useInterview();
 
   const [experience, setExperience] = useState<string | null>(null);
   const [difficulty, setDifficulty] = useState<string | null>(null);
   const [skills, setSkills]         = useState<string[]>([]);
   const [customSkill, setCustomSkill] = useState("");
+
+  // Guard: must have completed steps 1 and 2 before arriving here
+  if (!selectedRole) {
+    navigate("/interview/select-role", { replace: true });
+    return null;
+  }
+  if (!profileOption) {
+    navigate("/interview/select-profile", { replace: true });
+    return null;
+  }
 
   const addSkill = (skill: string) => {
     const t = skill.trim();
