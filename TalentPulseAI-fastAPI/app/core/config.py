@@ -5,6 +5,11 @@ class Settings(BaseSettings):
     VECTOR_DB_URL: str = ""
     # Backward-compatible alias (legacy key); prefer VECTOR_DB_URL.
     VECTOR_DATABASE_URL: str = ""
+
+    @property
+    def resolved_vector_db_url(self) -> str:
+        return self.VECTOR_DB_URL or self.VECTOR_DATABASE_URL or self.DATABASE_URL
+
     SECRET_KEY: str
     ALGORITHM: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int
