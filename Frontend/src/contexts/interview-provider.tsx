@@ -3,7 +3,7 @@
  * @description Interview flow state management & API integration
  */
 
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useMemo } from "react";
 import { useLocation } from "react-router-dom";
 import { indexResume, setupInterview } from "@/api/interviewService";
 import { useApi } from "@/hooks/useApi";
@@ -24,7 +24,7 @@ export const InterviewProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const location = useLocation();
   const initialDraft = loadInterviewDraft();
 
-  const [interviewId, setInterviewId] = useState<string | null>(null);
+  const [interviewId, setInterviewId] = useState<string | null>(initialDraft.interviewId ?? null);
   const [interviewSetup, setInterviewSetup] = useState<InterviewSetupResponse | null>(null);
 
   const [experience, setExperience] = useState<string | null>(initialDraft.experience);
@@ -54,7 +54,6 @@ export const InterviewProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         difficulty: diff,
         skills: skillsList,
       });
-      console.log("Quick setup saved to context");
     },
     []
   );
@@ -62,18 +61,15 @@ export const InterviewProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const saveRole = useCallback((role: string) => {
     setSelectedRole(role);
     patchInterviewDraft({ selectedRole: role });
-    console.log("Role saved to context:", role);
   }, []);
 
   const saveProfile = useCallback((option: "existing" | "upload") => {
     setProfileOption(option);
     patchInterviewDraft({ profileOption: option });
-    console.log("Profile option saved to context:", option);
   }, []);
 
   const saveResumeUpload = useCallback((resume: ResumeUploadDraft) => {
     setResumeUpload(resume);
-    console.log("Resume upload saved to context:", resume.fileName);
   }, []);
 
   const clearResumeUpload = useCallback(() => {
@@ -136,6 +132,7 @@ export const InterviewProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
         setInterviewId(response.interview_id);
         setInterviewSetup(response);
+        patchInterviewDraft({ interviewId: response.interview_id });
 
         // Wire RAG indexing immediately after setup when resume upload exists.
         if (prof === "upload" && resumeUpload?.base64Pdf) {
@@ -158,18 +155,13 @@ export const InterviewProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                 chunk_size: 700,
                 chunk_overlap: 120,
               },
-              embedding: {
-                provider: "cursor",
-              },
             });
-            console.log("Resume indexed for retrieval pipeline");
           } catch (ragErr) {
             // Don't block interview start if indexing fails; can retry later.
             console.warn("Resume indexing failed:", ragErr);
           }
         }
 
-        console.log("Interview setup submitted successfully:", response.interview_id);
         return response;
       } catch (err) {
         const message = err instanceof Error ? err.message : "Failed to setup interview";
@@ -198,25 +190,48 @@ export const InterviewProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     clearInterviewDraft();
   }, [setError]);
 
-  const value: InterviewContextType = {
-    interviewId,
-    interviewSetup,
-    experience,
-    difficulty,
-    skills,
-    selectedRole,
-    profileOption,
-    isLoading,
-    error,
-    saveQuickSetup,
-    saveRole,
-    saveProfile,
-    saveResumeUpload,
-    clearResumeUpload,
-    submitInterviewSetup,
-    clearError,
-    resetInterview,
-  };
+  // Memoized so consumers only re-render when actual state changes, not on every
+  // provider render. Callbacks above are already useCallback-stable.
+  const value: InterviewContextType = useMemo(
+    () => ({
+      interviewId,
+      interviewSetup,
+      experience,
+      difficulty,
+      skills,
+      selectedRole,
+      profileOption,
+      isLoading,
+      error,
+      saveQuickSetup,
+      saveRole,
+      saveProfile,
+      saveResumeUpload,
+      clearResumeUpload,
+      submitInterviewSetup,
+      clearError,
+      resetInterview,
+    }),
+    [
+      interviewId,
+      interviewSetup,
+      experience,
+      difficulty,
+      skills,
+      selectedRole,
+      profileOption,
+      isLoading,
+      error,
+      saveQuickSetup,
+      saveRole,
+      saveProfile,
+      saveResumeUpload,
+      clearResumeUpload,
+      submitInterviewSetup,
+      clearError,
+      resetInterview,
+    ]
+  );
 
   return (
     <InterviewContext.Provider value={value}>

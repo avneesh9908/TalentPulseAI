@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Award, BarChart3, CheckCircle2, Home, RotateCcw, Sparkles, Target } from "lucide-react";
 import { useTheme } from "@/contexts/use-theme";
+import { useInterview } from "@/contexts/use-interview";
 import type { InterviewSubmitResponse } from "@/types/api";
 
 type ResultState = {
@@ -11,17 +12,31 @@ type ResultState = {
   answeredQuestions?: number;
 };
 
+const RESULT_STORAGE_KEY = "talentpulse_last_result";
+
 const scoreTone = (score: number) => {
   if (score >= 80) return "text-emerald-500";
   if (score >= 65) return "text-cyan-500";
   return "text-amber-500";
 };
 
+function readPersistedResult(): ResultState | null {
+  try {
+    const raw = sessionStorage.getItem(RESULT_STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as ResultState;
+  } catch {
+    return null;
+  }
+}
+
 export default function InterviewResultPage() {
   const { isDark } = useTheme();
   const navigate = useNavigate();
+  const { resetInterview } = useInterview();
   const { state } = useLocation();
-  const typedState = (state as ResultState) || {};
+  // Use router state first (fresh navigation), fall back to sessionStorage (page refresh)
+  const typedState: ResultState = (state as ResultState) || readPersistedResult() || {};
   const result = typedState.result;
   const totalQuestions = typedState.totalQuestions ?? result?.feedback.question_feedback.length ?? 0;
   const answeredQuestions = typedState.answeredQuestions ?? result?.feedback.question_feedback.length ?? 0;
@@ -126,7 +141,11 @@ export default function InterviewResultPage() {
           </ul>
           <div className="flex flex-wrap gap-3 mt-6">
             <button
-              onClick={() => navigate("/interview/select-role")}
+              onClick={() => {
+                resetInterview();
+                sessionStorage.removeItem(RESULT_STORAGE_KEY);
+                navigate("/interview/select-role");
+              }}
               className="inline-flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold text-white bg-violet-600 hover:bg-violet-700"
             >
               <RotateCcw size={16} />

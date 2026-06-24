@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { useTheme } from "@/contexts/use-theme";
 import { useInterview } from "@/contexts/use-interview";
 import { ArrowLeft, Loader2, Mic, MicOff, Timer, Video, Volume2 } from "lucide-react";
-import { retrieveInterviewContext, submitInterview } from "@/api/interviewService";
+import { generateInterviewQuestions, retrieveInterviewContext, submitInterview } from "@/api/interviewService";
 import type { InterviewSubmitResponse, RetrievedContextChunk } from "@/types/api";
 
 type SpeechRecognitionLike = {
@@ -75,6 +75,8 @@ export default function InterviewNowPage() {
   const { interviewId, interviewSetup, selectedRole, profileOption, experience, difficulty, skills } = useInterview();
 
   const [questions, setQuestions] = useState<string[]>([]);
+  // Per-question expected signals (from LLM generation) — sent at submit for LLM judging.
+  const [questionSignals, setQuestionSignals] = useState<string[][]>([]);
   const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
   const [questionError, setQuestionError] = useState<string | null>(null);
   const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
@@ -98,6 +100,8 @@ export default function InterviewNowPage() {
   const finalTranscriptRef = useRef("");
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  // Ref so cleanup on unmount always has the latest recordings without re-triggering the effect
+  const questionRecordingsRef = useRef<Array<QuestionRecording | undefined>>([]);
   const recordingStartAtRef = useRef<number | null>(null);
   const recordingChunksRef = useRef<Blob[]>([]);
 
@@ -121,7 +125,13 @@ export default function InterviewNowPage() {
   }, []);
 
   const ensureMediaReady = useCallback(async (): Promise<MediaStream | null> => {
-    if (mediaStreamRef.current) return mediaStreamRef.current;
+    if (mediaStreamRef.current) {
+      // If the stream exists but tracks died (e.g. device disconnected), re-acquire
+      const alive = mediaStreamRef.current.getTracks().some((t) => t.readyState === "live");
+      if (alive) return mediaStreamRef.current;
+      mediaStreamRef.current = null;
+      setCameraReady(false);
+    }
     if (!navigator.mediaDevices?.getUserMedia) {
       setMediaError("Media devices API is not supported in this browser.");
       return null;
@@ -259,49 +269,82 @@ export default function InterviewNowPage() {
   }, [clearSilenceTimer, isTranscriptEdited, recognitionSupported, resetSilenceTimer, startQuestionRecording]);
 
   const handleSubmitInterview = useCallback(async () => {
-    if (!interviewId) return;
-    const answers = finalizedAnswers.reduce<Record<string, string>>((acc, ans, idx) => {
-      acc[`q_${idx + 1}`] = ans;
+    if (!interviewId) {
+      setSubmitMessage("Session expired. Please start a new interview.");
+      return;
+    }
+    // Synchronously capture the current answer (setState is async, so finalizedAnswers
+    // may not yet include the last question if the user didn't press Next Question)
+    const currentText =
+      editableTranscript.trim() ||
+      `${finalTranscriptRef.current} ${interimTranscript}`.trim() ||
+      "No answer captured.";
+    const allAnswers = [...finalizedAnswers];
+    if (!allAnswers[currentQuestionIdx]) {
+      allAnswers[currentQuestionIdx] = currentText;
+    }
+    const answers = allAnswers.reduce<Record<string, string>>((acc, ans, idx) => {
+      if (ans) acc[`q_${idx + 1}`] = ans;
       return acc;
     }, {});
     if (Object.keys(answers).length === 0) {
       setSubmitMessage("Please record at least one answer before submitting.");
       return;
     }
+    // Send the asked questions + expected signals so the backend can LLM-judge each answer.
+    const questionsPayload = questions.map((q, idx) => ({
+      question_id: `q_${idx + 1}`,
+      question: q,
+      expected_signals: questionSignals[idx] ?? [],
+    }));
     try {
       setIsSubmittingInterview(true);
       setSubmitMessage(null);
       const response: InterviewSubmitResponse = await submitInterview(interviewId, {
         answers,
         completed_at: new Date().toISOString(),
+        questions: questionsPayload,
       });
       setInterviewSubmitted(true);
       setSubmitMessage("Interview submitted successfully. Redirecting to your report...");
-      navigate("/interview/result", {
-        state: {
-          result: response,
-          totalQuestions: questions.length,
-          answeredQuestions: Object.keys(answers).length,
-        },
-      });
+      const resultState = {
+        result: response,
+        totalQuestions: questions.length,
+        answeredQuestions: Object.keys(answers).length,
+      };
+      // Persist so result page survives a refresh
+      try {
+        sessionStorage.setItem("talentpulse_last_result", JSON.stringify(resultState));
+      } catch { /* ignore quota errors */ }
+      navigate("/interview/result", { state: resultState });
     } catch (err) {
       setSubmitMessage(err instanceof Error ? err.message : "Failed to submit interview.");
     } finally {
       setIsSubmittingInterview(false);
     }
-  }, [finalizedAnswers, interviewId, navigate, questions.length]);
+  }, [currentQuestionIdx, editableTranscript, finalizedAnswers, interimTranscript, interviewId, navigate, questions, questionSignals]);
 
+  // Keep the recordings ref in sync so the unmount cleanup always revokes the latest URLs
+  useEffect(() => {
+    questionRecordingsRef.current = questionRecordings;
+  }, [questionRecordings]);
+
+  // Mount-only: acquire media once; clean up fully on unmount.
+  // Deps are intentionally empty — all values accessed in cleanup use refs so they
+  // don't need to be listed here. Adding currentQuestionIdx or questionRecordings
+  // would stop all tracks on every question advance (the camera-freeze bug).
   useEffect(() => {
     void ensureMediaReady();
     return () => {
       clearSilenceTimer();
       recognitionRef.current?.abort();
-      stopQuestionRecording(currentQuestionIdx);
+      if (mediaRecorderRef.current?.state === "recording") mediaRecorderRef.current.stop();
       if (mediaStreamRef.current) mediaStreamRef.current.getTracks().forEach((t) => t.stop());
-      questionRecordings.forEach((r) => r?.url && URL.revokeObjectURL(r.url));
+      questionRecordingsRef.current.forEach((r) => r?.url && URL.revokeObjectURL(r.url));
       window.speechSynthesis?.cancel();
     };
-  }, [clearSilenceTimer, currentQuestionIdx, ensureMediaReady, questionRecordings, stopQuestionRecording]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (videoRef.current && mediaStreamRef.current) videoRef.current.srcObject = mediaStreamRef.current;
@@ -332,7 +375,8 @@ export default function InterviewNowPage() {
       setIsGeneratingQuestions(true);
       setQuestionError(null);
       try {
-        const response = await retrieveInterviewContext({
+        // Primary path: server-side LLM question generation (Gemini free tier).
+        const generated = await generateInterviewQuestions({
           interview_id: interviewId,
           setup_id: 0,
           role: selectedRole,
@@ -340,13 +384,34 @@ export default function InterviewNowPage() {
           difficulty,
           skills,
           profile_option: profileOption,
-          query: "Generate practical interview prompts from resume context covering projects, skills, architecture, debugging, and communication.",
           top_k: 6,
         });
-        setQuestions(buildQuestionsFromContext(response.context_pack || [], selectedRole, difficulty, skills));
+        const usable = (generated.questions || []).filter((q) => q.question);
+        if (usable.length > 0) {
+          setQuestions(usable.map((q) => q.question));
+          setQuestionSignals(usable.map((q) => q.expected_signals || []));
+          return;
+        }
+        throw new Error("empty question set");
       } catch {
-        setQuestions(buildQuestionsFromContext([], selectedRole, difficulty, skills));
-        setQuestionError("Resume context is unavailable right now. Using a fallback question set.");
+        // Fallback path: retrieve context and build questions client-side.
+        try {
+          const response = await retrieveInterviewContext({
+            interview_id: interviewId,
+            setup_id: 0,
+            role: selectedRole,
+            experience,
+            difficulty,
+            skills,
+            profile_option: profileOption,
+            query: "Generate practical interview prompts from resume context covering projects, skills, architecture, debugging, and communication.",
+            top_k: 6,
+          });
+          setQuestions(buildQuestionsFromContext(response.context_pack || [], selectedRole, difficulty, skills));
+        } catch {
+          setQuestions(buildQuestionsFromContext([], selectedRole, difficulty, skills));
+          setQuestionError("Resume context is unavailable right now. Using a fallback question set.");
+        }
       } finally {
         setIsGeneratingQuestions(false);
       }
@@ -354,11 +419,31 @@ export default function InterviewNowPage() {
     void load();
   }, [interviewId, selectedRole, experience, difficulty, profileOption, skills, questions.length]);
 
+  // Guard: no active session (direct navigation or refresh before interviewId was persisted)
+  if (!interviewId && !isGeneratingQuestions) {
+    return (
+      <div className={`h-[calc(100vh-4rem)] flex items-center justify-center px-6 ${isDark ? "bg-slate-950 text-white" : "bg-slate-50 text-slate-900"}`}>
+        <div className={`max-w-md w-full rounded-2xl border p-8 text-center ${isDark ? "bg-slate-900 border-white/[0.08]" : "bg-white border-slate-200 shadow-sm"}`}>
+          <h2 className="text-xl font-bold mb-2">No Active Interview Session</h2>
+          <p className={`text-sm mb-6 ${isDark ? "text-slate-400" : "text-slate-600"}`}>
+            Your session was not found. Please go through the setup steps to start a new interview.
+          </p>
+          <button
+            onClick={() => navigate("/interview/select-role")}
+            className="px-5 py-2 rounded-lg text-sm font-semibold text-white bg-violet-600 hover:bg-violet-700"
+          >
+            Start New Interview
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`h-[calc(100vh-4rem)] overflow-hidden transition-colors duration-300 ${isDark ? "bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950" : "bg-gradient-to-br from-gray-50 via-white to-gray-100"}`}>
       <div className="relative z-10 w-full h-full px-4 lg:px-8 py-3 flex flex-col min-h-0">
         <motion.button initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} whileHover={{ x: -3 }} onClick={() => navigate("/interview/quick-setup")} className={`flex items-center gap-2 text-xs mb-2 transition ${isDark ? "text-slate-400 hover:text-white" : "text-slate-500 hover:text-slate-900"}`}>
-          <ArrowLeft size={16} />Back to Quick Search
+          <ArrowLeft size={16} />Back to Setup
         </motion.button>
 
         <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="mb-3">

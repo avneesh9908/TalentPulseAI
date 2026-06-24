@@ -1,15 +1,10 @@
 /**
  * @file config.ts
- * @description Centralized configuration for API endpoints and environment variables
+ * @description Single source of truth for API endpoint paths.
+ * The base URL and timeout live on the axios client (api/axiosInstance.ts).
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
-const API_TIMEOUT = parseInt(import.meta.env.VITE_API_TIMEOUT || "30000");
-
 export const config = {
-  API_BASE_URL,
-  API_TIMEOUT,
-  
   ENDPOINTS: {
     // Authentication endpoints
     AUTH: {
@@ -19,12 +14,19 @@ export const config = {
       LOGOUT: "/auth/logout",
       ME: "/auth/me",
     },
-    
+
+    // User management
+    USERS: {
+      LIST: "/users",
+      CREATE: "/users",
+    },
+
     // Interview management endpoints
     INTERVIEW: {
       SETUP: "/interview/setup",     // NEW: Unified setup endpoint (combines 3 steps)
       RESUME_INDEX: "/interview/resume/index",
       CONTEXT_RETRIEVE: "/interview/context/retrieve",
+      QUESTIONS_GENERATE: "/interview/questions/generate",
       START: "/interview/start",
       SAVE: "/interview/:id/progress",
       GET: "/interview/:id",

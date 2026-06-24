@@ -1,5 +1,5 @@
 import axiosInstance from "./axiosInstance";
-import { API_ENDPOINTS } from "./endpoints";
+import { config } from "@/lib/config";
 
 export interface User {
   id: string | number;
@@ -13,11 +13,11 @@ export interface CreateUserPayload {
 }
 
 export const getUsers = async (): Promise<User[]> => {
-  const { data } = await axiosInstance.get<User[]>(API_ENDPOINTS.USERS);
+  const { data } = await axiosInstance.get<User[]>(config.ENDPOINTS.USERS.LIST);
   return data;
 };
 
 export const createUser = async (payload: CreateUserPayload): Promise<User> => {
-  const { data } = await axiosInstance.post<User>(API_ENDPOINTS.CREATE_USER, payload);
+  const { data } = await axiosInstance.post<User>(config.ENDPOINTS.USERS.CREATE, payload);
   return data;
 };

@@ -184,9 +184,9 @@ export default function Login() {
 
           {/* Google Button */}
           <motion.button
+            type="button"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            onClick={() => console.log("Google login")}
             className={`
               w-full py-3 rounded-xl font-medium transition flex items-center justify-center gap-3
               ${

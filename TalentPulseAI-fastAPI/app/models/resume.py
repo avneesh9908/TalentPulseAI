@@ -1,8 +1,8 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, JSON, Text, UniqueConstraint
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, UniqueConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
-from app.database.db import Base
+from app.database.db import Base, JSONType
 
 
 class ResumeDocument(Base):
@@ -16,7 +16,7 @@ class ResumeDocument(Base):
     role = Column(String, nullable=False)
     experience = Column(String, nullable=False)
     difficulty = Column(String, nullable=False)
-    skills = Column(JSON, nullable=False, default=list)
+    skills = Column(JSONType, nullable=False, default=list)
     profile_option = Column(String, nullable=False)
 
     source = Column(String, nullable=False, default="upload")
@@ -27,8 +27,8 @@ class ResumeDocument(Base):
     # SHA-256 of the concatenated PII-stripped section text that was embedded.
     # Used to detect duplicate resume content across interviews.
     content_hash = Column(String(64), nullable=True, index=True)
-    parsed_sections = Column(JSON, nullable=False, default=dict)
-    parsed_summary = Column(JSON, nullable=False, default=dict)
+    parsed_sections = Column(JSONType, nullable=False, default=dict)
+    parsed_summary = Column(JSONType, nullable=False, default=dict)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
@@ -48,7 +48,7 @@ class ResumeChunk(Base):
     chunk_index = Column(Integer, nullable=False)
     section = Column(String, nullable=True)
     chunk_text = Column(Text, nullable=False)
-    metadata_json = Column(JSON, nullable=False, default=dict)
+    metadata_json = Column(JSONType, nullable=False, default=dict)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 

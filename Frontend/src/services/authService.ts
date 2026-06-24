@@ -1,148 +1,35 @@
 /**
  * @file services/authService.ts
- * @description Authentication service - handles login, register, logout, and token management
+ * @description Client-side auth token/user storage helpers (localStorage).
+ * Network auth calls live in `api/authService.ts`; the login/register flow is
+ * driven by `contexts/auth-context.tsx`.
  */
 
-import {
-  fetchCurrentUser,
-  loginUser,
-  logoutUser,
-  refreshUserToken,
-  registerUser,
-} from "@/api/authService";
-import type {
-  AuthResponse,
-  LoginRequest,
-  RegisterRequest,
-  UserProfile,
-} from "../types/api";
+import type { UserProfile } from "../types/api";
 
 class AuthService {
   private tokenKey = "access_token";
   private userKey = "current_user";
 
-  /**
-   * Login user with email and password
-   */
-  async login(credentials: LoginRequest): Promise<AuthResponse> {
-    try {
-      const response = await loginUser(credentials);
-      
-      if (response?.access_token) {
-        this.setToken(response.access_token);
-        if (response.user) {
-          this.setUser(response.user);
-        }
-      }
-      
-      return response;
-    } catch (error) {
-      throw new Error(this.extractErrorMessage(error, "Login failed"));
-    }
-  }
-
-  /**
-   * Register new user
-   */
-  async register(data: RegisterRequest): Promise<AuthResponse> {
-    try {
-      const response = await registerUser(data);
-      
-      if (response?.access_token) {
-        this.setToken(response.access_token);
-        if (response.user) {
-          this.setUser(response.user);
-        }
-      }
-      
-      return response;
-    } catch (error) {
-      throw new Error(this.extractErrorMessage(error, "Registration failed"));
-    }
-  }
-
-  /**
-   * Refresh access token
-   */
-  async refreshToken(): Promise<AuthResponse> {
-    try {
-      const response = await refreshUserToken();
-      
-      if (response?.access_token) {
-        this.setToken(response.access_token);
-      }
-      
-      return response;
-    } catch (error) {
-      this.logout();
-      throw error;
-    }
-  }
-
-  /**
-   * Get current user profile
-   */
-  async getCurrentUser(): Promise<UserProfile> {
-    try {
-      const response = await fetchCurrentUser();
-      if (response) {
-        this.setUser(response);
-      }
-      return response;
-    } catch (error) {
-      throw new Error(this.extractErrorMessage(error, "Failed to fetch user"));
-    }
-  }
-
-  /**
-   * Logout user
-   */
-  async logout(): Promise<void> {
-    try {
-      await logoutUser();
-    } catch (error) {
-      // Logout always succeeds locally even if API fails
-      console.warn("Logout API call failed, but clearing local session",error);
-    } finally {
-      this.clearAuth();
-    }
-  }
-
-  /**
-   * Clear all authentication data
-   */
-  private clearAuth(): void {
-    localStorage.removeItem(this.tokenKey);
-    localStorage.removeItem("token");
-    localStorage.removeItem(this.userKey);
-  }
-
   // ============================================
   // TOKEN MANAGEMENT
   // ============================================
 
-  /**
-   * Get stored access token
-   */
+  /** Get stored access token. */
   getToken(): string | null {
     return localStorage.getItem(this.tokenKey) ?? localStorage.getItem("token");
   }
 
-  /**
-   * Set access token in storage
-   */
+  /** Set access token in storage. */
   setToken(token: string): void {
     localStorage.setItem(this.tokenKey, token);
   }
 
-  /**
-   * Check if token exists and is valid
-   */
+  /** Check if a token exists and has not expired. */
   hasValidToken(): boolean {
     const token = this.getToken();
     if (!token) return false;
 
-    // Basic JWT validation - check expiry
     try {
       const payload = JSON.parse(atob(token.split(".")[1]));
       const expiryTime = payload.exp * 1000;
@@ -152,9 +39,7 @@ class AuthService {
     }
   }
 
-  /**
-   * Get token expiry time
-   */
+  /** Get token expiry time, or null if absent/unparseable. */
   getTokenExpiry(): Date | null {
     const token = this.getToken();
     if (!token) return null;
@@ -165,14 +50,6 @@ class AuthService {
     } catch {
       return null;
     }
-  }
-
-  /**
-   * Clear token
-   */
-  clearToken(): void {
-    localStorage.removeItem(this.tokenKey);
-    localStorage.removeItem("token");
   }
 
   /** Remove access token and cached user (logout / session reset). */
@@ -186,9 +63,7 @@ class AuthService {
   // USER MANAGEMENT
   // ============================================
 
-  /**
-   * Get stored current user
-   */
+  /** Get stored current user. */
   getCurrentUserFromStorage(): UserProfile | null {
     const userJson = localStorage.getItem(this.userKey);
     if (!userJson) return null;
@@ -200,50 +75,23 @@ class AuthService {
     }
   }
 
-  /**
-   * Set current user in storage
-   */
-  setUser(user: UserProfile): void { 
+  /** Set current user in storage. */
+  setUser(user: UserProfile): void {
     localStorage.setItem(this.userKey, JSON.stringify(user));
   }
 
-  /**
-   * Clear user data
-   */
-  clearUser(): void {
-    localStorage.removeItem(this.userKey);
-  }
-
   // ============================================
-  // CONVENIENCE METHODS
+  // CONVENIENCE
   // ============================================
 
-  /**
-   * Check if user is authenticated
-   */
+  /** Check if the user is authenticated (has a non-expired token). */
   isAuthenticated(): boolean {
     return this.hasValidToken();
   }
 
-  /**
-   * Get user ID
-   */
-  getUserId(): string | null {
-    return this.getCurrentUserFromStorage()?.id || null;
-  }
-
-  /**
-   * Get user email
-   */
+  /** Get user email from cached profile. */
   getUserEmail(): string | null {
     return this.getCurrentUserFromStorage()?.email || null;
-  }
-
-  private extractErrorMessage(error: unknown, fallback: string): string {
-    if (error instanceof Error && error.message) {
-      return error.message;
-    }
-    return fallback;
   }
 }
 

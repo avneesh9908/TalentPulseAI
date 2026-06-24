@@ -1,7 +1,7 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, JSON
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
-from app.database.db import Base
+from app.database.db import Base, JSONType
 
 
 class Interview(Base):
@@ -17,14 +17,14 @@ class Interview(Base):
     profile_id = Column(String, nullable=True)
     experience = Column(String, nullable=False)
     difficulty = Column(String, nullable=False)
-    skills = Column(JSON, nullable=False, default=list)
+    skills = Column(JSONType, nullable=False, default=list)
 
     status = Column(String, nullable=False, default="initialized")
-    answers = Column(JSON, nullable=True)
-    feedback = Column(JSON, nullable=True)
+    answers = Column(JSONType, nullable=True)
+    feedback = Column(JSONType, nullable=True)
     completed_at = Column(DateTime(timezone=True), nullable=True)
     started_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
-    user = relationship("User")
+    user = relationship("User", back_populates="interviews")

@@ -54,39 +54,131 @@ def normalize_resume_text(payload: ResumeIndexRequest) -> str:
     raise ValueError("Resume text is empty. Provide resume.text or resume.base64_pdf")
 
 
+# Canonical section -> heading aliases seen on real resumes. Matching is fuzzy
+# (normalized + keyword fallback) so variants like "Work History" or
+# "Technical Skills" are not dropped into the discarded header block.
+_SECTION_ALIASES = {
+    "summary": ["summary", "professional summary", "profile", "about", "about me",
+                "objective", "career objective", "overview"],
+    "experience": ["experience", "work experience", "professional experience",
+                   "employment", "employment history", "work history", "career history",
+                   "relevant experience"],
+    "projects": ["projects", "key projects", "selected projects", "personal projects",
+                 "academic projects", "notable projects"],
+    "skills": ["skills", "technical skills", "core skills", "core competencies",
+               "competencies", "skills and technologies", "technologies",
+               "technical proficiencies", "areas of expertise"],
+    "education": ["education", "academic background", "education and training",
+                  "academics", "qualifications", "educational qualifications"],
+    "certifications": ["certifications", "certificates", "certifications and licenses",
+                       "licenses", "courses", "training"],
+    "achievements": ["achievements", "awards", "honors", "honours", "accomplishments",
+                     "awards and honors", "achievements and awards"],
+}
+
+# Single-word keywords that strongly imply a heading on a short standalone line.
+_SECTION_KEYWORDS = {
+    "experience": "experience", "projects": "projects", "skills": "skills",
+    "education": "education", "summary": "summary",
+    "certifications": "certifications", "achievements": "achievements",
+}
+
+# Role/tech words that disqualify a line from being read as the candidate's name.
+_NAME_STOPWORDS = {
+    "engineer", "developer", "manager", "senior", "junior", "lead", "software",
+    "data", "scientist", "analyst", "designer", "architect", "consultant",
+    "intern", "student", "full", "stack", "frontend", "backend", "resume",
+    "curriculum", "vitae", "profile",
+}
+
+
+def _normalize_heading(line: str) -> str:
+    s = re.sub(r"[^a-z& ]", " ", line.lower()).replace("&", " and ")
+    return re.sub(r"\s+", " ", s).strip()
+
+
+def _match_section(line: str):
+    """Return the canonical section for a heading line, or None if it's body text."""
+    s = _normalize_heading(line)
+    if not s:
+        return None
+    words = s.split()
+    if len(words) > 5:
+        return None
+    # Strong: normalized line exactly equals a known alias.
+    for canonical, aliases in _SECTION_ALIASES.items():
+        if s in aliases:
+            return canonical
+    # Fallback: a short standalone line containing a section keyword (e.g. "Technical Skills").
+    if len(words) <= 4:
+        for canonical, keyword in _SECTION_KEYWORDS.items():
+            if keyword in words:
+                return canonical
+    return None
+
+
+def detect_candidate_name(text: str):
+    """
+    Best-effort detection of the candidate's own name (top of resume) so it can be
+    stripped from embedded text. Conservative: skips lines with role/tech words.
+    Third-party names inside body text are NOT detected (would need NER).
+    """
+    for line in [ln.strip() for ln in text.splitlines() if ln.strip()][:6]:
+        if "@" in line or any(ch.isdigit() for ch in line):
+            continue
+        words = line.split()
+        if not (2 <= len(words) <= 3):
+            continue
+        if not all(re.fullmatch(r"[A-Za-z][A-Za-z.'-]*", w) for w in words):
+            continue
+        if any(w.lower() in _NAME_STOPWORDS for w in words):
+            continue
+        if all(w.istitle() or w.isupper() for w in words):
+            return line
+    return None
+
+
+def _strip_name(text: str, name) -> str:
+    if not name:
+        return text
+    # Strip the full-name phrase (and possessive) case-insensitively.
+    pattern = re.compile(rf"\b{re.escape(name)}(?:'s)?\b", re.IGNORECASE)
+    return pattern.sub("", text)
+
+
 def parse_sections(text: str) -> Dict[str, str]:
     """
-    Split resume text into named sections.
-    Only sections in SAFE_SECTIONS are returned — the header/general block
-    (which contains name, address, phone, email) is intentionally excluded.
+    Split resume text into named sections (SAFE_SECTIONS only). The header/general
+    block (name, address, phone, email) is excluded. Heading matching is fuzzy, and
+    the candidate's name is stripped from every returned section.
     """
-    headings = {
-        "summary",
-        "experience",
-        "work experience",
-        "projects",
-        "skills",
-        "education",
-        "certifications",
-        "achievements",
-    }
+    name = detect_candidate_name(text)
     lines = [line.strip() for line in text.splitlines() if line.strip()]
-    current = "general"  # header block — will be dropped
+    current = "general"  # header block — dropped
     bucket: Dict[str, List[str]] = {current: []}
 
     for line in lines:
-        key = line.lower().strip(":")
-        if key in headings:
-            current = key.replace(" ", "_")
+        section = _match_section(line)
+        if section:
+            current = section
             bucket.setdefault(current, [])
             continue
         bucket.setdefault(current, []).append(line)
 
-    return {
-        section: "\n".join(parts).strip()
+    sections = {
+        section: _strip_name("\n".join(parts).strip(), name)
         for section, parts in bucket.items()
         if parts and section in SAFE_SECTIONS
     }
+
+    # Fallback: if no recognized sections, embed the whole resume (name-stripped)
+    # as a single summary rather than dropping everything.
+    if not sections:
+        full = _strip_name("\n".join(lines).strip(), name)
+        if full:
+            sections = {"summary": full}
+
+    return sections
 
 
 def strip_pii(text: str) -> str:

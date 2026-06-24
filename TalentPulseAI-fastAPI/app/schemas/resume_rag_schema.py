@@ -23,11 +23,6 @@ class ChunkingConfig(BaseModel):
     chunk_overlap: int = Field(default=120, ge=0, le=500)
 
 
-class EmbeddingConfig(BaseModel):
-    provider: Literal["cursor"] = "cursor"
-    model: str = "text-embedding-3-small"
-
-
 class ResumeIndexRequest(BaseModel):
     interview_id: str
     setup_id: int = Field(default=0, ge=0)
@@ -38,7 +33,7 @@ class ResumeIndexRequest(BaseModel):
     profile_option: ProfileOptionType
     resume: ResumePayload
     chunking: ChunkingConfig = ChunkingConfig()
-    embedding: EmbeddingConfig = EmbeddingConfig()
+    # Embedding provider is server-controlled via settings.EMBEDDING_PROVIDER (not a client choice).
 
 
 class ResumeIndexResponse(BaseModel):

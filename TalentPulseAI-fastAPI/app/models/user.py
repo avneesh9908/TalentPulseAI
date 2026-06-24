@@ -6,8 +6,8 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
-    email = Column(String, unique=True, index=True)
-    password = Column(String)
+    email = Column(String, unique=True, index=True, nullable=False)
+    password = Column(String, nullable=False)
 
     # Relationships
     profile     = relationship("Profile", back_populates="user", uselist=False)
@@ -15,4 +15,4 @@ class User(Base):
     skills      = relationship("Skill", back_populates="user")
     documents   = relationship("Document", back_populates="user")
     preferences = relationship("CareerPreferences", back_populates="user", uselist=False)
-    interviews  = relationship("Interview")
+    interviews  = relationship("Interview", back_populates="user", cascade="all, delete-orphan")
