@@ -77,7 +77,8 @@ app/
     scoring_service.py  score_answer(), build_interview_feedback()
     resume_rag_service.py ResumeRAGService (index_resume, retrieve_context) + get_rag_service() singleton
     embedding_service.py Provider dispatch (Google/Cursor), LocalHashEmbeddings fallback, PGVector factory
-    resume_parser.py    PDF extraction, section parsing, PII stripping, content hashing
+    resume_parser.py    PDF extraction (+ Gemini-vision OCR fallback for scanned PDFs), section parsing, PII stripping, content hashing
+    question_research_service.py Web research (Gemini + Google Search grounding) on commonly-asked questions per role/experience/skills; process-lifetime cache; never raises
   (migrations/ lives at backend top level, NOT app/migrations/) — manual SQL for existing DBs:
     phase4_add_content_hash_and_embedding_cache.sql
     phase6_jsonb_and_not_null.sql   (JSON→JSONB + users NOT NULL) — APPLIED to dev DB 2026-06-19 (all 9 stmts OK)
@@ -132,9 +133,20 @@ src/
 
 **API keys:** stored in `TalentPulseAI-fastAPI/.env` — never committed. Read via `pydantic-settings`.
 
+### Intelligent resume extraction (LLM-based, added 2026-06-26)
+- `resume_parser.extract_sections(text)` is the dispatcher used by `index_resume`: tries `parse_sections_llm` (Gemini, temp 0) first, falls back to heuristic `parse_sections` on any error.
+- `parse_sections_llm`: prompts Gemini to return ONLY interview-relevant professional content as JSON sections, explicitly EXCLUDING all PII (name, phone, email, address, **city/state/country/location**, postal, URLs, DOB, IDs). Defense-in-depth: every value still passes `strip_pii` + name-strip. Temp 0 keeps output stable for content-hash dedup.
+- Config flag: `ENABLE_LLM_RESUME_PARSING` (default True).
+- `strip_pii` now ALSO strips location PII (`_LOCATION_PATTERNS`: "City, India", "City, <Indian State>", trailing ", India"/", State"). On the heuristic fallback path this removes locations glued to company/college names by PDF extraction (e.g. "...LimitedSurat, India"). Runs per-chunk so surrounding bullet content is preserved.
+
+### PDF OCR for scanned/image resumes (added 2026-07-02)
+- `resume_parser.normalize_resume_text`: if pypdf extracts < 120 chars (`_MIN_PDF_TEXT_CHARS` — image PDFs have no text layer), falls back to `ocr_pdf_with_gemini` — sends the PDF inline (`application/pdf`) to Gemini vision via REST (`llm_service.generate_content_rest`, temp 0, 120s timeout). Live-tested 2026-07-02: exact transcription.
+- Config flag `ENABLE_PDF_OCR` (default True). OCR failure degrades: use pypdf text if any, else clear ValueError ("PDF has no text layer... OCR unavailable").
+- `llm_service.generate_content_rest(parts, tools, model, temperature, timeout)` is the shared REST helper (also used by question research) — bypasses the deprecated `google.generativeai` SDK, uses `requests` + `x-goog-api-key` header.
+
 ### RAG pipeline
-1. Resume uploaded → PDF decoded → text extracted → sections parsed (safe sections only; **"general" header block dropped**). Heading matching is fuzzy (aliases + keyword fallback); candidate's own name detected & stripped; full-text fallback to `summary` if no headings found.
-2. PII stripped from each chunk (email, phone, address, postal, URLs) before embedding
+1. Resume uploaded → PDF decoded → text extracted (pypdf; **Gemini-vision OCR fallback for scanned/image PDFs**) → `extract_sections` (LLM-intelligent, heuristic fallback; safe sections only; **"general" header block dropped**). Heading matching is fuzzy (aliases + keyword fallback); candidate's own name detected & stripped; full-text fallback to `summary` if no headings found.
+2. PII stripped from each chunk (email, phone, address, **location**, postal, URLs) before embedding
 3. Content hash (SHA-256 of PII-stripped sections) checked against `EmbeddingCache`; if hit, chunks copied from source document (zero API calls)
 4. Chunks stored in `resume_chunks` (SQL) and pgvector collection `talentpulse_resume_chunks`
 5. At interview time, `retrieve_context` does similarity search with enriched query → returns top-k chunks
@@ -146,6 +158,19 @@ src/
 - Config flags: `ENABLE_LLM_QUESTIONS` (default True), `GOOGLE_CHAT_MODEL`. Lazy import + `@lru_cache` chat client (mirrors embedding_service).
 - **Fallback chain:** LLM off/no key/error → deterministic templates in `question_service._fallback_questions` (mirrors the old frontend templater). Frontend `interview-now.tsx` tries `generateInterviewQuestions` first, then falls back to `retrieveInterviewContext` + `buildQuestionsFromContext`.
 - **Env note:** app runs from the **global** Python (has `langchain-google-genai` 2.0.10 + fastapi/uvicorn); the `.venv` is stale/incomplete (lacks `langchain-google-genai` and `langchain-community`). (unconfirmed whether venv should be repaired)
+- **2026-06-26 improvements:** personalized RAG retrieval query (uses role/experience/skills instead of a hardcoded string — different chunks per candidate); system+user prompts rewritten to force questions that reference the candidate's actual projects/companies/tools; full traceback logged on LLM failure (was a one-line swallow); `_fallback_questions` rewritten to be content-aware (uses up to 200 chars of real resume text per section with section-specific templates) instead of identical generic templates.
+
+### Web-researched question blending (added 2026-07-02)
+- `question_research_service.research_common_questions(role, experience, skills)` → `{topics[], common_questions[], source}` — Gemini + `tools=[{"google_search": {}}]` grounding (free tier) researches what interviewers most commonly ask this profile; fallback chain: grounded web → ungrounded LLM knowledge → None. Never raises. Cached per (role, experience, top-5 skills) for process lifetime — wizard roles are a fixed set, so repeats cost 0 API calls.
+- `question_service.generate_questions(..., research=)` blends it: LLM prompt gets a research block + instruction "4 resume-grounded + 2 adapted from commonly-asked, personalized to the resume". Deterministic fallback also appends up to 2 researched questions (section `"industry"`).
+- Route `/questions/generate` calls research before generation (best-effort). Config flag `ENABLE_QUESTION_RESEARCH` (default True). Response schema unchanged — frontend untouched.
+- Live-tested 2026-07-02: grounded search returned source=web with 8 topics + 10 real questions for "Frontend Developer / 2-4 years / React+TypeScript"; cache hit confirmed.
+
+### Gemini model quota (root cause of "same questions every time") — RESOLVED 2026-06-26
+- **Root cause:** `gemini-2.0-flash` returned HTTP 429 `RESOURCE_EXHAUSTED` with **`limit: 0`** (free-tier daily quota gone). LLM never succeeded → BOTH question generation AND resume parsing silently fell back to deterministic paths → near-identical output every run. NOT a prompt problem.
+- **FIX APPLIED:** switched `.env` `GOOGLE_CHAT_MODEL` from `gemini-2.0-flash` → **`gemini-2.5-flash`** (config.py default still says 2.0-flash; .env overrides). Live-tested 2026-06-26: gemini-2.5-flash responds OK, quota available.
+- If 2.5-flash quota also runs out later: try `gemini-1.5-flash`, rotate `GOOGLE_API_KEY`, or enable billing. Deterministic fallbacks remain as a safety net.
+- Deprecation warning: `langchain-google-genai` 2.0.10 uses the deprecated `google.generativeai` package; migrate to `google.genai` eventually.
 
 ### Scoring — LLM-as-judge with heuristic fallback (added 2026-06-19)
 - `scoring_service.generate_feedback(answers, skills, questions, role, experience, difficulty)` is the dispatcher: uses Gemini judge when `llm_service.llm_enabled()` and answers exist, else the heuristic.
@@ -252,6 +277,18 @@ Overall rating ~5/10: strong AI/RAG layer (8/10), weak engineering maturity & se
 - ✅ ~~🟡 hardcoded "cursor" embedding provider~~ FIXED 2026-06-19: was NOT mis-routing (backend never reads `payload.embedding`; provider = `EMBEDDING_PROVIDER` env). Removed the dead field from frontend payload+types and backend schema (EmbeddingConfig deleted). Embedding provider is server-controlled.
 - ✅ Good: AI/RAG pipeline, clean layering, TS strict-clean (zero `any`), `.env` gitignored.
 
+## Proposed Feature — Job Search Agent (planning, 2026-07-13, NOT started)
+User idea: an agent that finds relevant job openings per the user's profile and reports them, since users forget to check portals daily. Design locked with user (roadmap only, no code yet):
+- **Apply mode:** ASSISTED, not auto-submit. Frontend `/jobs` **status table** (Company | Role | Location | Match % | Status | Action/Reason). Statuses on `job_matches`: `new → reviewed → pending_apply → applied → dismissed`. When agent can't safely auto-fill (CAPTCHA / SSO login wall / non-standard form) → status **Pending** + reason string + direct apply URL so user finishes manually. No fully-autonomous submit (ban / ToS / CAPTCHA risk).
+- **Sourcing = company career pages via ATS JSON connectors** (not HTML scraping): one connector per ATS covers many firms. Workday (PwC/Deloitte/EY), Greenhouse (`boards-api.greenhouse.io/v1/boards/{company}/jobs`), Lever (`api.lever.co/v0/postings/{company}`). Config table `target_companies (name, ats_type, board_slug)` — add a company = one row. Uniform interface `search(profile) -> List[RawJob]`.
+- **Matching reuses existing resume RAG:** embed job description → similarity vs resume chunks → Gemini re-rank + "why fits / gaps". Dedup jobs via `content_hash` (same pattern as EmbeddingCache).
+- **Tables (Phase 0, manual SQL — no Alembic):** `job_search_profiles`, `job_listings`, `job_matches`, `target_companies`.
+- **Scheduling (Phase 3):** APScheduler in-process (fits no-Docker scale) → daily digest (not every run) + "New" badge.
+- **Build order:** Phase 0 schema → Phase 1 Greenhouse connector first (then Lever, Workday) → Phase 2 match + status table → Phase 3 scheduler → Phase 4 assisted pre-fill via browser tools (user clicks final submit).
+- **Setup flow (mirrors interview wizard):** one-time setup saved to `job_search_profiles`; on return, auto-load saved setup + show only a **[Re-setup]** button. If no setup / profile incomplete → show TWO options like interview step 2: "Go with Profile" vs "Go with Resume" (reuses `profileOption: "upload"|"existing"` pattern). **Ship resume-only first** — "Go with Profile" (existing-profile) deferred until interview flow's existing-profile path is wired.
+- **Designations = auto-derived default, USER-OVERRIDABLE, NOT permanent:** one resume → many target roles. Gemini derives candidate designations from the resume (add to resume_parser/question flow: "suggest 3–5 job titles this person qualifies for") → pre-fill an **editable multi-select chip list** → user can remove/edit/**add a totally different role** (e.g. profile is Python-only but user now wants Frontend Developer). Choice applies to THIS setup only; Re-setup overwrites the row — designations are never permanently tied to the profile. Each chip feeds the ATS connectors in parallel; status table spans all designations at once.
+- **Phase 0 `job_search_profiles` cols:** `target_designations` (JSONType array, editable per setup), `setup_source` (`resume` now; `profile` later), `resume_document_id` FK.
+
 ## Open Questions
 1. What model/API will generate interview questions? (Currently client-side from context chunks — no LLM call)
 2. Will "Use Existing Profile" be wired up, and to which profile entity?
@@ -267,6 +304,12 @@ Overall rating ~5/10: strong AI/RAG layer (8/10), weak engineering maturity & se
 - Manual migration SQL: `TalentPulseAI-fastAPI/migrations/phase4_add_content_hash_and_embedding_cache.sql`
 
 ## Changelog
+- 2026-07-13 — Designed **Job Search Agent** feature roadmap with user (planning only, no code). Assisted-apply status table + ATS-connector sourcing (Greenhouse/Lever/Workday) + resume-RAG matching + APScheduler digest. Setup flow mirrors interview wizard (resume-only first); designations auto-derived by Gemini but user-overridable/non-permanent (one resume → many roles, incl. a role different from profile). See "Proposed Feature — Job Search Agent".
+- 2026-07-02 — **Flow-gap fixes (user request: verify upload→extract→questions flow):** (1) Gemini-vision OCR fallback for scanned/image PDFs (`ocr_pdf_with_gemini`, trigger `_MIN_PDF_TEXT_CHARS=120`, flag `ENABLE_PDF_OCR`) — previously image PDFs hard-failed with "Resume text is empty"; (2) web research of commonly-asked questions per role/experience via Google Search grounding (`question_research_service.py`, flag `ENABLE_QUESTION_RESEARCH`), blended into LLM prompt + fallback; (3) shared `llm_service.generate_content_rest` REST helper. All live-tested OK (OCR exact transcription; research source=web). Note: flow has NO queue — indexing/generation are synchronous request/response (fine at current scale).
+- 2026-06-26 — **Diagnosed repetitive-questions root cause: Gemini free-tier quota = `limit: 0`** (live 429 test). LLM never runs → deterministic fallback every time. See AI Layer § CRITICAL KNOWN ISSUE.
+- 2026-06-26 — Question generation hardened: personalized RAG query (role/experience/skills), prompts force resume-specific questions, full traceback logging, content-aware fallback (real resume text, not generic templates). Files: routes/interview.py, services/question_service.py.
+- 2026-06-26 — Added LLM-based intelligent resume extraction (`resume_parser.extract_sections` → `parse_sections_llm`, Gemini temp 0, heuristic fallback) gated by `ENABLE_LLM_RESUME_PARSING`. `strip_pii` extended with `_LOCATION_PATTERNS` (city/state/India). index_resume now calls `extract_sections`. Verified PII removal + content preservation on the real resume.
+- 2026-06-26 — Fixed local boot bug: `config.Settings` rejected `.env`'s `ALLOWED_ORIGINS` (extra key) → added `extra = "ignore"` to Settings.Config. `ALLOWED_ORIGINS` is read directly in main.py via os.environ.
 - 2026-06-19 — Initial skill created from Phase 1 repo exploration; captured full stack, 5-phase refactor history, completion state, open questions
 - 2026-06-19 — Added prioritized Improvement Backlog after code review of question generation, scoring, and RAG retrieval (verified current code).
 - 2026-06-19 — Implemented server-side LLM question generation (Gemini free tier, gemini-2.0-flash) with deterministic fallback. New question_service.py, POST /interview/questions/generate, frontend wired in interview-now.tsx. Backend py_compile + frontend tsc both pass.

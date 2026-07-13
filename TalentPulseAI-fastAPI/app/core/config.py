@@ -23,6 +23,14 @@ class Settings(BaseSettings):
     GOOGLE_CHAT_MODEL: str = "gemini-2.0-flash"
     # Toggle LLM question generation; falls back to deterministic templates when off/unavailable
     ENABLE_LLM_QUESTIONS: bool = True
+    # Toggle LLM-based intelligent resume parsing (extracts interview-relevant content,
+    # excludes PII like name/phone/email/address/location); falls back to heuristic parser
+    ENABLE_LLM_RESUME_PARSING: bool = True
+    # OCR scanned/image-based PDFs via Gemini vision when pypdf finds no text layer
+    ENABLE_PDF_OCR: bool = True
+    # Web research (Gemini + Google Search grounding) on questions commonly asked
+    # for the candidate's role/experience; blended into question generation
+    ENABLE_QUESTION_RESEARCH: bool = True
 
     # Cursor (legacy — only used when EMBEDDING_PROVIDER=cursor)
     CURSOR_API_KEY: str = ""
@@ -33,5 +41,8 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = ".env"
+        # Deploy-only env vars (e.g. ALLOWED_ORIGINS, read directly in main.py) live in
+        # .env too; ignore them here instead of failing startup on unknown keys.
+        extra = "ignore"
 
 settings = Settings()

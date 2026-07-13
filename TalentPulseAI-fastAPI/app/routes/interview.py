@@ -16,7 +16,7 @@ from app.schemas.resume_rag_schema import (
     ResumeIndexRequest,
     ResumeIndexResponse,
 )
-from app.services import interview_service, question_service
+from app.services import interview_service, question_research_service, question_service
 from app.services.resume_rag_service import ResumeRAGService, get_rag_service
 
 router = APIRouter()
@@ -101,6 +101,7 @@ def generate_interview_questions(
     service: ResumeRAGService = Depends(get_rag_service),
 ):
     try:
+        skills_str = ", ".join(payload.skills) if payload.skills else "general"
         retrieve_payload = ContextRetrieveRequest(
             interview_id=payload.interview_id,
             setup_id=payload.setup_id,
@@ -110,18 +111,25 @@ def generate_interview_questions(
             skills=payload.skills,
             profile_option=payload.profile_option,
             query=(
-                "Resume context for generating interview questions covering projects, "
-                "skills, architecture, debugging, and communication."
+                f"Interview questions for {payload.role} role at {payload.experience} level "
+                f"focusing on {skills_str}. Cover: specific projects built, technologies used, "
+                f"system design decisions, debugging challenges, team contributions, and "
+                f"quantifiable achievements relevant to {payload.role}."
             ),
             top_k=payload.top_k,
         )
         context_pack = service.retrieve_context(db=db, user_id=current_user.id, payload=retrieve_payload)
+        # Best-effort web research (cached per role/experience/skills); None on any failure.
+        research = question_research_service.research_common_questions(
+            payload.role, payload.experience, payload.skills
+        )
         result = question_service.generate_questions(
             context_pack=context_pack,
             role=payload.role,
             experience=payload.experience,
             difficulty=payload.difficulty,
             skills=payload.skills,
+            research=research,
         )
         return {
             "interview_id": payload.interview_id,

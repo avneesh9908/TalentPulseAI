@@ -27,6 +27,41 @@ def chat_model(temperature: float = 0.4):
     return get_chat_model(settings.GOOGLE_API_KEY, settings.GOOGLE_CHAT_MODEL, temperature)
 
 
+_GEMINI_REST_BASE = "https://generativelanguage.googleapis.com/v1beta/models"
+
+
+def generate_content_rest(
+    parts: List[dict],
+    tools: Any = None,
+    model: str = "",
+    temperature: float = 0.2,
+    timeout: int = 60,
+) -> str:
+    """
+    Call Gemini generateContent over REST for capabilities the langchain client
+    doesn't expose: inline PDF vision (OCR of scanned resumes) and Google Search
+    grounding (web research). Returns the concatenated text of the first candidate.
+    """
+    import requests  # lazy: only needed when OCR/research features run
+
+    body: dict = {
+        "contents": [{"role": "user", "parts": parts}],
+        "generationConfig": {"temperature": temperature},
+    }
+    if tools:
+        body["tools"] = tools
+    response = requests.post(
+        f"{_GEMINI_REST_BASE}/{model or settings.GOOGLE_CHAT_MODEL}:generateContent",
+        headers={"x-goog-api-key": settings.GOOGLE_API_KEY},
+        json=body,
+        timeout=timeout,
+    )
+    response.raise_for_status()
+    data = response.json()
+    out_parts = (data.get("candidates") or [{}])[0].get("content", {}).get("parts", [])
+    return "\n".join(p.get("text", "") for p in out_parts if p.get("text")).strip()
+
+
 def parse_json(content: str) -> Any:
     """Extract a JSON value from a model response, tolerating ``` fences and surrounding prose."""
     text = (content or "").strip()

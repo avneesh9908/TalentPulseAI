@@ -6,6 +6,7 @@ from typing import Dict, List
 
 from pypdf import PdfReader
 
+from app.core.config import settings
 from app.schemas.resume_rag_schema import ResumeIndexRequest
 
 # Only these sections are safe to embed — no PII (name/address/phone/email) should appear here.
@@ -34,6 +35,24 @@ _PII_PATTERNS = [
     re.compile(r"github\.com/\S+"),
 ]
 
+# Geographic location fragments (city/state/country). Not interview-relevant and
+# often glued to company/college names by PDF extraction (e.g. "...LimitedSurat, India").
+_INDIAN_STATES = (
+    "Andhra Pradesh|Arunachal Pradesh|Assam|Bihar|Chhattisgarh|Goa|Gujarat|Haryana|"
+    "Himachal Pradesh|Jharkhand|Karnataka|Kerala|Madhya Pradesh|Maharashtra|Manipur|"
+    "Meghalaya|Mizoram|Nagaland|Odisha|Punjab|Rajasthan|Sikkim|Tamil Nadu|Telangana|"
+    "Tripura|Uttar Pradesh|Uttarakhand|West Bengal|Jammu and Kashmir|Ladakh|"
+    "Chandigarh|Puducherry"
+)
+_LOCATION_PATTERNS = [
+    # "City, India" / "City, State, India" / "Khair, Aligarh, India"
+    re.compile(r"[A-Z][a-zA-Z]+(?:[ ,]+[A-Z][a-zA-Z]+)*,\s*India\b"),
+    # "City, <Indian State>" e.g. "Noida, Uttar Pradesh"
+    re.compile(rf"[A-Z][a-zA-Z]+(?:[ ,]+[A-Z][a-zA-Z]+)*,\s*(?:{_INDIAN_STATES})\b"),
+    # standalone ", India" / ", <State>" left after the above
+    re.compile(rf",\s*(?:India|{_INDIAN_STATES})\b"),
+]
+
 
 def extract_text_from_pdf_b64(base64_pdf: str) -> str:
     pdf_bytes = base64.b64decode(base64_pdf)
@@ -44,14 +63,59 @@ def extract_text_from_pdf_b64(base64_pdf: str) -> str:
     return "\n".join(pages).strip()
 
 
+# Below this many extracted characters the PDF is treated as scanned/image-based
+# (pypdf only reads the text layer, which image PDFs don't have) and OCR kicks in.
+_MIN_PDF_TEXT_CHARS = 120
+
+_OCR_PROMPT = (
+    "This document is a resume. Transcribe ALL text it contains, exactly as written, "
+    "reading every page in order. Preserve section headings and line breaks. "
+    "Output ONLY the transcribed plain text — no commentary, no markdown."
+)
+
+
+def _pdf_ocr_enabled() -> bool:
+    return bool(settings.ENABLE_PDF_OCR and settings.GOOGLE_API_KEY)
+
+
+def ocr_pdf_with_gemini(base64_pdf: str) -> str:
+    """OCR a scanned/image-based PDF by sending it inline to Gemini vision."""
+    from app.services import llm_service  # lazy import: avoids cost when OCR disabled
+
+    return llm_service.generate_content_rest(
+        parts=[
+            {"inline_data": {"mime_type": "application/pdf", "data": base64_pdf}},
+            {"text": _OCR_PROMPT},
+        ],
+        temperature=0.0,
+        timeout=120,
+    )
+
+
 def normalize_resume_text(payload: ResumeIndexRequest) -> str:
     if payload.resume.text and payload.resume.text.strip():
         return payload.resume.text.strip()
     if payload.resume.base64_pdf:
         extracted = extract_text_from_pdf_b64(payload.resume.base64_pdf)
+        if len(extracted) >= _MIN_PDF_TEXT_CHARS:
+            return extracted
+        if _pdf_ocr_enabled():
+            try:
+                ocr_text = ocr_pdf_with_gemini(payload.resume.base64_pdf)
+                if len(ocr_text) > len(extracted):
+                    return ocr_text
+            except Exception as err:  # noqa: BLE001 — OCR failure must not kill indexing
+                import traceback
+                print(
+                    f"[resume_parser] Gemini OCR failed; using pypdf text if any.\n"
+                    f"error={err}\n{traceback.format_exc()}"
+                )
         if extracted:
             return extracted
-    raise ValueError("Resume text is empty. Provide resume.text or resume.base64_pdf")
+    raise ValueError(
+        "Resume text is empty. The PDF has no text layer (scanned/image-based) and "
+        "OCR was unavailable. Provide resume.text or a text-based PDF."
+    )
 
 
 # Canonical section -> heading aliases seen on real resumes. Matching is fuzzy
@@ -181,9 +245,99 @@ def parse_sections(text: str) -> Dict[str, str]:
     return sections
 
 
+# ── Intelligent (LLM-based) resume extraction ────────────────────────────────
+# Uses Gemini to read the raw resume and return ONLY interview-relevant
+# professional content, with all PII (name, contact, address, location) excluded
+# by design. Falls back to the heuristic parser when the LLM is off/unavailable.
+
+_RESUME_PARSE_SYSTEM = (
+    "You are a precise resume parser for an interview platform. Your job is to extract "
+    "ONLY the professional, interview-relevant content from a resume and to COMPLETELY "
+    "EXCLUDE every piece of personal or contact information.\n\n"
+    "ALWAYS REMOVE (never include in output): full name, phone numbers, email addresses, "
+    "physical/mailing addresses, city/state/country/location, postal or ZIP codes, "
+    "LinkedIn/GitHub/portfolio/social URLs, date of birth, age, gender, marital status, "
+    "nationality, photos, and any government or national ID numbers.\n\n"
+    "ALWAYS KEEP (this is what interviewers care about): professional summary, work "
+    "experience (role, company type, responsibilities, technologies, impact — but NOT the "
+    "company's address/location), projects (what was built, tech stack, your contribution, "
+    "outcomes), skills, education (degree, field, institution name — but NOT its address), "
+    "certifications, and achievements.\n\n"
+    "Preserve the candidate's real wording and technical detail. Do not invent content."
+)
+
+_LLM_SECTION_KEYS = (
+    "summary", "experience", "projects", "skills",
+    "education", "certifications", "achievements",
+)
+
+
+def _llm_resume_parsing_enabled() -> bool:
+    return bool(settings.ENABLE_LLM_RESUME_PARSING and settings.GOOGLE_API_KEY)
+
+
+def parse_sections_llm(text: str) -> Dict[str, str]:
+    """
+    Intelligent extraction: ask Gemini to return interview-relevant sections with
+    all PII excluded. Returns {} on any failure so the caller can fall back to the
+    heuristic parser. Temperature 0 keeps output stable for content-hash dedup.
+    """
+    from app.services import llm_service  # lazy import: avoids cost when LLM disabled
+
+    user_prompt = (
+        "Extract the resume below into clean JSON. Include ONLY sections that have real "
+        "content. Each value is plain text (newline-separated bullets are fine). "
+        "Strictly exclude all personal and contact information as instructed.\n\n"
+        "Return ONLY a JSON object, no markdown, with any of these keys:\n"
+        f"{', '.join(_LLM_SECTION_KEYS)}\n\n"
+        f"=== RESUME ===\n{text}\n=== END RESUME ==="
+    )
+
+    model = llm_service.get_chat_model(settings.GOOGLE_API_KEY, settings.GOOGLE_CHAT_MODEL, 0.0)
+    response = model.invoke([("system", _RESUME_PARSE_SYSTEM), ("human", user_prompt)])
+    raw = getattr(response, "content", "") or ""
+    data = llm_service.parse_json(raw)
+    if not isinstance(data, dict):
+        raise ValueError("LLM resume parse did not return a JSON object")
+
+    # Keep only safe section keys; defense-in-depth PII strip + name strip on every value.
+    name = detect_candidate_name(text)
+    sections: Dict[str, str] = {}
+    for key in _LLM_SECTION_KEYS:
+        value = data.get(key)
+        if not isinstance(value, str):
+            continue
+        cleaned = strip_pii(_strip_name(value.strip(), name))
+        if cleaned:
+            sections[key] = cleaned
+
+    if not sections:
+        raise ValueError("LLM resume parse produced no usable sections")
+    return sections
+
+
+def extract_sections(text: str) -> Dict[str, str]:
+    """
+    Dispatcher: intelligent LLM extraction first, heuristic parser as fallback.
+    Always returns the same {section: text} shape, so callers are unaffected.
+    """
+    if _llm_resume_parsing_enabled():
+        try:
+            return parse_sections_llm(text)
+        except Exception as err:  # noqa: BLE001 — any failure must degrade gracefully
+            import traceback
+            print(
+                f"[resume_parser] LLM parsing failed, using heuristic parser.\n"
+                f"error={err}\n{traceback.format_exc()}"
+            )
+    return parse_sections(text)
+
+
 def strip_pii(text: str) -> str:
     """Remove PII tokens from a chunk of text before it is embedded."""
     for pattern in _PII_PATTERNS:
+        text = pattern.sub("", text)
+    for pattern in _LOCATION_PATTERNS:
         text = pattern.sub("", text)
     # Collapse runs of whitespace left behind by removals.
     text = re.sub(r"[ \t]{2,}", " ", text)

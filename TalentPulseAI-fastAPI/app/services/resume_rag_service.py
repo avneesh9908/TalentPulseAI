@@ -32,7 +32,7 @@ class ResumeRAGService:
         payload: ResumeIndexRequest,
     ) -> Tuple[ResumeDocument, int, bool]:
         raw_text = resume_parser.normalize_resume_text(payload)
-        sections = resume_parser.parse_sections(raw_text)
+        sections = resume_parser.extract_sections(raw_text)
         parsed_summary = resume_parser.extract_summary(raw_text, payload.skills)
         content_hash = resume_parser.compute_content_hash(sections)
 
