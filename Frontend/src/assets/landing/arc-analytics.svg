@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 400">
+  <defs>
+    <linearGradient id="g" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#06b6d4"/><stop offset="1" stop-color="#7c3aed"/>
+    </linearGradient>
+  </defs>
+  <rect width="300" height="400" rx="20" fill="#0f172a"/>
+  <rect x="24" y="36" width="150" height="13" rx="6.5" fill="#334155"/>
+  <g>
+    <rect x="34" y="200" width="30" height="110" rx="8" fill="#1e293b"/>
+    <rect x="76" y="160" width="30" height="150" rx="8" fill="url(#g)"/>
+    <rect x="118" y="220" width="30" height="90" rx="8" fill="#1e293b"/>
+    <rect x="160" y="120" width="30" height="190" rx="8" fill="url(#g)"/>
+    <rect x="202" y="180" width="30" height="130" rx="8" fill="#1e293b"/>
+    <rect x="244" y="90" width="30" height="220" rx="8" fill="url(#g)"/>
+  </g>
+  <polyline points="49,190 91,148 133,206 175,106 217,166 259,76" fill="none" stroke="#f1f5f9" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+  <circle cx="259" cy="76" r="7" fill="#f1f5f9"/>
+  <text x="24" y="356" font-family="system-ui,sans-serif" font-size="15" font-weight="700" fill="#e2e8f0">Skill Analytics</text>
+</svg>

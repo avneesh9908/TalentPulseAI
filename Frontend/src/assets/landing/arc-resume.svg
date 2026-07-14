@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 400">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#7c3aed"/><stop offset="1" stop-color="#06b6d4"/>
+    </linearGradient>
+  </defs>
+  <rect width="300" height="400" rx="20" fill="#0f172a"/>
+  <rect x="50" y="36" width="200" height="270" rx="14" fill="#1e293b"/>
+  <circle cx="88" cy="76" r="18" fill="#334155"/>
+  <rect x="118" y="62" width="100" height="10" rx="5" fill="#475569"/>
+  <rect x="118" y="80" width="70" height="8" rx="4" fill="#334155"/>
+  <rect x="70" y="118" width="160" height="8" rx="4" fill="#334155"/>
+  <rect x="70" y="136" width="140" height="8" rx="4" fill="#334155"/>
+  <rect x="70" y="154" width="150" height="8" rx="4" fill="#334155"/>
+  <rect x="70" y="186" width="90" height="8" rx="4" fill="#475569"/>
+  <rect x="70" y="204" width="160" height="8" rx="4" fill="#334155"/>
+  <rect x="70" y="222" width="120" height="8" rx="4" fill="#334155"/>
+  <rect x="70" y="254" width="60" height="18" rx="9" fill="url(#g)" opacity="0.85"/>
+  <rect x="140" y="254" width="60" height="18" rx="9" fill="url(#g)" opacity="0.55"/>
+  <rect x="40" y="160" width="220" height="5" rx="2.5" fill="url(#g)">
+    <animate attributeName="y" values="60;290;60" dur="4s" repeatCount="indefinite"/>
+  </rect>
+  <text x="50" y="356" font-family="system-ui,sans-serif" font-size="15" font-weight="700" fill="#e2e8f0">Resume RAG Scan</text>
+</svg>
