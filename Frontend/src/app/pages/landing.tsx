@@ -1,33 +1,109 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useTheme } from "@/contexts/use-theme";
-import { motion } from "framer-motion";
+import {
+  motion,
+  useMotionValue,
+  useScroll,
+  useSpring,
+  useTransform,
+  type MotionValue,
+} from "framer-motion";
 import {
   Menu, X, ArrowRight, Sparkles, Mic, BarChart3,
-  Code, Brain, Target, Play, ChevronRight, Github, Twitter, Linkedin, Sun, Moon
+  Code, Brain, Target, Play, ChevronRight, ChevronDown,
+  Github, Twitter, Linkedin, Sun, Moon
 } from "lucide-react";
-import { ArcGalleryHero } from "@/components/ui/arc-gallery-hero";
 import { LimelightNav } from "@/components/ui/limelight-nav";
 import { InteractiveSelector } from "@/components/ui/interactive-selector";
 import { ImageSwiper } from "@/components/ui/image-swiper";
 import { Testimonials } from "@/components/ui/testimonials";
 import { SocialIcons } from "@/components/ui/social-icons";
+import { Marquee } from "@/components/ui/marquee";
 import { Reveal } from "@/components/motion/reveal";
 import { StaggerGroup, StaggerItem } from "@/components/motion/stagger";
+import { CountUp } from "@/components/motion/count-up";
+import { useMotionSafe } from "@/components/motion/use-motion-safe";
+import { staggerChild, staggerParent } from "@/lib/motion";
 import arcInterview from "@/assets/landing/arc-interview.svg";
 import arcScore from "@/assets/landing/arc-score.svg";
 import arcQuestion from "@/assets/landing/arc-question.svg";
 import arcAnalytics from "@/assets/landing/arc-analytics.svg";
-import arcResume from "@/assets/landing/arc-resume.svg";
 import arcVoice from "@/assets/landing/arc-voice.svg";
 import arcFeedback from "@/assets/landing/arc-feedback.svg";
-import arcOffer from "@/assets/landing/arc-offer.svg";
 import tourDashboard from "@/assets/landing/tour-dashboard.svg";
 import tourInterview from "@/assets/landing/tour-interview.svg";
 import tourResults from "@/assets/landing/tour-results.svg";
 
+/** Floating hero card: scroll parallax (outer) + ambient float loop (inner). */
+function FloatingCard({
+  src,
+  className,
+  rotate,
+  floatDelay,
+  parallax,
+  progress,
+}: {
+  src: string;
+  className: string;
+  rotate: number;
+  floatDelay: number;
+  parallax: number;
+  progress: MotionValue<number>;
+}) {
+  const safe = useMotionSafe();
+  const y = useTransform(progress, [0, 1], [0, -140 * parallax]);
+  return (
+    <motion.div className={`absolute ${className}`} style={safe ? { y } : undefined}>
+      <motion.img
+        src={src}
+        alt=""
+        initial={{ opacity: 0, scale: 0.7, rotate: rotate * 2 }}
+        animate={{
+          opacity: 0.95,
+          scale: 1,
+          rotate,
+          y: safe ? [0, -14, 0] : 0,
+        }}
+        transition={{
+          opacity: { duration: 0.8, delay: floatDelay * 0.3 },
+          scale: { duration: 0.8, delay: floatDelay * 0.3, ease: [0.22, 1, 0.36, 1] },
+          rotate: { duration: 0.8, delay: floatDelay * 0.3 },
+          y: { duration: 5.5, delay: floatDelay, repeat: Infinity, ease: "easeInOut" },
+        }}
+        className="w-full rounded-2xl shadow-2xl shadow-violet-500/20"
+        draggable={false}
+      />
+    </motion.div>
+  );
+}
+
 export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { isDark, toggleTheme } = useTheme();
+  const motionSafe = useMotionSafe();
+  const [finePointer] = useState(
+    () => typeof window !== "undefined" && window.matchMedia("(pointer: fine)").matches
+  );
+
+  // Hero scroll choreography
+  const heroRef = useRef<HTMLElement>(null);
+  const { scrollYProgress: heroProgress } = useScroll({
+    target: heroRef,
+    offset: ["start start", "end start"],
+  });
+  const heroTextY = useTransform(heroProgress, [0, 1], [0, 90]);
+  const heroTextOpacity = useTransform(heroProgress, [0, 0.75], [1, 0]);
+
+  // Page scroll progress bar
+  const { scrollYProgress: pageProgress } = useScroll();
+  const progressScale = useSpring(pageProgress, { stiffness: 120, damping: 30 });
+
+  // Cursor glow (desktop + motion-safe only)
+  const glowX = useMotionValue(-600);
+  const glowY = useMotionValue(-600);
+  const glowXs = useSpring(glowX, { stiffness: 60, damping: 20 });
+  const glowYs = useSpring(glowY, { stiffness: 60, damping: 20 });
+  const glowEnabled = motionSafe && finePointer;
 
   const interviewTracks = [
     { name: "Python Interview", icon: "🐍", color: "from-blue-500 to-cyan-500", topics: "Core Python, DSA, OOP" },
@@ -48,24 +124,9 @@ export default function LandingPage() {
   ];
 
   const steps = [
-    {
-      icon: Target,
-      title: "Choose Interview",
-      desc: "Select role, technology & difficulty level",
-      color: "from-blue-500 to-cyan-500"
-    },
-    {
-      icon: Mic,
-      title: "AI Interview",
-      desc: "Answer AI-generated questions via video/audio",
-      color: "from-violet-500 to-purple-500"
-    },
-    {
-      icon: BarChart3,
-      title: "Instant Report",
-      desc: "Get score, strengths & improvement tips",
-      color: "from-emerald-500 to-teal-500"
-    },
+    { icon: Target, title: "Choose Interview", desc: "Select role, technology & difficulty level", color: "from-blue-500 to-cyan-500" },
+    { icon: Mic, title: "AI Interview", desc: "Answer AI-generated questions via video/audio", color: "from-violet-500 to-purple-500" },
+    { icon: BarChart3, title: "Instant Report", desc: "Get score, strengths & improvement tips", color: "from-emerald-500 to-teal-500" },
   ];
 
   const stats = [
@@ -73,11 +134,6 @@ export default function LandingPage() {
     { value: "85%", label: "Success Rate" },
     { value: "24/7", label: "AI Availability" },
     { value: "4.9★", label: "User Rating" },
-  ];
-
-  const arcImages = [
-    arcResume, arcQuestion, arcInterview, arcVoice,
-    arcScore, arcAnalytics, arcFeedback, arcOffer,
   ];
 
   const tourSlides = [
@@ -101,35 +157,48 @@ export default function LandingPage() {
     { id: "demo", label: "Demo", href: "/demo" },
   ];
 
-  // Reusable card class
-  const cardClass = isDark
-    ? "bg-gradient-to-br from-slate-900/90 to-slate-800/90 border-white/10 text-white"
-    : "bg-white border-slate-200 text-slate-900 shadow-sm";
+  const marqueeItems = [
+    "AI-Powered Interviews", "Resume-Based Questions", "Instant Scoring",
+    "Voice & Video Answers", "Personalized Feedback", "Real Interview Pressure",
+  ];
+
+  const floatingCards = [
+    { src: arcInterview, className: "left-[3%] top-[16%] w-36 xl:w-44 hidden md:block", rotate: -8, floatDelay: 0, parallax: 1 },
+    { src: arcScore, className: "right-[4%] top-[13%] w-32 xl:w-40 hidden md:block", rotate: 9, floatDelay: 0.8, parallax: 1.3 },
+    { src: arcQuestion, className: "left-[9%] bottom-[8%] w-28 xl:w-36 hidden md:block", rotate: 6, floatDelay: 1.6, parallax: 0.7 },
+    { src: arcAnalytics, className: "right-[10%] bottom-[12%] w-32 xl:w-36 hidden md:block", rotate: -6, floatDelay: 2.4, parallax: 1.1 },
+    { src: arcVoice, className: "left-[26%] top-[5%] w-24 hidden xl:block", rotate: 4, floatDelay: 1.2, parallax: 1.6 },
+    { src: arcFeedback, className: "right-[27%] top-[4%] w-24 hidden xl:block", rotate: -5, floatDelay: 2, parallax: 1.8 },
+  ];
+
+  const headlineTop = "Practice Real AI Interviews.";
+  const headlineBottom = "Get Instant Feedback.";
 
   const subTextClass = isDark ? "text-slate-400" : "text-slate-500";
   const sectionBgClass = isDark ? "bg-slate-900/50" : "bg-slate-50";
+  const glassCard = isDark
+    ? "border-white/10 bg-white/[0.04] text-white"
+    : "border-slate-200 bg-white text-slate-900 shadow-sm";
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${
+    <div className={`min-h-screen overflow-x-clip transition-colors duration-300 ${
       isDark
-        ? "bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white"
-        : "bg-gradient-to-b from-white via-slate-50 to-white text-slate-900"
+        ? "bg-slate-950 text-white"
+        : "bg-white text-slate-900"
     }`}>
-      {/* Animated background blobs (motion-reduce: static) */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className={`absolute top-0 left-1/4 w-96 h-96 rounded-full blur-3xl animate-pulse motion-reduce:animate-none ${
-          isDark ? "bg-violet-500/10" : "bg-violet-200/40"
-        }`}></div>
-        <div className={`absolute bottom-0 right-1/4 w-96 h-96 rounded-full blur-3xl animate-pulse motion-reduce:animate-none ${
-          isDark ? "bg-cyan-500/10" : "bg-cyan-200/40"
-        }`} style={{ animationDelay: "1s" }}></div>
-      </div>
+      {/* Scroll progress bar */}
+      {motionSafe && (
+        <motion.div
+          className="fixed left-0 right-0 top-0 z-[60] h-1 origin-left bg-gradient-to-r from-violet-600 to-cyan-500"
+          style={{ scaleX: progressScale }}
+        />
+      )}
 
       {/* ── Header ── */}
       <header className={`relative z-50 sticky top-0 backdrop-blur-xl border-b ${
         isDark
-          ? "bg-slate-900/80 border-white/10 text-white"
-          : "bg-white/80 border-slate-200 text-slate-900"
+          ? "bg-slate-950/70 border-white/10 text-white"
+          : "bg-white/70 border-slate-200 text-slate-900"
       }`}>
         <nav className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
@@ -142,7 +211,7 @@ export default function LandingPage() {
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-cyan-500 shadow-lg flex items-center justify-center">
                 <Sparkles className="text-white" size={20} />
               </div>
-              <span className="text-xl font-bold">
+              <span className="text-xl font-bold font-display">
                 TalentPulse<span className="text-cyan-500">AI</span>
               </span>
             </motion.div>
@@ -198,9 +267,7 @@ export default function LandingPage() {
                 onClick={toggleTheme}
                 aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
                 className={`p-2 rounded-lg transition ${
-                  isDark
-                    ? "bg-slate-800 text-yellow-300"
-                    : "bg-slate-100 text-slate-600"
+                  isDark ? "bg-slate-800 text-yellow-300" : "bg-slate-100 text-slate-600"
                 }`}
               >
                 {isDark ? <Sun size={20} /> : <Moon size={20} />}
@@ -263,127 +330,239 @@ export default function LandingPage() {
         </nav>
       </header>
 
-      {/* ── Hero — arc gallery ── */}
-      <ArcGalleryHero images={arcImages} className="pt-10 pb-24 px-6">
-        <div className="max-w-4xl mx-auto text-center -mt-6">
+      {/* ── Hero — immersive, type-first ── */}
+      <section
+        ref={heroRef}
+        className="relative flex min-h-[92vh] items-center justify-center overflow-hidden px-6"
+        onMouseMove={
+          glowEnabled
+            ? (e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                glowX.set(e.clientX - rect.left);
+                glowY.set(e.clientY - rect.top);
+              }
+            : undefined
+        }
+      >
+        {/* Backdrop: glow orbs + dot grid */}
+        <div className="pointer-events-none absolute inset-0">
+          <div className={`absolute -top-32 left-1/4 h-[480px] w-[480px] rounded-full blur-3xl ${
+            isDark ? "bg-violet-600/25" : "bg-violet-300/40"
+          }`} />
+          <div className={`absolute -bottom-40 right-1/5 h-[520px] w-[520px] rounded-full blur-3xl ${
+            isDark ? "bg-cyan-500/20" : "bg-cyan-200/50"
+          }`} />
+          <div
+            className={`absolute inset-0 ${isDark ? "opacity-[0.15]" : "opacity-[0.35]"}`}
+            style={{
+              backgroundImage: `radial-gradient(circle at 1px 1px, ${isDark ? "#64748b" : "#94a3b8"} 1px, transparent 0)`,
+              backgroundSize: "36px 36px",
+              maskImage: "radial-gradient(ellipse 80% 70% at 50% 40%, black 40%, transparent 100%)",
+              WebkitMaskImage: "radial-gradient(ellipse 80% 70% at 50% 40%, black 40%, transparent 100%)",
+            }}
+          />
+          {/* Cursor-follow glow */}
+          {glowEnabled && (
+            <motion.div
+              className={`absolute h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[110px] ${
+                isDark ? "bg-violet-500/25" : "bg-violet-400/25"
+              }`}
+              style={{ left: glowXs, top: glowYs }}
+            />
+          )}
+        </div>
+
+        {/* Floating product cards */}
+        {floatingCards.map((card) => (
+          <FloatingCard key={card.src} {...card} progress={heroProgress} />
+        ))}
+
+        {/* Copy */}
+        <motion.div
+          className="relative z-10 mx-auto max-w-5xl py-24 text-center"
+          style={motionSafe ? { y: heroTextY, opacity: heroTextOpacity } : undefined}
+        >
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className={`mb-8 inline-block rounded-full border px-4 py-2 text-sm ${
+              isDark
+                ? "border-violet-500/30 bg-violet-500/20 text-violet-300"
+                : "border-violet-200 bg-violet-50 text-violet-600"
+            }`}
+          >
+            🚀 AI-Powered Interview Platform
+          </motion.div>
+
+          <motion.h1
+            className="font-display font-bold uppercase leading-[0.95] tracking-tight"
+            initial="hidden"
+            animate="visible"
+            variants={staggerParent(0.08, 0.15)}
+          >
+            <span className="block text-[clamp(2.5rem,7.5vw,6.5rem)]">
+              {headlineTop.split(" ").map((word, i) => (
+                <motion.span key={i} variants={staggerChild(40, 0.5)} className="inline-block whitespace-pre">
+                  {word}{" "}
+                </motion.span>
+              ))}
+            </span>
+            <span className="block bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-400 bg-clip-text text-transparent text-[clamp(2.5rem,7.5vw,6.5rem)]">
+              {headlineBottom.split(" ").map((word, i) => (
+                <motion.span key={i} variants={staggerChild(40, 0.5)} className="inline-block whitespace-pre">
+                  {word}{" "}
+                </motion.span>
+              ))}
+            </span>
+          </motion.h1>
+
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.7 }}
+            className={`mx-auto mb-10 mt-8 max-w-2xl text-lg md:text-xl ${subTextClass}`}
+          >
+            TalentPulseAI simulates real interviews using advanced AI. Answer via video/audio, get scored in seconds, and improve with personalized smart feedback.
+          </motion.p>
+
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
+            transition={{ duration: 0.6, delay: 0.85 }}
+            className="flex flex-col justify-center gap-4 sm:flex-row"
           >
-            <div className={`inline-block px-4 py-2 rounded-full text-sm mb-6 border ${
-              isDark
-                ? "bg-violet-500/20 border-violet-500/30 text-violet-300"
-                : "bg-violet-50 border-violet-200 text-violet-600"
-            }`}>
-              🚀 AI-Powered Interview Platform
-            </div>
-
-            <h1 className="text-5xl md:text-7xl font-bold leading-tight mb-6">
-              Practice Real AI Interviews.{" "}
-              <span className="bg-gradient-to-r from-violet-500 to-cyan-500 bg-clip-text text-transparent">
-                Get Instant Feedback.
-              </span>
-            </h1>
-
-            <p className={`text-xl mb-8 leading-relaxed max-w-2xl mx-auto ${subTextClass}`}>
-              TalentPulseAI simulates real interviews using advanced AI. Answer via video/audio, get scored in seconds, and improve with personalized smart feedback.
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a href="/demo">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="px-8 py-4 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-500 hover:to-cyan-500 text-white transition shadow-lg font-semibold flex items-center justify-center gap-2"
-                >
-                  <Play size={20} />
-                  Try Free Demo
-                </motion.button>
-              </a>
-              <a href="/auth/register">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className={`px-8 py-4 rounded-xl font-semibold flex items-center justify-center gap-2 transition border ${
-                    isDark
-                      ? "bg-slate-800 hover:bg-slate-700 text-white border-white/10"
-                      : "bg-white hover:bg-slate-50 text-slate-800 border-slate-200 shadow-sm"
-                  }`}
-                >
-                  Get Started Free
-                  <ArrowRight size={20} />
-                </motion.button>
-              </a>
-            </div>
+            <a href="/demo">
+              <motion.button
+                whileHover={{ scale: 1.06 }}
+                whileTap={{ scale: 0.95 }}
+                className="flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-cyan-600 px-9 py-4 text-lg font-semibold text-white shadow-[0_0_40px_-8px_rgba(139,92,246,0.7)] transition hover:from-violet-500 hover:to-cyan-500"
+              >
+                <Play size={20} />
+                Try Free Demo
+              </motion.button>
+            </a>
+            <a href="/auth/register">
+              <motion.button
+                whileHover={{ scale: 1.06 }}
+                whileTap={{ scale: 0.95 }}
+                className={`flex items-center justify-center gap-2 rounded-2xl border px-9 py-4 text-lg font-semibold transition ${
+                  isDark
+                    ? "border-white/15 bg-white/5 text-white hover:bg-white/10"
+                    : "border-slate-200 bg-white text-slate-800 shadow-sm hover:bg-slate-50"
+                }`}
+              >
+                Get Started Free
+                <ArrowRight size={20} />
+              </motion.button>
+            </a>
           </motion.div>
+        </motion.div>
 
-          {/* Stats */}
-          <StaggerGroup className="grid grid-cols-2 sm:grid-cols-4 gap-6 mt-14" delay={0.5}>
-            {stats.map((stat, i) => (
-              <StaggerItem key={i} className="text-center">
-                <div className={`text-2xl font-bold ${isDark ? "text-cyan-400" : "text-violet-600"}`}>
-                  {stat.value}
-                </div>
-                <div className={`text-xs mt-1 ${subTextClass}`}>{stat.label}</div>
-              </StaggerItem>
-            ))}
-          </StaggerGroup>
-        </div>
-      </ArcGalleryHero>
+        {/* Scroll hint */}
+        <motion.div
+          className="absolute bottom-6 left-1/2 -translate-x-1/2"
+          animate={motionSafe ? { y: [0, 8, 0] } : undefined}
+          transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+          aria-hidden="true"
+        >
+          <ChevronDown className={subTextClass} size={26} />
+        </motion.div>
+      </section>
 
-      {/* ── How It Works ── */}
-      <section id="how-it-works" className={`py-24 px-6 ${sectionBgClass}`}>
-        <div className="max-w-7xl mx-auto">
-          <Reveal className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-4">How It Works</h2>
-            <p className={`text-xl ${subTextClass}`}>Get started in 3 simple steps</p>
+      {/* ── Marquee band ── */}
+      <div className="-rotate-1 scale-[1.02]">
+        <Marquee
+          items={marqueeItems}
+          className="border-y border-black/10 bg-gradient-to-r from-violet-600 to-cyan-600 py-4 font-display text-lg font-bold uppercase tracking-widest text-white md:text-2xl"
+        />
+      </div>
+
+      {/* ── Stats — giant count-ups ── */}
+      <section className="px-6 py-24">
+        <StaggerGroup className="mx-auto grid max-w-6xl grid-cols-2 gap-10 md:grid-cols-4">
+          {stats.map((stat, i) => (
+            <StaggerItem key={i} className="text-center">
+              <CountUp
+                value={stat.value}
+                className={`font-display text-5xl font-bold md:text-7xl ${
+                  isDark ? "text-white" : "text-slate-900"
+                }`}
+              />
+              <div className={`mt-3 text-sm uppercase tracking-wider ${subTextClass}`}>{stat.label}</div>
+            </StaggerItem>
+          ))}
+        </StaggerGroup>
+      </section>
+
+      {/* ── How It Works — huge numbered rows ── */}
+      <section id="how-it-works" className={`px-6 py-28 ${sectionBgClass}`}>
+        <div className="mx-auto max-w-6xl">
+          <Reveal className="mb-20">
+            <h2 className="font-display text-[clamp(2.25rem,5vw,4.5rem)] font-bold uppercase leading-none tracking-tight">
+              How It{" "}
+              <span className="bg-gradient-to-r from-violet-500 to-cyan-400 bg-clip-text text-transparent">Works</span>
+            </h2>
+            <p className={`mt-4 text-xl ${subTextClass}`}>Get started in 3 simple steps</p>
           </Reveal>
 
-          <StaggerGroup className="grid md:grid-cols-3 gap-8">
+          <div className="space-y-8">
             {steps.map((step, i) => (
-              <StaggerItem key={i}>
+              <Reveal key={i} delay={i * 0.08}>
                 <motion.div
-                  whileHover={{ y: -8 }}
-                  className={`relative h-full backdrop-blur-xl border rounded-2xl p-8 transition ${cardClass}`}
+                  whileHover={{ x: 12 }}
+                  className={`flex flex-col items-start gap-6 rounded-3xl border p-8 backdrop-blur-xl md:flex-row md:items-center md:gap-12 md:p-10 ${glassCard}`}
                 >
-                  <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${step.color} shadow-lg flex items-center justify-center mb-6`}>
-                    <step.icon className="text-white" size={32} />
+                  <span
+                    aria-hidden="true"
+                    className={`font-display text-7xl font-bold leading-none text-transparent md:text-9xl ${
+                      isDark
+                        ? "[-webkit-text-stroke:2px_rgba(139,92,246,0.5)]"
+                        : "[-webkit-text-stroke:2px_rgba(139,92,246,0.35)]"
+                    }`}
+                  >
+                    0{i + 1}
+                  </span>
+                  <div className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br shadow-lg ${step.color}`}>
+                    <step.icon className="text-white" size={30} />
                   </div>
-                  <div className={`absolute top-4 right-4 text-6xl font-bold ${
-                    isDark ? "text-white/5" : "text-slate-100"
-                  }`}>{i + 1}</div>
-                  <h3 className="text-2xl font-bold mb-3">{step.title}</h3>
-                  <p className={subTextClass}>{step.desc}</p>
+                  <div>
+                    <h3 className="font-display text-2xl font-bold md:text-3xl">{step.title}</h3>
+                    <p className={`mt-2 text-lg ${subTextClass}`}>{step.desc}</p>
+                  </div>
                 </motion.div>
-              </StaggerItem>
+              </Reveal>
             ))}
-          </StaggerGroup>
+          </div>
         </div>
       </section>
 
-      {/* ── Features ── */}
-      <section id="features" className="py-24 px-6">
-        <div className="max-w-7xl mx-auto">
-          <Reveal className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-4">Why TalentPulseAI?</h2>
-            <p className={`text-xl ${subTextClass}`}>Powerful features to ace your interviews</p>
+      {/* ── Features — bento grid ── */}
+      <section id="features" className="px-6 py-28">
+        <div className="mx-auto max-w-6xl">
+          <Reveal className="mb-20 text-center">
+            <h2 className="font-display text-[clamp(2.25rem,5vw,4.5rem)] font-bold uppercase leading-none tracking-tight">
+              Why{" "}
+              <span className="bg-gradient-to-r from-violet-500 to-cyan-400 bg-clip-text text-transparent">TalentPulseAI?</span>
+            </h2>
+            <p className={`mt-4 text-xl ${subTextClass}`}>Powerful features to ace your interviews</p>
           </Reveal>
 
-          <StaggerGroup className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <StaggerGroup className="grid gap-5 md:grid-cols-4">
             {features.map((feature, i) => (
-              <StaggerItem key={i}>
+              <StaggerItem key={i} className={i === 0 || i === 5 ? "md:col-span-2" : ""}>
                 <motion.div
-                  whileHover={{ scale: 1.04 }}
-                  className={`h-full backdrop-blur-xl border rounded-2xl p-6 transition hover:border-violet-500/40 ${cardClass}`}
+                  whileHover={{ y: -8 }}
+                  className={`group relative h-full overflow-hidden rounded-3xl border p-7 backdrop-blur-xl transition-colors hover:border-violet-500/50 ${glassCard}`}
                 >
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${
+                  <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-gradient-to-br from-violet-600/20 to-cyan-500/20 blur-2xl transition-opacity opacity-0 group-hover:opacity-100" />
+                  <div className={`mb-5 flex h-12 w-12 items-center justify-center rounded-xl ${
                     isDark ? "bg-violet-500/20" : "bg-violet-50"
                   }`}>
                     <feature.icon className={isDark ? "text-violet-400" : "text-violet-600"} size={24} />
                   </div>
-                  <h3 className="text-xl font-bold mb-2">{feature.title}</h3>
-                  <p className={`text-sm ${subTextClass}`}>{feature.desc}</p>
+                  <h3 className="font-display text-xl font-bold">{feature.title}</h3>
+                  <p className={`mt-2 text-sm leading-relaxed ${subTextClass}`}>{feature.desc}</p>
                 </motion.div>
               </StaggerItem>
             ))}
@@ -391,12 +570,24 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── Marquee band (reverse) ── */}
+      <Marquee
+        items={marqueeItems}
+        reverse
+        className={`border-y py-4 font-display text-lg font-bold uppercase tracking-widest md:text-2xl ${
+          isDark ? "border-white/10 text-white/30" : "border-slate-200 text-slate-300"
+        }`}
+      />
+
       {/* ── Interview Tracks — interactive selector ── */}
-      <section id="tracks" className={`py-24 px-6 ${sectionBgClass}`}>
-        <div className="max-w-7xl mx-auto">
-          <Reveal className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-4">Popular Interview Tracks</h2>
-            <p className={`text-xl ${subTextClass}`}>Choose your domain and start practicing</p>
+      <section id="tracks" className={`px-6 py-28 ${sectionBgClass}`}>
+        <div className="mx-auto max-w-7xl">
+          <Reveal className="mb-20 text-center">
+            <h2 className="font-display text-[clamp(2.25rem,5vw,4.5rem)] font-bold uppercase leading-none tracking-tight">
+              Interview{" "}
+              <span className="bg-gradient-to-r from-violet-500 to-cyan-400 bg-clip-text text-transparent">Tracks</span>
+            </h2>
+            <p className={`mt-4 text-xl ${subTextClass}`}>Choose your domain and start practicing</p>
           </Reveal>
 
           <Reveal>
@@ -420,70 +611,87 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Product tour — image swiper ── */}
-      <section className="py-24 px-6">
-        <div className="max-w-5xl mx-auto">
-          <Reveal className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-4">See TalentPulseAI in Action</h2>
-            <p className={`text-xl ${subTextClass}`}>From first question to final report</p>
+      {/* ── Product tour — image swiper in glow frame ── */}
+      <section className="px-6 py-28">
+        <div className="mx-auto max-w-5xl">
+          <Reveal className="mb-20 text-center">
+            <h2 className="font-display text-[clamp(2.25rem,5vw,4.5rem)] font-bold uppercase leading-none tracking-tight">
+              See It In{" "}
+              <span className="bg-gradient-to-r from-violet-500 to-cyan-400 bg-clip-text text-transparent">Action</span>
+            </h2>
+            <p className={`mt-4 text-xl ${subTextClass}`}>From first question to final report</p>
           </Reveal>
           <Reveal>
-            <ImageSwiper slides={tourSlides} />
-          </Reveal>
-        </div>
-      </section>
-
-      {/* ── Testimonials ── */}
-      <section className={`py-24 px-6 ${sectionBgClass}`}>
-        <div className="max-w-7xl mx-auto">
-          <Reveal className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-4">Loved by Candidates</h2>
-            <p className={`text-xl ${subTextClass}`}>Real practice, real confidence, real offers</p>
-          </Reveal>
-          <Testimonials items={testimonials} />
-        </div>
-      </section>
-
-      {/* ── CTA ── */}
-      <section className="py-24 px-6">
-        <div className="max-w-5xl mx-auto">
-          <Reveal>
-            <div className="relative overflow-hidden bg-gradient-to-r from-violet-600 to-cyan-600 rounded-3xl p-12 text-center">
-              <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzRjMC0yLjIxLTEuNzktNC00LTRzLTQgMS43OS00IDQgMS43OSA0IDQgNCA0LTEuNzkgNC00em0wLTEwYzAtMi4yMS0xLjc5LTQtNC00cy00IDEuNzktNCA0IDEuNzkgNCA0IDQgNC0xLjc5IDQtNHoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-10"></div>
-              <div className="relative z-10">
-                <h2 className="text-4xl md:text-5xl font-bold mb-4 text-white">Ready to Crack Your Next Interview?</h2>
-                <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
-                  Start your AI-powered mock interview today and land your dream tech job.
-                </p>
-                <a href="/demo">
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="px-8 py-4 rounded-xl bg-white text-violet-600 hover:bg-gray-100 transition shadow-2xl font-bold text-lg flex items-center gap-2 mx-auto"
-                  >
-                    Start Free Interview Now
-                    <ArrowRight size={24} />
-                  </motion.button>
-                </a>
+            <div className="relative">
+              <div className="pointer-events-none absolute -inset-6 rounded-[2rem] bg-gradient-to-r from-violet-600/25 to-cyan-500/25 blur-2xl" />
+              <div className="relative">
+                <ImageSwiper slides={tourSlides} />
               </div>
             </div>
           </Reveal>
         </div>
       </section>
 
+      {/* ── Testimonials ── */}
+      <section className={`px-6 py-28 ${sectionBgClass}`}>
+        <div className="mx-auto max-w-7xl">
+          <Reveal className="mb-20 text-center">
+            <h2 className="font-display text-[clamp(2.25rem,5vw,4.5rem)] font-bold uppercase leading-none tracking-tight">
+              Loved by{" "}
+              <span className="bg-gradient-to-r from-violet-500 to-cyan-400 bg-clip-text text-transparent">Candidates</span>
+            </h2>
+            <p className={`mt-4 text-xl ${subTextClass}`}>Real practice, real confidence, real offers</p>
+          </Reveal>
+          <Testimonials items={testimonials} />
+        </div>
+      </section>
+
+      {/* ── CTA finale — massive type ── */}
+      <section className="relative overflow-hidden px-6 py-32">
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute left-1/2 top-1/2 h-[560px] w-[900px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-r from-violet-600/30 to-cyan-500/30 blur-[130px]" />
+        </div>
+        <div className="relative mx-auto max-w-5xl text-center">
+          <Reveal>
+            <h2 className="font-display text-[clamp(2.5rem,8vw,7rem)] font-bold uppercase leading-[0.95] tracking-tight">
+              Ready to{" "}
+              <span className="bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-400 bg-clip-text text-transparent">
+                Crack
+              </span>{" "}
+              Your Next Interview?
+            </h2>
+          </Reveal>
+          <Reveal delay={0.15}>
+            <p className={`mx-auto mb-10 mt-6 max-w-2xl text-xl ${subTextClass}`}>
+              Start your AI-powered mock interview today and land your dream tech job.
+            </p>
+            <a href="/demo" className="inline-block">
+              <motion.button
+                whileHover={{ scale: 1.07 }}
+                whileTap={{ scale: 0.95 }}
+                className="flex items-center gap-3 rounded-2xl bg-gradient-to-r from-violet-600 to-cyan-600 px-10 py-5 text-xl font-bold text-white shadow-[0_0_60px_-10px_rgba(139,92,246,0.8)] transition hover:from-violet-500 hover:to-cyan-500"
+              >
+                Start Free Interview Now
+                <ArrowRight size={26} />
+              </motion.button>
+            </a>
+          </Reveal>
+        </div>
+      </section>
+
       {/* ── Footer ── */}
-      <footer className={`relative border-t py-12 px-6 ${
+      <footer className={`relative border-t px-6 py-12 ${
         isDark ? "border-white/10" : "border-slate-200"
       }`}>
-        <div className="max-w-7xl mx-auto">
-          <div className="grid md:grid-cols-4 gap-12 mb-12">
+        <div className="mx-auto max-w-7xl">
+          <div className="mb-12 grid gap-12 md:grid-cols-4">
             {/* Brand */}
             <div>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-cyan-500 shadow-lg flex items-center justify-center">
+              <div className="mb-4 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-cyan-500 shadow-lg">
                   <Sparkles className="text-white" size={20} />
                 </div>
-                <span className="text-xl font-bold">
+                <span className="font-display text-xl font-bold">
                   TalentPulse<span className="text-cyan-500">AI</span>
                 </span>
               </div>
@@ -502,7 +710,7 @@ export default function LandingPage() {
 
             {/* Product */}
             <div>
-              <h3 className="font-bold mb-4">Product</h3>
+              <h3 className="mb-4 font-bold">Product</h3>
               <ul className={`space-y-2 text-sm ${subTextClass}`}>
                 <li><a href="/explore" className={`hover:${isDark ? "text-white" : "text-violet-600"} transition`}>Explore</a></li>
                 <li><a href="/demo" className={`hover:${isDark ? "text-white" : "text-violet-600"} transition`}>Demo</a></li>
@@ -513,27 +721,27 @@ export default function LandingPage() {
 
             {/* Company */}
             <div>
-              <h3 className="font-bold mb-4">Company</h3>
+              <h3 className="mb-4 font-bold">Company</h3>
               <ul className={`space-y-2 text-sm ${subTextClass}`}>
-                <li><a href="#" className="hover:text-violet-600 transition">About Us</a></li>
-                <li><a href="#" className="hover:text-violet-600 transition">Blog</a></li>
-                <li><a href="#" className="hover:text-violet-600 transition">Careers</a></li>
-                <li><a href="#" className="hover:text-violet-600 transition">Contact</a></li>
+                <li><a href="#" className="transition hover:text-violet-600">About Us</a></li>
+                <li><a href="#" className="transition hover:text-violet-600">Blog</a></li>
+                <li><a href="#" className="transition hover:text-violet-600">Careers</a></li>
+                <li><a href="#" className="transition hover:text-violet-600">Contact</a></li>
               </ul>
             </div>
 
             {/* Legal */}
             <div>
-              <h3 className="font-bold mb-4">Legal</h3>
+              <h3 className="mb-4 font-bold">Legal</h3>
               <ul className={`space-y-2 text-sm ${subTextClass}`}>
-                <li><a href="#" className="hover:text-violet-600 transition">Privacy Policy</a></li>
-                <li><a href="#" className="hover:text-violet-600 transition">Terms of Service</a></li>
-                <li><a href="#" className="hover:text-violet-600 transition">Cookie Policy</a></li>
+                <li><a href="#" className="transition hover:text-violet-600">Privacy Policy</a></li>
+                <li><a href="#" className="transition hover:text-violet-600">Terms of Service</a></li>
+                <li><a href="#" className="transition hover:text-violet-600">Cookie Policy</a></li>
               </ul>
             </div>
           </div>
 
-          <div className={`pt-8 border-t flex flex-col md:flex-row justify-between items-center gap-4 text-sm ${subTextClass} ${
+          <div className={`flex flex-col items-center justify-between gap-4 border-t pt-8 text-sm md:flex-row ${subTextClass} ${
             isDark ? "border-white/10" : "border-slate-200"
           }`}>
             <p>© {new Date().getFullYear()} TalentPulseAI. All rights reserved.</p>

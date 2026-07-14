@@ -7,6 +7,23 @@ export default {
 	],
 	theme: {
 		extend: {
+			fontFamily: {
+				display: ['"Space Grotesk Variable"', 'system-ui', 'sans-serif'],
+			},
+			keyframes: {
+				marquee: {
+					'0%': { transform: 'translateX(0)' },
+					'100%': { transform: 'translateX(-50%)' },
+				},
+				'marquee-reverse': {
+					'0%': { transform: 'translateX(-50%)' },
+					'100%': { transform: 'translateX(0)' },
+				},
+			},
+			animation: {
+				marquee: 'marquee 28s linear infinite',
+				'marquee-reverse': 'marquee-reverse 28s linear infinite',
+			},
 			borderRadius: {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
