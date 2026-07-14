@@ -6,7 +6,6 @@ import {
   useScroll,
   useSpring,
   useTransform,
-  type MotionValue,
 } from "framer-motion";
 import {
   Menu, X, ArrowRight, Sparkles, Mic, BarChart3,
@@ -14,17 +13,22 @@ import {
   Github, Twitter, Linkedin, Sun, Moon
 } from "lucide-react";
 import { LimelightNav } from "@/components/ui/limelight-nav";
-import { InteractiveSelector } from "@/components/ui/interactive-selector";
+import { ArcGalleryHero } from "@/components/ui/arc-gallery-hero";
+import { CircularFlipGallery } from "@/components/ui/circular-flip-gallery";
+import { CardStack } from "@/components/ui/card-stack";
+import { ImageAutoSlider } from "@/components/ui/image-auto-slider";
 import { ImageSwiper } from "@/components/ui/image-swiper";
-import { Testimonials } from "@/components/ui/testimonials";
 import { SocialIcons } from "@/components/ui/social-icons";
 import { Marquee } from "@/components/ui/marquee";
 import { Reveal } from "@/components/motion/reveal";
 import { StaggerGroup, StaggerItem } from "@/components/motion/stagger";
 import { CountUp } from "@/components/motion/count-up";
+import { ClipReveal } from "@/components/motion/clip-reveal";
 import { useMotionSafe } from "@/components/motion/use-motion-safe";
 import { staggerChild, staggerParent } from "@/lib/motion";
 import arcInterview from "@/assets/landing/arc-interview.svg";
+import arcResume from "@/assets/landing/arc-resume.svg";
+import arcOffer from "@/assets/landing/arc-offer.svg";
 import arcScore from "@/assets/landing/arc-score.svg";
 import arcQuestion from "@/assets/landing/arc-question.svg";
 import arcAnalytics from "@/assets/landing/arc-analytics.svg";
@@ -33,49 +37,6 @@ import arcFeedback from "@/assets/landing/arc-feedback.svg";
 import tourDashboard from "@/assets/landing/tour-dashboard.svg";
 import tourInterview from "@/assets/landing/tour-interview.svg";
 import tourResults from "@/assets/landing/tour-results.svg";
-
-/** Floating hero card: scroll parallax (outer) + ambient float loop (inner). */
-function FloatingCard({
-  src,
-  className,
-  rotate,
-  floatDelay,
-  parallax,
-  progress,
-}: {
-  src: string;
-  className: string;
-  rotate: number;
-  floatDelay: number;
-  parallax: number;
-  progress: MotionValue<number>;
-}) {
-  const safe = useMotionSafe();
-  const y = useTransform(progress, [0, 1], [0, -140 * parallax]);
-  return (
-    <motion.div className={`absolute ${className}`} style={safe ? { y } : undefined}>
-      <motion.img
-        src={src}
-        alt=""
-        initial={{ opacity: 0, scale: 0.7, rotate: rotate * 2 }}
-        animate={{
-          opacity: 0.95,
-          scale: 1,
-          rotate,
-          y: safe ? [0, -14, 0] : 0,
-        }}
-        transition={{
-          opacity: { duration: 0.8, delay: floatDelay * 0.3 },
-          scale: { duration: 0.8, delay: floatDelay * 0.3, ease: [0.22, 1, 0.36, 1] },
-          rotate: { duration: 0.8, delay: floatDelay * 0.3 },
-          y: { duration: 5.5, delay: floatDelay, repeat: Infinity, ease: "easeInOut" },
-        }}
-        className="w-full rounded-2xl shadow-2xl shadow-violet-500/20"
-        draggable={false}
-      />
-    </motion.div>
-  );
-}
 
 export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -162,13 +123,9 @@ export default function LandingPage() {
     "Voice & Video Answers", "Personalized Feedback", "Real Interview Pressure",
   ];
 
-  const floatingCards = [
-    { src: arcInterview, className: "left-[3%] top-[16%] w-36 xl:w-44 hidden md:block", rotate: -8, floatDelay: 0, parallax: 1 },
-    { src: arcScore, className: "right-[4%] top-[13%] w-32 xl:w-40 hidden md:block", rotate: 9, floatDelay: 0.8, parallax: 1.3 },
-    { src: arcQuestion, className: "left-[9%] bottom-[8%] w-28 xl:w-36 hidden md:block", rotate: 6, floatDelay: 1.6, parallax: 0.7 },
-    { src: arcAnalytics, className: "right-[10%] bottom-[12%] w-32 xl:w-36 hidden md:block", rotate: -6, floatDelay: 2.4, parallax: 1.1 },
-    { src: arcVoice, className: "left-[26%] top-[5%] w-24 hidden xl:block", rotate: 4, floatDelay: 1.2, parallax: 1.6 },
-    { src: arcFeedback, className: "right-[27%] top-[4%] w-24 hidden xl:block", rotate: -5, floatDelay: 2, parallax: 1.8 },
+  const arcImages = [
+    arcResume, arcQuestion, arcInterview, arcVoice,
+    arcScore, arcAnalytics, arcFeedback, arcOffer,
   ];
 
   const headlineTop = "Practice Real AI Interviews.";
@@ -372,14 +329,11 @@ export default function LandingPage() {
           )}
         </div>
 
-        {/* Floating product cards */}
-        {floatingCards.map((card) => (
-          <FloatingCard key={card.src} {...card} progress={heroProgress} />
-        ))}
-
-        {/* Copy */}
+        {/* Arc gallery + copy */}
+        <div className="relative z-10 w-full pt-6">
+        <ArcGalleryHero images={arcImages}>
         <motion.div
-          className="relative z-10 mx-auto max-w-5xl py-24 text-center"
+          className="mx-auto max-w-5xl px-2 pb-20 text-center"
           style={motionSafe ? { y: heroTextY, opacity: heroTextOpacity } : undefined}
         >
           <motion.div
@@ -458,6 +412,8 @@ export default function LandingPage() {
             </a>
           </motion.div>
         </motion.div>
+        </ArcGalleryHero>
+        </div>
 
         {/* Scroll hint */}
         <motion.div
@@ -570,13 +526,17 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Marquee band (reverse) ── */}
-      <Marquee
-        items={marqueeItems}
-        reverse
-        className={`border-y py-4 font-display text-lg font-bold uppercase tracking-widest md:text-2xl ${
-          isDark ? "border-white/10 text-white/30" : "border-slate-200 text-slate-300"
-        }`}
+      {/* ── Image auto-slider band ── */}
+      <ImageAutoSlider
+        className={`border-y ${isDark ? "border-white/10" : "border-slate-200"}`}
+        images={[
+          { src: tourInterview },
+          { src: arcScore },
+          { src: tourResults },
+          { src: arcAnalytics },
+          { src: tourDashboard },
+          { src: arcFeedback },
+        ]}
       />
 
       {/* ── Interview Tracks — interactive selector ── */}
@@ -591,19 +551,27 @@ export default function LandingPage() {
           </Reveal>
 
           <Reveal>
-            <InteractiveSelector
-              options={interviewTracks.map((track) => ({
+            <CircularFlipGallery
+              radius={280}
+              items={interviewTracks.map((track) => ({
                 id: track.name,
-                title: track.name,
-                description: track.topics,
-                icon: track.icon,
-                footer: (
-                  <span className={`flex items-center font-semibold ${
-                    isDark ? "text-violet-400" : "text-violet-600"
-                  }`}>
-                    Start Practice
-                    <ChevronRight size={20} />
-                  </span>
+                front: (
+                  <>
+                    <span className="text-5xl" aria-hidden="true">{track.icon}</span>
+                    <span className="font-display text-lg font-bold leading-tight">{track.name}</span>
+                    <span className={`text-xs ${subTextClass}`}>Hover to flip</span>
+                  </>
+                ),
+                back: (
+                  <>
+                    <span className={`text-sm ${subTextClass}`}>{track.topics}</span>
+                    <span className={`flex items-center justify-center font-semibold ${
+                      isDark ? "text-violet-400" : "text-violet-600"
+                    }`}>
+                      Start Practice
+                      <ChevronRight size={20} />
+                    </span>
+                  </>
                 ),
               }))}
             />
@@ -621,14 +589,14 @@ export default function LandingPage() {
             </h2>
             <p className={`mt-4 text-xl ${subTextClass}`}>From first question to final report</p>
           </Reveal>
-          <Reveal>
+          <ClipReveal>
             <div className="relative">
               <div className="pointer-events-none absolute -inset-6 rounded-[2rem] bg-gradient-to-r from-violet-600/25 to-cyan-500/25 blur-2xl" />
               <div className="relative">
                 <ImageSwiper slides={tourSlides} />
               </div>
             </div>
-          </Reveal>
+          </ClipReveal>
         </div>
       </section>
 
@@ -642,7 +610,40 @@ export default function LandingPage() {
             </h2>
             <p className={`mt-4 text-xl ${subTextClass}`}>Real practice, real confidence, real offers</p>
           </Reveal>
-          <Testimonials items={testimonials} />
+          <CardStack
+            heightClass="h-80 md:h-72"
+            cards={testimonials.map((t) => ({
+              id: t.name,
+              content: (
+                <figure
+                  className={`flex h-full cursor-grab flex-col justify-between rounded-3xl border p-8 ${
+                    isDark
+                      ? "border-white/10 bg-slate-900 text-white"
+                      : "border-slate-200 bg-white text-slate-900 shadow-xl"
+                  }`}
+                >
+                  <blockquote className="text-base leading-relaxed md:text-lg">
+                    “{t.quote}”
+                  </blockquote>
+                  <figcaption className="mt-6 flex items-center gap-3">
+                    <span
+                      className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-violet-600 to-cyan-500 text-sm font-bold text-white"
+                      aria-hidden="true"
+                    >
+                      {t.name.charAt(0)}
+                    </span>
+                    <span className="text-left">
+                      <span className="block text-sm font-semibold">{t.name}</span>
+                      <span className={`block text-xs ${subTextClass}`}>{t.role}</span>
+                    </span>
+                  </figcaption>
+                </figure>
+              ),
+            }))}
+          />
+          <p className={`mt-6 text-center text-xs uppercase tracking-widest ${subTextClass}`}>
+            Drag a card — or wait, they cycle
+          </p>
         </div>
       </section>
 

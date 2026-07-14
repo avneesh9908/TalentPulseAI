@@ -19,10 +19,20 @@ export default {
 					'0%': { transform: 'translateX(-50%)' },
 					'100%': { transform: 'translateX(0)' },
 				},
+				'spin-slow': {
+					'0%': { transform: 'rotate(0deg)' },
+					'100%': { transform: 'rotate(360deg)' },
+				},
+				'spin-reverse': {
+					'0%': { transform: 'rotate(0deg)' },
+					'100%': { transform: 'rotate(-360deg)' },
+				},
 			},
 			animation: {
 				marquee: 'marquee 28s linear infinite',
 				'marquee-reverse': 'marquee-reverse 28s linear infinite',
+				'spin-slow': 'spin-slow 45s linear infinite',
+				'spin-reverse': 'spin-reverse 45s linear infinite',
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
