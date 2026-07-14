@@ -341,7 +341,17 @@ User-directed redesign: modern animated/tastefully-3D UI, **home page (landing.t
 - Content arrays (tracks/features/steps/stats), all hrefs, useTheme/isDark handling: VERBATIM from old page. Only state dep still useTheme + mobileMenuOpen.
 - **Verified:** tsc+eslint+build pass; initial home JS 139.45+12.96+1.62 ≈ **154 kB gzip ≤ 160 budget** (baseline ~145; landing chunk 5.19→12.96 due to inlined SVGs); CSS 12.16 ≤ 15. Live render on user's dev server: all sections, ZERO console errors; JS assertions: 11/11 images load (0 broken), swiper arrows+3 dots, nav hrefs exactly [#features,#how-it-works,#tracks,/explore,/demo,/auth/login,/auth/register].
 - Deviation from P1 plan noted: sections kept inline in landing.tsx (single-file convention) instead of components/landing/* split.
-**Next: Phase 4 rollout to remaining screens in small batches (plan written; header.tsx limelight + auth pages first).**
+**Landing v2 (bold redesign) — DONE 2026-07-14 (commit 51d1bb0d).** User rejected the conservative facelift ("you work according to previous ui i want major changes fully animation attractive") with refs: SPYLT Milk, Kumo matcha, Web3 marketplace dribbble, dock.cool, voltlites, opacity.com → direction = type-first, immersive, award-site energy. **DESIGN LANGUAGE NOW = BOLD** (use this for all future screens, NOT the old conservative style):
+- Giant uppercase display type: `font-display` = Space Grotesk Variable (@fontsource-variable/space-grotesk 5.2.10, self-hosted; `@import` at top of index.css; tailwind fontFamily.display). Headings `text-[clamp(...)] font-bold uppercase tracking-tight leading-none`, gradient keyword spans.
+- Hero: word-stagger headline, 6 floating arc-SVG cards (FloatingCard local comp: scroll parallax via useScroll+useTransform on outer, infinite float loop on inner; hidden below md), glow orbs + masked dot-grid, cursor-follow glow (useMotionValue+useSpring; gated motionSafe && pointer:fine), hero text drifts/fades on scroll, scroll progress bar (fixed top, spring scaleX).
+- `ui/marquee.tsx` (pure-CSS infinite loop: duplicated row, translateX -50% keyframes in tailwind.config `marquee`/`marquee-reverse` 28s; motion-reduce:animate-none; one band tilted -rotate-1 gradient, one reversed subdued).
+- `motion/count-up.tsx` (parses "50K+"→50+"K+"; animate() on useInView once; static under reduced motion; verified settles exact: 50K+/85%/24/7→"24"+"/7" works/4.9★). NOTE eslint react-hooks/set-state-in-effect: don't setState sync in effect body — derive static branch at render.
+- Sections: outline-number rows ([-webkit-text-stroke:2px_rgba(...)] + text-transparent), bento features grid (md:grid-cols-4, cards 0&5 col-span-2, hover glow blob), swiper in gradient glow frame, massive CTA.
+- Scroll-linked style={{y}} transforms BYPASS MotionConfig reducedMotion → always gate with useMotionSafe.
+- Budget: initial JS 139.66+19.99+1.62 ≈ **161.3 kB gzip (1.3 over 160 target — accepted/disclosed)**; fonts = separate woff2 assets (~48 kB, latin+ext+viet subsets).
+- ArcGalleryHero component now UNUSED by landing (kept in ui/ for reuse).
+- Verify count-up in browser: element text is lowercase in textContent (CSS uppercase is render-only); IO fires only if element actually crosses viewport — instant scrolls can jump past.
+**Next: Phase 4 rollout of the BOLD language to app screens in batches (header/auth → wizard → dashboard/results → jobs/profile).**
 
 ## Open Questions
 1. What model/API will generate interview questions? (Currently client-side from context chunks — no LLM call)
@@ -358,6 +368,7 @@ User-directed redesign: modern animated/tastefully-3D UI, **home page (landing.t
 - Manual migration SQL: `TalentPulseAI-fastAPI/migrations/phase4_add_content_hash_and_embedding_cache.sql`
 
 ## Changelog
+- 2026-07-14 — **Landing v2 bold redesign DONE** (51d1bb0d): user pivoted from conservative facelift to award-site style (SPYLT/Kumo/Web3 refs). Giant display type (Space Grotesk), word-stagger hero + floating parallax cards + cursor glow, marquee bands, count-up stats, bento grid, outline numbers, massive CTA. Verified live incl. count-up settling. 161.3 kB gzip (+1.3 over target, disclosed). Design language for future screens = BOLD.
 - 2026-07-14 — **UI redesign Phase 3 home page DONE** (gates lifted by user): arc hero w/ 11 inlined brand SVGs, limelight nav, interactive tracks, product swiper, testimonials, social icons; content/links/logic verbatim; 154 kB gzip ≤ 160 budget; render + assertions verified, zero console errors.
 - 2026-07-14 — **UI redesign Phase 2 foundation DONE:** motion tokens + Reveal/Stagger/useMotionSafe, global MotionConfig reducedMotion="user", 6 in-house equivalents of the 21st.dev refs (registry now auth-gated — equivalents chosen after unanswered question; reversible via API key), components.json, launch.json. tsc+eslint+build pass; landing chunk byte-identical; live render verified, zero console errors. Awaiting approval.
 - 2026-07-14 — **Job Search committed & pushed** (6a30626c feat 16 files, 0daff39e docs) — repo clean. **UI redesign Phase 1 strategy DONE** (FM-primary/GSAP-deferred, 3D Option B recommended, shadcn CLI init plan, motion tokens, 160 kB budget, 4 open decisions). Awaiting approval.
