@@ -16,6 +16,7 @@ import {
   Moon,
   Bell,
   LayoutDashboard,
+  Briefcase,
 } from "lucide-react";
 
 export default function Header() {
@@ -51,6 +52,12 @@ export default function Header() {
 
   const handleProfile = () => {
     navigate("/profile");
+    setMobileMenuOpen(false);
+    setDropdownOpen(false);
+  };
+
+  const handleJobs = () => {
+    navigate("/jobs");
     setMobileMenuOpen(false);
     setDropdownOpen(false);
   };
@@ -221,6 +228,18 @@ export default function Header() {
                       </button>
 
                       <button
+                        onClick={handleJobs}
+                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition ${
+                          isDark
+                            ? "text-slate-300 hover:bg-white/10 hover:text-white"
+                            : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                        }`}
+                      >
+                        <Briefcase size={16} />
+                        Job Search
+                      </button>
+
+                      <button
                         onClick={handleProfile}
                         className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition ${
                           isDark
@@ -327,6 +346,19 @@ export default function Header() {
                 >
                   <LayoutDashboard size={16} />
                   Dashboard
+                </motion.button>
+
+                <motion.button
+                  onClick={handleJobs}
+                  whileTap={{ scale: 0.95 }}
+                  className={`w-full flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition ${
+                    isDark
+                      ? "text-slate-300 hover:bg-white/10"
+                      : "text-slate-600 hover:bg-slate-100"
+                  }`}
+                >
+                  <Briefcase size={16} />
+                  Job Search
                 </motion.button>
 
                 <motion.button

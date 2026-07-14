@@ -35,6 +35,16 @@ export const config = {
       RESULTS: "/interview/:id/results",
     },
     
+    // Job Search Agent endpoints
+    JOBS: {
+      SETUP: "/jobs/setup",
+      DESIGNATIONS_SUGGEST: "/jobs/designations/suggest",
+      SEARCH: "/jobs/search",
+      MATCHES: "/jobs/matches",
+      MATCH_UPDATE: "/jobs/matches/:id",
+      COMPANIES: "/jobs/companies",
+    },
+
     // User profile endpoints
     PROFILE: {
       GET: "/user/profile",

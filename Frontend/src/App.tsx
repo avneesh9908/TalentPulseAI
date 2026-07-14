@@ -23,6 +23,7 @@ const QuickSetup = lazy(() => import("@/app/pages/interview/quick-setup"));
 const InterviewNow = lazy(() => import("@/app/pages/interview/interview-now"));
 const InterviewResult = lazy(() => import("@/app/pages/interview/interview-result"));
 const Profile = lazy(() => import("@/app/pages/profile/profile"));
+const JobsPage = lazy(() => import("@/app/pages/jobs/jobs"));
 
 const PageFallback = () => (
   <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
@@ -140,6 +141,17 @@ function App() {
                 <ProtectedRoute>
                   <ProtectedLayout>
                     <UsersPage />
+                  </ProtectedLayout>
+                </ProtectedRoute>
+              }
+            />
+            {/* PROTECTED JOB SEARCH */}
+            <Route
+              path="/jobs"
+              element={
+                <ProtectedRoute>
+                  <ProtectedLayout>
+                    <JobsPage />
                   </ProtectedLayout>
                 </ProtectedRoute>
               }

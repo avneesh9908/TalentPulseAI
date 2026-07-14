@@ -39,6 +39,16 @@ class Settings(BaseSettings):
 
     RAG_COLLECTION: str = "talentpulse_resume_chunks"
 
+    # ── Job Search Agent ──────────────────────────────────────────────────────
+    ENABLE_JOB_SEARCH: bool = True
+    # HTTP timeout (seconds) for outbound ATS career-page API calls.
+    JOB_SEARCH_HTTP_TIMEOUT: int = 20
+    # Max job listings pulled per company per fetch (safety cap).
+    JOB_SEARCH_MAX_PER_COMPANY: int = 200
+    # Separate vector collection for job-description embeddings (kept apart from
+    # resume chunks so the two never collide in similarity search).
+    JOB_LISTINGS_COLLECTION: str = "talentpulse_job_listings"
+
     class Config:
         env_file = ".env"
         # Deploy-only env vars (e.g. ALLOWED_ORIGINS, read directly in main.py) live in

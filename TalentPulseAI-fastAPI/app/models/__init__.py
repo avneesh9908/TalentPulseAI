@@ -6,3 +6,9 @@ from app.models.document    import Document
 from app.models.preferences import CareerPreferences
 from app.models.interview   import Interview
 from app.models.resume      import ResumeDocument, ResumeChunk, EmbeddingCache
+from app.models.job_search  import (
+    JobSearchProfile,
+    TargetCompany,
+    JobListing,
+    JobMatch,
+)

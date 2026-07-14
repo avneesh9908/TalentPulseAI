@@ -1,7 +1,7 @@
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routes import auth, user, interview
+from app.routes import auth, user, interview, jobs
 from app.database.db import engine, Base
 import app.models
 
@@ -40,3 +40,4 @@ Base.metadata.create_all(bind=engine)
 app.include_router(auth.router, prefix="/auth", tags=["Auth"])
 app.include_router(user.router, prefix="/user", tags=["User"])
 app.include_router(interview.router, prefix="/interview", tags=["Interview"])
+app.include_router(jobs.router, prefix="/jobs", tags=["Jobs"])
