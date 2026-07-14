@@ -351,6 +351,15 @@ User-directed redesign: modern animated/tastefully-3D UI, **home page (landing.t
 - Budget: initial JS 139.66+19.99+1.62 ≈ **161.3 kB gzip (1.3 over 160 target — accepted/disclosed)**; fonts = separate woff2 assets (~48 kB, latin+ext+viet subsets).
 - ArcGalleryHero component now UNUSED by landing (kept in ui/ for reuse).
 - Verify count-up in browser: element text is lowercase in textContent (CSS uppercase is render-only); IO fires only if element actually crosses viewport — instant scrolls can jump past.
+**Landing v2.1 (user's 2nd reference batch) — DONE 2026-07-14 (commit 03868a34).** User referenced 4 more 21st.dev components + clip-path image effects → implemented as equivalents (registry still auth-gated):
+- `ui/card-stack.tsx` (ruixen.ui/card-stack): depth-stacked deck, front card drag-to-dismiss (>90px), auto-cycle 4.5s (pause on hover, off under reduced motion, click-to-cycle fallback). USED FOR TESTIMONIALS. Cards need OPAQUE bg (bg-slate-900 / bg-white) — translucent glass shows stacked cards through each other.
+- `ui/circular-flip-gallery.tsx` (minhxthanh/circular-flip-card-gallery): ring via rotate(θ)+translateX(r)+rotate(−θ); container `animate-spin-slow`, per-card `animate-spin-reverse` (same 45s linear — cards stay upright); hover/focus flip via [transform-style:preserve-3d]+[backface-visibility:hidden] rotateY 180; dashed ring guide; **md+ only — mobile renders flip-card grid**. USED FOR TRACKS (front: emoji+name, back: topics+Start Practice — still non-navigating).
+- `ui/image-auto-slider.tsx` (waleedkibhen/image-auto-slider): reuses animate-marquee keyframe with images (alternating ±rotate-1), hover pause, motion-reduce freeze. Replaced the 2nd text marquee (tour + arc SVG mix).
+- `motion/clip-reveal.tsx` (uilayout.contact/clip-path-image effect): clipPath inset curtain wipe on whileInView (left/right/bottom). **clipPath is NOT gated by MotionConfig reducedMotion → gates via useMotionSafe (renders plain div)**. Applied to the tour swiper.
+- Hero: floating cards REPLACED by ArcGalleryHero fan (user re-referenced arc-gallery-hero; component back in use). Kept cursor glow, word-stagger, hero scroll drift.
+- tailwind.config: added `spin-slow`/`spin-reverse` keyframes (45s linear infinite).
+- Verified live: 0 console errors, 23/23 imgs, ring+slider+stack in DOM; landing chunk 21.10 kB gzip (total ≈162.4). NOTE: innerText checks must account for CSS `uppercase`/lowercase — use case-insensitive matching.
+- Now UNUSED by landing (kept in ui/ for app-screen reuse): interactive-selector, testimonials, marquee still used (band 1).
 **Next: Phase 4 rollout of the BOLD language to app screens in batches (header/auth → wizard → dashboard/results → jobs/profile).**
 
 ## Open Questions
@@ -368,6 +377,7 @@ User-directed redesign: modern animated/tastefully-3D UI, **home page (landing.t
 - Manual migration SQL: `TalentPulseAI-fastAPI/migrations/phase4_add_content_hash_and_embedding_cache.sql`
 
 ## Changelog
+- 2026-07-14 — **Landing v2.1 DONE** (03868a34): 2nd user reference batch — card-stack testimonials (drag+auto-cycle), circular flip ring for tracks (spin/counter-spin), image auto-slider band, clip-path reveal on tour, arc-gallery fan back in hero. All verified live, 0 console errors.
 - 2026-07-14 — **Landing v2 bold redesign DONE** (51d1bb0d): user pivoted from conservative facelift to award-site style (SPYLT/Kumo/Web3 refs). Giant display type (Space Grotesk), word-stagger hero + floating parallax cards + cursor glow, marquee bands, count-up stats, bento grid, outline numbers, massive CTA. Verified live incl. count-up settling. 161.3 kB gzip (+1.3 over target, disclosed). Design language for future screens = BOLD.
 - 2026-07-14 — **UI redesign Phase 3 home page DONE** (gates lifted by user): arc hero w/ 11 inlined brand SVGs, limelight nav, interactive tracks, product swiper, testimonials, social icons; content/links/logic verbatim; 154 kB gzip ≤ 160 budget; render + assertions verified, zero console errors.
 - 2026-07-14 — **UI redesign Phase 2 foundation DONE:** motion tokens + Reveal/Stagger/useMotionSafe, global MotionConfig reducedMotion="user", 6 in-house equivalents of the 21st.dev refs (registry now auth-gated — equivalents chosen after unanswered question; reversible via API key), components.json, launch.json. tsc+eslint+build pass; landing chunk byte-identical; live render verified, zero console errors. Awaiting approval.
