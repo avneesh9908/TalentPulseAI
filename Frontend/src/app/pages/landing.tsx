@@ -510,11 +510,12 @@ export default function LandingPage() {
 
           <Reveal>
             <CardStack
-              items={features.map((f) => ({
+              items={features.map((f, i) => ({
                 id: f.title,
                 title: f.title,
                 description: f.desc,
                 icon: f.icon,
+                imageSrc: [arcQuestion, tourInterview, tourDashboard, arcResume, arcInterview, arcFeedback][i],
               }))}
               cardWidth={stackCardWidth}
               cardHeight={300}
@@ -524,19 +525,25 @@ export default function LandingPage() {
               renderCard={(item) => {
                 const Icon = item.icon;
                 return (
-                  <div
-                    className={`relative flex h-full w-full flex-col justify-end overflow-hidden p-7 ${
-                      isDark ? "bg-slate-900 text-white" : "bg-white text-slate-900"
-                    }`}
-                  >
-                    <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-gradient-to-br from-violet-600/25 to-cyan-500/25 blur-2xl" />
-                    <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-xl ${
-                      isDark ? "bg-violet-500/20" : "bg-violet-50"
-                    }`}>
-                      <Icon className={isDark ? "text-violet-400" : "text-violet-600"} size={26} />
+                  <div className="relative h-full w-full bg-slate-950">
+                    {/* Full-bleed artwork */}
+                    <img
+                      src={item.imageSrc}
+                      alt=""
+                      className="absolute inset-0 h-full w-full object-cover"
+                      draggable={false}
+                      loading="eager"
+                    />
+                    {/* Readability gradient */}
+                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
+                    {/* Content over the image */}
+                    <div className="relative z-10 flex h-full flex-col justify-end p-6">
+                      <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-white/15 backdrop-blur">
+                        <Icon className="text-white" size={22} />
+                      </div>
+                      <h3 className="font-display text-2xl font-bold text-white">{item.title}</h3>
+                      <p className="mt-1 text-sm leading-relaxed text-white/80">{item.description}</p>
                     </div>
-                    <h3 className="font-display text-2xl font-bold">{item.title}</h3>
-                    <p className={`mt-2 text-sm leading-relaxed ${subTextClass}`}>{item.description}</p>
                   </div>
                 );
               }}
