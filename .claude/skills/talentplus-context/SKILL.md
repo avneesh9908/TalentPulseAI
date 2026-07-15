@@ -360,6 +360,7 @@ User-directed redesign: modern animated/tastefully-3D UI, **home page (landing.t
 - tailwind.config: added `spin-slow`/`spin-reverse` keyframes (45s linear infinite).
 - Verified live: 0 console errors, 23/23 imgs, ring+slider+stack in DOM; landing chunk 21.10 kB gzip (total ≈162.4). NOTE: innerText checks must account for CSS `uppercase`/lowercase — use case-insensitive matching.
 - Now UNUSED by landing (kept in ui/ for app-screen reuse): interactive-selector, testimonials, marquee still used (band 1).
+**Features section rework — DONE 2026-07-14 (commit 9138f4bc).** User screenshot feedback: bento grid → (right) **CardStack of the 6 feature cards** (auto-cycle 3.8s, drag-to-dismiss) each wrapped in NEW `motion/tilt-card.tsx` (**cursor-rotate 3D tilt**: rotateX/rotateY useSpring follow pointer, ±10° default; [perspective:1000px] on wrapper; gated motion-safe + pointer:fine); (left) heading + **orbiting icon ring** — 6 feature icons revolve around a glowing gradient hub (same spin-slow/spin-reverse counter-rotation pattern, radius 140, dashed guide, hidden below sm). Verified live: 0 console errors, 1 ring + 6 counter-spin icons + 4 stacked cards w/ correct titles. Landing chunk 21.50 kB gzip. GOTCHA: innerText may omit text inside transformed/stacked absolute elements — assert via textContent.
 **Next: Phase 4 rollout of the BOLD language to app screens in batches (header/auth → wizard → dashboard/results → jobs/profile).**
 
 ## Open Questions
@@ -377,6 +378,7 @@ User-directed redesign: modern animated/tastefully-3D UI, **home page (landing.t
 - Manual migration SQL: `TalentPulseAI-fastAPI/migrations/phase4_add_content_hash_and_embedding_cache.sql`
 
 ## Changelog
+- 2026-07-14 — **Features section rework DONE** (9138f4bc): bento → cursor-tilt CardStack + orbiting icon ring (new motion/tilt-card.tsx). Verified live, 0 errors.
 - 2026-07-14 — **Landing v2.1 DONE** (03868a34): 2nd user reference batch — card-stack testimonials (drag+auto-cycle), circular flip ring for tracks (spin/counter-spin), image auto-slider band, clip-path reveal on tour, arc-gallery fan back in hero. All verified live, 0 console errors.
 - 2026-07-14 — **Landing v2 bold redesign DONE** (51d1bb0d): user pivoted from conservative facelift to award-site style (SPYLT/Kumo/Web3 refs). Giant display type (Space Grotesk), word-stagger hero + floating parallax cards + cursor glow, marquee bands, count-up stats, bento grid, outline numbers, massive CTA. Verified live incl. count-up settling. 161.3 kB gzip (+1.3 over target, disclosed). Design language for future screens = BOLD.
 - 2026-07-14 — **UI redesign Phase 3 home page DONE** (gates lifted by user): arc hero w/ 11 inlined brand SVGs, limelight nav, interactive tracks, product swiper, testimonials, social icons; content/links/logic verbatim; 154 kB gzip ≤ 160 budget; render + assertions verified, zero console errors.
