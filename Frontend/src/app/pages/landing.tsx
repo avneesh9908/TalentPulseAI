@@ -24,7 +24,6 @@ import { Reveal } from "@/components/motion/reveal";
 import { StaggerGroup, StaggerItem } from "@/components/motion/stagger";
 import { CountUp } from "@/components/motion/count-up";
 import { ClipReveal } from "@/components/motion/clip-reveal";
-import { TiltCard } from "@/components/motion/tilt-card";
 import { useMotionSafe } from "@/components/motion/use-motion-safe";
 import { staggerChild, staggerParent } from "@/lib/motion";
 import arcInterview from "@/assets/landing/arc-interview.svg";
@@ -45,6 +44,10 @@ export default function LandingPage() {
   const motionSafe = useMotionSafe();
   const [finePointer] = useState(
     () => typeof window !== "undefined" && window.matchMedia("(pointer: fine)").matches
+  );
+  // Fan stacks use fixed pixel card sizes — fit them to the viewport once.
+  const [stackCardWidth] = useState(() =>
+    typeof window === "undefined" ? 520 : Math.min(520, window.innerWidth - 72)
   );
 
   // Hero scroll choreography
@@ -494,85 +497,51 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Features — orbiting icons + tilt card stack ── */}
+      {/* ── Features — fan card stack ── */}
       <section id="features" className="px-6 py-28">
         <div className="mx-auto max-w-6xl">
-          <div className="grid items-center gap-16 lg:grid-cols-2">
-            {/* Left: heading + orbiting icon ring */}
-            <div>
-              <Reveal>
-                <h2 className="font-display text-[clamp(2.25rem,5vw,4.5rem)] font-bold uppercase leading-none tracking-tight">
-                  Why{" "}
-                  <span className="bg-gradient-to-r from-violet-500 to-cyan-400 bg-clip-text text-transparent">TalentPulseAI?</span>
-                </h2>
-                <p className={`mt-4 text-xl ${subTextClass}`}>Powerful features to ace your interviews</p>
-              </Reveal>
+          <Reveal className="mb-16 text-center">
+            <h2 className="font-display text-[clamp(2.25rem,5vw,4.5rem)] font-bold uppercase leading-none tracking-tight">
+              Why{" "}
+              <span className="bg-gradient-to-r from-violet-500 to-cyan-400 bg-clip-text text-transparent">TalentPulseAI?</span>
+            </h2>
+            <p className={`mt-4 text-xl ${subTextClass}`}>Powerful features to ace your interviews</p>
+          </Reveal>
 
-              <Reveal delay={0.15}>
-                <div className="relative mx-auto mt-14 hidden h-80 w-80 sm:block">
-                  {/* Center hub */}
-                  <div className="absolute left-1/2 top-1/2 z-10 flex h-20 w-20 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-600 to-cyan-500 shadow-[0_0_50px_-8px_rgba(139,92,246,0.9)]">
-                    <Sparkles className="text-white" size={30} />
+          <Reveal>
+            <CardStack
+              items={features.map((f) => ({
+                id: f.title,
+                title: f.title,
+                description: f.desc,
+                icon: f.icon,
+              }))}
+              cardWidth={stackCardWidth}
+              cardHeight={300}
+              maxVisible={5}
+              autoAdvance
+              intervalMs={3200}
+              renderCard={(item) => {
+                const Icon = item.icon;
+                return (
+                  <div
+                    className={`relative flex h-full w-full flex-col justify-end overflow-hidden p-7 ${
+                      isDark ? "bg-slate-900 text-white" : "bg-white text-slate-900"
+                    }`}
+                  >
+                    <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-gradient-to-br from-violet-600/25 to-cyan-500/25 blur-2xl" />
+                    <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-xl ${
+                      isDark ? "bg-violet-500/20" : "bg-violet-50"
+                    }`}>
+                      <Icon className={isDark ? "text-violet-400" : "text-violet-600"} size={26} />
+                    </div>
+                    <h3 className="font-display text-2xl font-bold">{item.title}</h3>
+                    <p className={`mt-2 text-sm leading-relaxed ${subTextClass}`}>{item.description}</p>
                   </div>
-                  {/* Ring guide */}
-                  <div className="pointer-events-none absolute left-1/2 top-1/2 h-[280px] w-[280px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-violet-500/25" aria-hidden="true" />
-                  {/* Orbiting feature icons — ring spins, icons counter-spin to stay upright */}
-                  <div className="absolute left-1/2 top-1/2 h-0 w-0 animate-spin-slow motion-reduce:animate-none" aria-hidden="true">
-                    {features.map((feature, i) => (
-                      <div
-                        key={i}
-                        className="absolute"
-                        style={{ transform: `rotate(${(360 / features.length) * i}deg) translateX(140px) rotate(${-(360 / features.length) * i}deg)` }}
-                      >
-                        <div className="-translate-x-1/2 -translate-y-1/2 animate-spin-reverse motion-reduce:animate-none">
-                          <div className={`flex h-14 w-14 items-center justify-center rounded-xl border shadow-lg ${
-                            isDark
-                              ? "border-white/10 bg-slate-900 text-violet-400"
-                              : "border-slate-200 bg-white text-violet-600"
-                          }`}>
-                            <feature.icon size={24} />
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </Reveal>
-            </div>
-
-            {/* Right: feature card stack with cursor-rotate tilt */}
-            <Reveal delay={0.1}>
-              <CardStack
-                heightClass="h-72"
-                autoAdvanceMs={3800}
-                cards={features.map((feature) => ({
-                  id: feature.title,
-                  content: (
-                    <TiltCard className="h-full">
-                      <div
-                        className={`flex h-full flex-col justify-center rounded-3xl border p-9 ${
-                          isDark
-                            ? "border-white/10 bg-slate-900 text-white"
-                            : "border-slate-200 bg-white text-slate-900 shadow-xl"
-                        }`}
-                      >
-                        <div className={`mb-6 flex h-14 w-14 items-center justify-center rounded-xl ${
-                          isDark ? "bg-violet-500/20" : "bg-violet-50"
-                        }`}>
-                          <feature.icon className={isDark ? "text-violet-400" : "text-violet-600"} size={28} />
-                        </div>
-                        <h3 className="font-display text-2xl font-bold md:text-3xl">{feature.title}</h3>
-                        <p className={`mt-3 text-base leading-relaxed ${subTextClass}`}>{feature.desc}</p>
-                      </div>
-                    </TiltCard>
-                  ),
-                }))}
-              />
-              <p className={`mt-6 text-center text-xs uppercase tracking-widest ${subTextClass}`}>
-                Move your cursor over a card — drag to see the next
-              </p>
-            </Reveal>
-          </div>
+                );
+              }}
+            />
+          </Reveal>
         </div>
       </section>
 
@@ -661,39 +630,41 @@ export default function LandingPage() {
             <p className={`mt-4 text-xl ${subTextClass}`}>Real practice, real confidence, real offers</p>
           </Reveal>
           <CardStack
-            heightClass="h-80 md:h-72"
-            cards={testimonials.map((t) => ({
+            items={testimonials.map((t) => ({
               id: t.name,
-              content: (
-                <figure
-                  className={`flex h-full cursor-grab flex-col justify-between rounded-3xl border p-8 ${
-                    isDark
-                      ? "border-white/10 bg-slate-900 text-white"
-                      : "border-slate-200 bg-white text-slate-900 shadow-xl"
-                  }`}
-                >
-                  <blockquote className="text-base leading-relaxed md:text-lg">
-                    “{t.quote}”
-                  </blockquote>
-                  <figcaption className="mt-6 flex items-center gap-3">
-                    <span
-                      className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-violet-600 to-cyan-500 text-sm font-bold text-white"
-                      aria-hidden="true"
-                    >
-                      {t.name.charAt(0)}
-                    </span>
-                    <span className="text-left">
-                      <span className="block text-sm font-semibold">{t.name}</span>
-                      <span className={`block text-xs ${subTextClass}`}>{t.role}</span>
-                    </span>
-                  </figcaption>
-                </figure>
-              ),
+              title: t.name,
+              description: t.role,
+              quote: t.quote,
             }))}
+            cardWidth={stackCardWidth}
+            cardHeight={300}
+            maxVisible={5}
+            autoAdvance
+            intervalMs={4500}
+            renderCard={(item) => (
+              <figure
+                className={`flex h-full w-full flex-col justify-between p-7 ${
+                  isDark ? "bg-slate-900 text-white" : "bg-white text-slate-900"
+                }`}
+              >
+                <blockquote className="text-base leading-relaxed md:text-lg">
+                  “{item.quote}”
+                </blockquote>
+                <figcaption className="mt-6 flex items-center gap-3">
+                  <span
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-violet-600 to-cyan-500 text-sm font-bold text-white"
+                    aria-hidden="true"
+                  >
+                    {item.title.charAt(0)}
+                  </span>
+                  <span className="text-left">
+                    <span className="block text-sm font-semibold">{item.title}</span>
+                    <span className={`block text-xs ${subTextClass}`}>{item.description}</span>
+                  </span>
+                </figcaption>
+              </figure>
+            )}
           />
-          <p className={`mt-6 text-center text-xs uppercase tracking-widest ${subTextClass}`}>
-            Drag a card — or wait, they cycle
-          </p>
         </div>
       </section>
 
