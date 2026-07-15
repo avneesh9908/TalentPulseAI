@@ -379,6 +379,7 @@ User-directed redesign: modern animated/tastefully-3D UI, **home page (landing.t
 - Manual migration SQL: `TalentPulseAI-fastAPI/migrations/phase4_add_content_hash_and_embedding_cache.sql`
 
 ## Changelog
+- 2026-07-14 — **Feature fan cards image-filled** (46b3fbde): full-bleed arc/tour SVG art per feature (object-cover + bottom gradient + white icon/title/desc overlay). Mapping: question/tourInterview/tourDashboard/resume/interview/feedback. Verified live 5/5, 0 errors.
 - 2026-07-14 — **Fan CardStack adopted** (be08a7f5): user-supplied ruixen source replaces simple stack; features + testimonials now 3D fan carousels; orbit/tilt layout removed. tailwind-merge/cn chunk gotcha + alpha-value dot gotcha recorded.
 - 2026-07-14 — **Features section rework DONE** (9138f4bc): bento → cursor-tilt CardStack + orbiting icon ring (new motion/tilt-card.tsx). Verified live, 0 errors.
 - 2026-07-14 — **Landing v2.1 DONE** (03868a34): 2nd user reference batch — card-stack testimonials (drag+auto-cycle), circular flip ring for tracks (spin/counter-spin), image auto-slider band, clip-path reveal on tour, arc-gallery fan back in hero. All verified live, 0 console errors.
