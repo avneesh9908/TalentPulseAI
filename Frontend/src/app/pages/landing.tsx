@@ -24,6 +24,7 @@ import { Reveal } from "@/components/motion/reveal";
 import { StaggerGroup, StaggerItem } from "@/components/motion/stagger";
 import { CountUp } from "@/components/motion/count-up";
 import { ClipReveal } from "@/components/motion/clip-reveal";
+import { TiltCard } from "@/components/motion/tilt-card";
 import { useMotionSafe } from "@/components/motion/use-motion-safe";
 import { staggerChild, staggerParent } from "@/lib/motion";
 import arcInterview from "@/assets/landing/arc-interview.svg";
@@ -493,36 +494,85 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Features — bento grid ── */}
+      {/* ── Features — orbiting icons + tilt card stack ── */}
       <section id="features" className="px-6 py-28">
         <div className="mx-auto max-w-6xl">
-          <Reveal className="mb-20 text-center">
-            <h2 className="font-display text-[clamp(2.25rem,5vw,4.5rem)] font-bold uppercase leading-none tracking-tight">
-              Why{" "}
-              <span className="bg-gradient-to-r from-violet-500 to-cyan-400 bg-clip-text text-transparent">TalentPulseAI?</span>
-            </h2>
-            <p className={`mt-4 text-xl ${subTextClass}`}>Powerful features to ace your interviews</p>
-          </Reveal>
+          <div className="grid items-center gap-16 lg:grid-cols-2">
+            {/* Left: heading + orbiting icon ring */}
+            <div>
+              <Reveal>
+                <h2 className="font-display text-[clamp(2.25rem,5vw,4.5rem)] font-bold uppercase leading-none tracking-tight">
+                  Why{" "}
+                  <span className="bg-gradient-to-r from-violet-500 to-cyan-400 bg-clip-text text-transparent">TalentPulseAI?</span>
+                </h2>
+                <p className={`mt-4 text-xl ${subTextClass}`}>Powerful features to ace your interviews</p>
+              </Reveal>
 
-          <StaggerGroup className="grid gap-5 md:grid-cols-4">
-            {features.map((feature, i) => (
-              <StaggerItem key={i} className={i === 0 || i === 5 ? "md:col-span-2" : ""}>
-                <motion.div
-                  whileHover={{ y: -8 }}
-                  className={`group relative h-full overflow-hidden rounded-3xl border p-7 backdrop-blur-xl transition-colors hover:border-violet-500/50 ${glassCard}`}
-                >
-                  <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-gradient-to-br from-violet-600/20 to-cyan-500/20 blur-2xl transition-opacity opacity-0 group-hover:opacity-100" />
-                  <div className={`mb-5 flex h-12 w-12 items-center justify-center rounded-xl ${
-                    isDark ? "bg-violet-500/20" : "bg-violet-50"
-                  }`}>
-                    <feature.icon className={isDark ? "text-violet-400" : "text-violet-600"} size={24} />
+              <Reveal delay={0.15}>
+                <div className="relative mx-auto mt-14 hidden h-80 w-80 sm:block">
+                  {/* Center hub */}
+                  <div className="absolute left-1/2 top-1/2 z-10 flex h-20 w-20 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-600 to-cyan-500 shadow-[0_0_50px_-8px_rgba(139,92,246,0.9)]">
+                    <Sparkles className="text-white" size={30} />
                   </div>
-                  <h3 className="font-display text-xl font-bold">{feature.title}</h3>
-                  <p className={`mt-2 text-sm leading-relaxed ${subTextClass}`}>{feature.desc}</p>
-                </motion.div>
-              </StaggerItem>
-            ))}
-          </StaggerGroup>
+                  {/* Ring guide */}
+                  <div className="pointer-events-none absolute left-1/2 top-1/2 h-[280px] w-[280px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-violet-500/25" aria-hidden="true" />
+                  {/* Orbiting feature icons — ring spins, icons counter-spin to stay upright */}
+                  <div className="absolute left-1/2 top-1/2 h-0 w-0 animate-spin-slow motion-reduce:animate-none" aria-hidden="true">
+                    {features.map((feature, i) => (
+                      <div
+                        key={i}
+                        className="absolute"
+                        style={{ transform: `rotate(${(360 / features.length) * i}deg) translateX(140px) rotate(${-(360 / features.length) * i}deg)` }}
+                      >
+                        <div className="-translate-x-1/2 -translate-y-1/2 animate-spin-reverse motion-reduce:animate-none">
+                          <div className={`flex h-14 w-14 items-center justify-center rounded-xl border shadow-lg ${
+                            isDark
+                              ? "border-white/10 bg-slate-900 text-violet-400"
+                              : "border-slate-200 bg-white text-violet-600"
+                          }`}>
+                            <feature.icon size={24} />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </Reveal>
+            </div>
+
+            {/* Right: feature card stack with cursor-rotate tilt */}
+            <Reveal delay={0.1}>
+              <CardStack
+                heightClass="h-72"
+                autoAdvanceMs={3800}
+                cards={features.map((feature) => ({
+                  id: feature.title,
+                  content: (
+                    <TiltCard className="h-full">
+                      <div
+                        className={`flex h-full flex-col justify-center rounded-3xl border p-9 ${
+                          isDark
+                            ? "border-white/10 bg-slate-900 text-white"
+                            : "border-slate-200 bg-white text-slate-900 shadow-xl"
+                        }`}
+                      >
+                        <div className={`mb-6 flex h-14 w-14 items-center justify-center rounded-xl ${
+                          isDark ? "bg-violet-500/20" : "bg-violet-50"
+                        }`}>
+                          <feature.icon className={isDark ? "text-violet-400" : "text-violet-600"} size={28} />
+                        </div>
+                        <h3 className="font-display text-2xl font-bold md:text-3xl">{feature.title}</h3>
+                        <p className={`mt-3 text-base leading-relaxed ${subTextClass}`}>{feature.desc}</p>
+                      </div>
+                    </TiltCard>
+                  ),
+                }))}
+              />
+              <p className={`mt-6 text-center text-xs uppercase tracking-widest ${subTextClass}`}>
+                Move your cursor over a card — drag to see the next
+              </p>
+            </Reveal>
+          </div>
         </div>
       </section>
 
