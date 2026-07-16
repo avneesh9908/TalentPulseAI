@@ -310,11 +310,12 @@ export default function SelectRolePage() {
           </div>
 
           <h1
-            className={`text-4xl font-bold mb-3 tracking-tight ${
+            className={`font-display text-4xl md:text-5xl font-bold uppercase mb-3 tracking-tight ${
               isDark ? "text-white" : "text-gray-900"
             }`}
           >
-            Select Your Role
+            Select Your{" "}
+            <span className="bg-gradient-to-r from-violet-500 to-cyan-400 bg-clip-text text-transparent">Role</span>
           </h1>
           <p className={`text-base max-w-xl ${isDark ? "text-slate-400" : "text-gray-500"}`}>
             Choose the role you're interviewing for. We'll tailor questions to

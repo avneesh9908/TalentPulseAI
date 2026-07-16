@@ -32,7 +32,10 @@ export default function Profile() {
       >
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">Your Profile</h1>
+          <h1 className="font-display text-4xl md:text-5xl font-bold uppercase tracking-tight mb-2">
+            Your{" "}
+            <span className="bg-gradient-to-r from-violet-500 to-cyan-400 bg-clip-text text-transparent">Profile</span>
+          </h1>
           <p className={`text-lg ${isDark ? "text-slate-400" : "text-slate-600"}`}>
             Manage your account settings and personal information
           </p>

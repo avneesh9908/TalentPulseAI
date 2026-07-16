@@ -447,7 +447,7 @@ export default function InterviewNowPage() {
         </motion.button>
 
         <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="mb-3">
-          <h1 className={`text-2xl lg:text-3xl font-bold tracking-tight ${isDark ? "text-white" : "text-slate-900"}`}>Interview Now</h1>
+          <h1 className={`font-display text-2xl lg:text-3xl font-bold uppercase tracking-tight ${isDark ? "text-white" : "text-slate-900"}`}>Interview Now</h1>
         </motion.div>
 
         <div className="grid gap-4 lg:grid-cols-2 flex-1 min-h-0">

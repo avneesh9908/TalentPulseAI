@@ -40,7 +40,7 @@ export default function UsersPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6 p-6">
-      <h1 className="text-2xl font-semibold">Users</h1>
+      <h1 className="font-display text-2xl font-bold uppercase tracking-tight">Users</h1>
 
       <form
         onSubmit={onSubmit}

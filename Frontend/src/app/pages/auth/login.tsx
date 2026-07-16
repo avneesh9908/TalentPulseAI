@@ -64,7 +64,7 @@ export default function Login() {
             <div className="w-16 h-16 rounded-xl bg-gradient-primary shadow-lg flex items-center justify-center mb-4">
               <span className="text-white text-2xl font-bold">TP</span>
             </div>
-            <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+            <h1 className="font-display text-4xl font-bold uppercase tracking-tight bg-gradient-primary bg-clip-text text-transparent">
               Welcome Back
             </h1>
             <p className={`text-sm mt-2 ${isDark ? "text-slate-400" : "text-gray-600"}`}>

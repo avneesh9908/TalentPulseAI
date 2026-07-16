@@ -19,6 +19,7 @@ import {
   type JobSetup,
   type MatchStatus,
 } from "@/api/jobService";
+import { Reveal } from "@/components/motion/reveal";
 
 type Mode = "loading" | "setup" | "table";
 
@@ -187,7 +188,10 @@ export default function JobsPage() {
     <div className="mx-auto max-w-6xl space-y-6 p-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Job Search</h1>
+          <h1 className="font-display text-3xl font-bold uppercase tracking-tight text-slate-900 dark:text-white">
+            Job{" "}
+            <span className="bg-gradient-to-r from-violet-500 to-cyan-400 bg-clip-text text-transparent">Search</span>
+          </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400">
             Matches from company career pages, ranked against your resume
           </p>
@@ -226,6 +230,7 @@ export default function JobsPage() {
       )}
 
       {mode === "setup" && (
+        <Reveal>
         <section className="space-y-4 rounded-lg border border-slate-300 p-5 shadow-sm dark:border-slate-700">
           <div>
             <h2 className="text-lg font-medium text-slate-900 dark:text-white">
@@ -296,6 +301,7 @@ export default function JobsPage() {
             {saving ? "Saving…" : "Save & Continue"}
           </button>
         </section>
+        </Reveal>
       )}
 
       {mode === "table" && (
@@ -334,7 +340,7 @@ export default function JobsPage() {
             </button>
           </div>
 
-          <div className="overflow-x-auto rounded-lg border border-slate-300 shadow-sm dark:border-slate-700">
+          <Reveal className="overflow-x-auto rounded-lg border border-slate-300 shadow-sm dark:border-slate-700">
             <table className="w-full text-left text-sm">
               <thead className="bg-slate-50 text-slate-600 dark:bg-slate-900 dark:text-slate-300">
                 <tr>
@@ -432,7 +438,7 @@ export default function JobsPage() {
                 ))}
               </tbody>
             </table>
-          </div>
+          </Reveal>
         </>
       )}
     </div>

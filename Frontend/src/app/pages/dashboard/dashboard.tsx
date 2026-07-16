@@ -2,6 +2,7 @@
 import { useTheme } from "@/contexts/use-theme";
 import {authService} from "@/services/authService";
 import { motion, AnimatePresence } from "framer-motion";
+import { CountUp } from "@/components/motion/count-up";
 import {
   Line,
   XAxis,
@@ -112,7 +113,9 @@ function StatCard({ title, value, change, icon: Icon, color }: StatCardProps) {
           </div>
         </div>
         <div className="text-sm text-slate-400 mb-1 card-subtitle">{title}</div>
-        <div className="text-3xl font-bold text-white card-value">{value}</div>
+        <div className="font-display text-3xl font-bold text-white card-value">
+          <CountUp value={String(value)} />
+        </div>
       </div>
     </motion.div>
   );
@@ -309,7 +312,10 @@ export default function UserDashboardPage() {
                 className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4"
               >
                 <div>
-                  <h1 className={`text-3xl font-bold mb-2 ${isDark ? "text-white" : "text-gray-900"}`}>Welcome back, {displayName}</h1>
+                  <h1 className={`font-display text-3xl md:text-4xl font-bold uppercase tracking-tight mb-2 ${isDark ? "text-white" : "text-gray-900"}`}>
+                    Welcome back,{" "}
+                    <span className="bg-gradient-to-r from-violet-500 to-cyan-400 bg-clip-text text-transparent">{displayName}</span>
+                  </h1>
                   <p className={isDark ? "text-slate-400" : "text-gray-600"}>Track your progress and prepare for upcoming interviews</p>
                 </div>
 

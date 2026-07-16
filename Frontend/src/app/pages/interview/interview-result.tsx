@@ -75,7 +75,10 @@ export default function InterviewResultPage() {
             <Sparkles size={14} />
             AI Interview Report
           </div>
-          <h1 className={`text-4xl font-bold tracking-tight ${isDark ? "text-white" : "text-slate-900"}`}>Interview Completed</h1>
+          <h1 className={`font-display text-4xl md:text-5xl font-bold uppercase tracking-tight ${isDark ? "text-white" : "text-slate-900"}`}>
+            Interview{" "}
+            <span className="bg-gradient-to-r from-violet-500 to-cyan-400 bg-clip-text text-transparent">Completed</span>
+          </h1>
           <p className={`mt-2 ${isDark ? "text-slate-400" : "text-slate-600"}`}>{result.message}</p>
         </motion.div>
 

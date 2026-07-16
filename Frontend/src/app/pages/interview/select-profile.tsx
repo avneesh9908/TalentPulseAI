@@ -425,11 +425,12 @@ export default function SelectProfilePage() {
             </div>
           </div>
           <h1
-            className={`text-4xl font-bold mb-3 tracking-tight ${
+            className={`font-display text-4xl md:text-5xl font-bold uppercase mb-3 tracking-tight ${
               isDark ? "text-white" : "text-gray-900"
             }`}
           >
-            Setup Your Profile
+            Setup Your{" "}
+            <span className="bg-gradient-to-r from-violet-500 to-cyan-400 bg-clip-text text-transparent">Profile</span>
           </h1>
           <p
             className={`text-base max-w-lg ${

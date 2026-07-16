@@ -196,7 +196,10 @@ export default function QuickSetupPage() {
               <span className="text-xs font-semibold text-violet-400 tracking-wide uppercase">Step 3 of 4</span>
             </div>
           </div>
-          <h1 className={`text-4xl font-bold mb-2 tracking-tight ${textMain}`}>Quick Search</h1>
+          <h1 className={`font-display text-4xl md:text-5xl font-bold uppercase mb-2 tracking-tight ${textMain}`}>
+            Quick{" "}
+            <span className="bg-gradient-to-r from-violet-500 to-cyan-400 bg-clip-text text-transparent">Search</span>
+          </h1>
           <p className={`text-base ${subText}`}>Help us tailor the interview to your background and goals.</p>
         </motion.div>
 

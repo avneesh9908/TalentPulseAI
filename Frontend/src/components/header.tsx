@@ -87,7 +87,7 @@ export default function Header() {
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-cyan-500 flex items-center justify-center shadow-lg group-hover:shadow-violet-500/50">
               <Sparkles className="text-white" size={18} />
             </div>
-            <span className="text-lg font-bold hidden sm:block">
+            <span className="font-display text-lg font-bold hidden sm:block">
               TalentPulse<span className="text-cyan-500">AI</span>
             </span>
           </motion.button>
