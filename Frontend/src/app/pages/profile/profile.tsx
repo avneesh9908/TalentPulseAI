@@ -18,6 +18,7 @@ export default function Profile() {
     name: stored?.full_name ?? "User",
     email: stored?.email ?? "—",
     phone: stored?.phone ?? "—",
+    publicId: stored?.public_id ?? "—",
     title: "Software Engineer",
     bio: "Passionate about building great products",
   };
@@ -64,6 +65,9 @@ export default function Profile() {
                 {userData.title}
               </p>
               <p className="text-sm text-slate-500 mt-1">{userData.bio}</p>
+              <p className="mt-2 font-mono text-xs text-slate-500">
+                User ID: <span className="select-all">{userData.publicId}</span>
+              </p>
             </div>
           </div>
 

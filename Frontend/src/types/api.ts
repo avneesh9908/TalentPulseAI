@@ -16,11 +16,13 @@ export interface RegisterRequest {
   email: string;
   password: string;
   full_name: string;
-  phone?: string;
+  phone: string; // mandatory at signup
 }
 
 export interface UserProfile {
   id: string;
+  /** Stable unique per-user handle (used for profile/interviews/etc.). */
+  public_id?: string;
   email: string;
   full_name: string;
   phone?: string;
