@@ -370,6 +370,16 @@ User-directed redesign: modern animated/tastefully-3D UI, **home page (landing.t
 - **Perf/a11y rules:** lazy-mount canvas post-idle; frameloop="demand" (R3F) or own rAF + IntersectionObserver pause (OGL); DPR clamp 1–1.5 (drei PerformanceMonitor/regress()); draw calls < few hundred, instancing for particles; prefers-reduced-motion → never mount canvas (static gradient); **WCAG 2.2.2: ambient animation >5s needs a pause control**.
 - **DECISION RECOMMENDED (not yet approved): OGL cursor-reactive shader hero (~20 kB)** behind arc hero; R3F v9.5+ single scene only as a later tier; avoid Spline/GLTF-scenes/scroll-jacked 3D storytelling.
 
+## Auth model (updated 2026-07-15, commit e9aca76b)
+- **User table now:** `id` (int PK, internal FK target — unchanged), **`public_id`** (uuid4 hex, unique, auto-gen — the external handle for profile/interviews/etc.), `email` (unique), **`phone`** (unique, nullable at DB for legacy rows but REQUIRED by register API), `full_name`, `password`. Model default `_gen_public_id` fills public_id on INSERT.
+- **Register (`signup_user`):** requires phone; 409 on dup email OR dup phone; phone normalized in `user_schema._normalize_phone` (optional leading `+`, digits only → "+91 98765 43210" == "+919876543210"). Previously the frontend already sent phone/full_name but `UserCreate` dropped them — now stored.
+- **login + register responses include `user` {public_id,email,phone,full_name}**; auth-context persists it (login stores `data.user`). Token still `sub=email` (get_current_user unchanged).
+- **Migration:** `migrations/phase8_user_public_id_phone.sql` — MUST run on existing DBs (local Postgres + Supabase); create_all only covers fresh DBs. Backfills public_id via gen_random_uuid, adds unique indexes on public_id+phone.
+- **Frontend:** RegisterRequest.phone required; UserProfile.public_id added; register password min 8 (was 6, mismatched backend); profile page shows "User ID" = public_id. Register form already had the phone field.
+- **Google login: DEFERRED** (user chose skip — needs a Google Cloud OAuth client id). Google buttons on login/register are still inert placeholders.
+- **public_id is the user-facing unique id;** interviews/profile still keyed internally by numeric user_id (user chose "add UUID, keep numeric PK" — NOT full re-key). Deeper wiring of public_id into interview/job records is future work if wanted.
+- Verified via SQLite functional test (7 cases) + tsc/build; NOT browser-e2e'd (needs phase8 SQL on a live DB first).
+
 ## Deployment / Ops
 - **Frontend:** Netlify (static + SPA redirect, `netlify.toml`). **Backend:** Render **free plan** (`render.yaml`, `startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT`). Deployed URLs live in dashboard env vars (`VITE_API_BASE_URL` on Netlify, `ALLOWED_ORIGINS`/`DATABASE_URL`/`GOOGLE_API_KEY` on Render — `sync:false`, not in repo). Local `.env` points frontend at `127.0.0.1:8000`.
 - **Online login "time limit exceeded" — ROOT CAUSE (2026-07-15):** Render free tier **spins down after ~15 min idle**; cold start ~50s > axios 30s timeout → first login after idle times out. **FIX APPLIED (commit 4e28fe55):** login/register get 90s per-request timeout (fast DB endpoints keep 30s); axios interceptor maps timeout/ECONNABORTED/ERR_NETWORK → "server is waking up, try again" (toast + login/register error text). **Still TODO (ops, not code):** keep-warm cron ping (UptimeRobot/cron-job.org every ~10 min) so it never sleeps; OR upgrade Render plan.
@@ -390,6 +400,7 @@ User-directed redesign: modern animated/tastefully-3D UI, **home page (landing.t
 - Manual migration SQL: `TalentPulseAI-fastAPI/migrations/phase4_add_content_hash_and_embedding_cache.sql`
 
 ## Changelog
+- 2026-07-15 — **Auth: mandatory unique phone + public_id UUID** (e9aca76b): register requires+dedups phone, per-user public_id handle, responses return user object, phase8 migration. Google login deferred (no OAuth id). See "Auth model".
 - 2026-07-15 — **Fixed online login timeout** (4e28fe55): root cause = Render free-tier cold start (~50s) > 30s axios timeout. Auth calls now 90s + friendly "waking up" message. Ops TODO: keep-warm ping. Flagged stale gemini-2.0-flash in render.yaml.
 - 2026-07-15 — **3D UI deep research done** (verifiers rate-limited; 25 claims manually assessed): OGL shader hero (~20 kB) recommended over three/R3F (~220 kB) for the next hero upgrade; Spline out. See "3D UI Research" section.
 - 2026-07-14 — **Phase 4 rollout DONE** (3c6d65a5): display type + gradient keywords on every app screen h1, dashboard CountUp stats, jobs Reveal entrances, reduced-motion fixes. Pre-existing hook bugs flagged (not fixed).
