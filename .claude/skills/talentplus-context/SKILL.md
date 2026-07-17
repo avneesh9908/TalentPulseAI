@@ -370,6 +370,11 @@ User-directed redesign: modern animated/tastefully-3D UI, **home page (landing.t
 - **Perf/a11y rules:** lazy-mount canvas post-idle; frameloop="demand" (R3F) or own rAF + IntersectionObserver pause (OGL); DPR clamp 1–1.5 (drei PerformanceMonitor/regress()); draw calls < few hundred, instancing for particles; prefers-reduced-motion → never mount canvas (static gradient); **WCAG 2.2.2: ambient animation >5s needs a pause control**.
 - **DECISION RECOMMENDED (not yet approved): OGL cursor-reactive shader hero (~20 kB)** behind arc hero; R3F v9.5+ single scene only as a later tier; avoid Spline/GLTF-scenes/scroll-jacked 3D storytelling.
 
+## Deployment / Ops
+- **Frontend:** Netlify (static + SPA redirect, `netlify.toml`). **Backend:** Render **free plan** (`render.yaml`, `startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT`). Deployed URLs live in dashboard env vars (`VITE_API_BASE_URL` on Netlify, `ALLOWED_ORIGINS`/`DATABASE_URL`/`GOOGLE_API_KEY` on Render — `sync:false`, not in repo). Local `.env` points frontend at `127.0.0.1:8000`.
+- **Online login "time limit exceeded" — ROOT CAUSE (2026-07-15):** Render free tier **spins down after ~15 min idle**; cold start ~50s > axios 30s timeout → first login after idle times out. **FIX APPLIED (commit 4e28fe55):** login/register get 90s per-request timeout (fast DB endpoints keep 30s); axios interceptor maps timeout/ECONNABORTED/ERR_NETWORK → "server is waking up, try again" (toast + login/register error text). **Still TODO (ops, not code):** keep-warm cron ping (UptimeRobot/cron-job.org every ~10 min) so it never sleeps; OR upgrade Render plan.
+- ⚠️ **`render.yaml` sets `GOOGLE_CHAT_MODEL: gemini-2.0-flash`** — the model with exhausted free quota (limit:0, see Gemini quota note). Local .env uses 2.5-flash. **Online question generation will fall back to deterministic** until the Render env var is updated to `gemini-2.5-flash`.
+
 ## Open Questions
 1. What model/API will generate interview questions? (Currently client-side from context chunks — no LLM call)
 2. Will "Use Existing Profile" be wired up, and to which profile entity?
@@ -385,6 +390,7 @@ User-directed redesign: modern animated/tastefully-3D UI, **home page (landing.t
 - Manual migration SQL: `TalentPulseAI-fastAPI/migrations/phase4_add_content_hash_and_embedding_cache.sql`
 
 ## Changelog
+- 2026-07-15 — **Fixed online login timeout** (4e28fe55): root cause = Render free-tier cold start (~50s) > 30s axios timeout. Auth calls now 90s + friendly "waking up" message. Ops TODO: keep-warm ping. Flagged stale gemini-2.0-flash in render.yaml.
 - 2026-07-15 — **3D UI deep research done** (verifiers rate-limited; 25 claims manually assessed): OGL shader hero (~20 kB) recommended over three/R3F (~220 kB) for the next hero upgrade; Spline out. See "3D UI Research" section.
 - 2026-07-14 — **Phase 4 rollout DONE** (3c6d65a5): display type + gradient keywords on every app screen h1, dashboard CountUp stats, jobs Reveal entrances, reduced-motion fixes. Pre-existing hook bugs flagged (not fixed).
 - 2026-07-14 — **Feature fan cards image-filled** (46b3fbde): full-bleed arc/tour SVG art per feature (object-cover + bottom gradient + white icon/title/desc overlay). Mapping: question/tourInterview/tourDashboard/resume/interview/feedback. Verified live 5/5, 0 errors.
