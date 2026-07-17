@@ -5,6 +5,9 @@ import { useAuth } from "@/contexts/use-auth";
 import { Mail, Lock, AlertCircle, Loader2 } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import { motion } from "framer-motion";
+import { validateEmail } from "@/lib/validation";
+
+type LoginField = "email" | "password";
 
 export default function Login() {
   const { isDark, toggleTheme } = useTheme();
@@ -13,13 +16,33 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<LoginField, string>>>({});
   const [isLoading, setIsLoading] = useState(false);
+
+  // Login only checks presence + basic email shape (never reveals which field
+  // is wrong for real credentials — that stays the server's generic 401).
+  const validateOne = (field: LoginField) => {
+    const msg =
+      field === "email" ? validateEmail(email) : password ? null : "Password is required";
+    setFieldErrors((prev) => ({ ...prev, [field]: msg ?? undefined }));
+    return msg;
+  };
+  const clearFieldError = (field: LoginField) =>
+    setFieldErrors((prev) => (prev[field] ? { ...prev, [field]: undefined } : prev));
 
   const handleLogin = async (e?: React.FormEvent) => {
     e?.preventDefault();
     setError("");
-    setIsLoading(true);
 
+    const next: Partial<Record<LoginField, string>> = {};
+    const emailMsg = validateEmail(email);
+    const pwMsg = password ? null : "Password is required";
+    if (emailMsg) next.email = emailMsg;
+    if (pwMsg) next.password = pwMsg;
+    setFieldErrors(next);
+    if (Object.keys(next).length > 0) return;
+
+    setIsLoading(true);
     try {
       await login(email, password);
       // Navigation is handled inside auth-context
@@ -84,8 +107,8 @@ export default function Login() {
             </motion.div>
           )}
 
-          {/* Form */}
-          <form onSubmit={handleLogin} className="space-y-4">
+          {/* Form (noValidate: JS validators own the messages) */}
+          <form onSubmit={handleLogin} noValidate className="space-y-4">
             {/* Email Input */}
             <div>
               <label
@@ -105,9 +128,10 @@ export default function Login() {
                 <input
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => { setEmail(e.target.value); clearFieldError("email"); }}
+                  onBlur={() => validateOne("email")}
+                  aria-invalid={Boolean(fieldErrors.email)}
                   placeholder="your@email.com"
-                  required
                   className={`
                     w-full pl-10 pr-4 py-3 rounded-xl transition
                     ${
@@ -115,10 +139,12 @@ export default function Login() {
                         ? "bg-slate-800/50 border-white/10 text-white placeholder:text-slate-500"
                         : "bg-white border-gray-300 text-gray-900 placeholder:text-gray-400"
                     }
-                    border focus:outline-none focus:ring-2 focus:ring-violet-500
+                    border focus:outline-none focus:ring-2
+                    ${fieldErrors.email ? "border-red-500 focus:ring-red-500" : "focus:ring-violet-500"}
                   `}
                 />
               </div>
+              {fieldErrors.email && <p className="mt-1 text-xs text-red-400">{fieldErrors.email}</p>}
             </div>
 
             {/* Password Input */}
@@ -140,9 +166,10 @@ export default function Login() {
                 <input
                   type="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => { setPassword(e.target.value); clearFieldError("password"); }}
+                  onBlur={() => validateOne("password")}
+                  aria-invalid={Boolean(fieldErrors.password)}
                   placeholder="••••••••"
-                  required
                   className={`
                     w-full pl-10 pr-4 py-3 rounded-xl transition
                     ${
@@ -150,10 +177,12 @@ export default function Login() {
                         ? "bg-slate-800/50 border-white/10 text-white placeholder:text-slate-500"
                         : "bg-white border-gray-300 text-gray-900 placeholder:text-gray-400"
                     }
-                    border focus:outline-none focus:ring-2 focus:ring-violet-500
+                    border focus:outline-none focus:ring-2
+                    ${fieldErrors.password ? "border-red-500 focus:ring-red-500" : "focus:ring-violet-500"}
                   `}
                 />
               </div>
+              {fieldErrors.password && <p className="mt-1 text-xs text-red-400">{fieldErrors.password}</p>}
             </div>
 
             {/* Login Button */}

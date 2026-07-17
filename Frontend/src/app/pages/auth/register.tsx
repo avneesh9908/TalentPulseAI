@@ -5,6 +5,9 @@ import { useAuth } from "@/contexts/use-auth";
 import { Mail, Phone, Lock, User, AlertCircle, Loader2 } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import { motion } from "framer-motion";
+import { validateName, validateEmail, validatePhone, validatePassword } from "@/lib/validation";
+
+type RegisterField = "name" | "email" | "phone" | "password";
 
 export default function Register() {
   const { isDark, toggleTheme } = useTheme();
@@ -15,16 +18,37 @@ export default function Register() {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<RegisterField, string>>>({});
   const [isLoading, setIsLoading] = useState(false);
+
+  const validators: Record<RegisterField, (v: string) => string | null> = {
+    name: validateName,
+    email: validateEmail,
+    phone: validatePhone,
+    password: validatePassword,
+  };
+  const values: Record<RegisterField, string> = { name, email, phone, password };
+
+  const validateOne = (field: RegisterField) => {
+    const msg = validators[field](values[field]);
+    setFieldErrors((prev) => ({ ...prev, [field]: msg ?? undefined }));
+    return msg;
+  };
+  // Clear a field's error as the user corrects it.
+  const clearFieldError = (field: RegisterField) =>
+    setFieldErrors((prev) => (prev[field] ? { ...prev, [field]: undefined } : prev));
 
   const handleRegister = async (e?: React.FormEvent) => {
     e?.preventDefault();
     setError("");
 
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters");
-      return;
-    }
+    const next: Partial<Record<RegisterField, string>> = {};
+    (Object.keys(validators) as RegisterField[]).forEach((f) => {
+      const msg = validators[f](values[f]);
+      if (msg) next[f] = msg;
+    });
+    setFieldErrors(next);
+    if (Object.keys(next).length > 0) return;
 
     setIsLoading(true);
     try {
@@ -91,8 +115,8 @@ export default function Register() {
             </motion.div>
           )}
 
-          {/* Form */}
-          <form onSubmit={handleRegister} className="space-y-4">
+          {/* Form (noValidate: our JS validators own the messages, not the browser) */}
+          <form onSubmit={handleRegister} noValidate className="space-y-4">
             {/* Name Input */}
             <div>
               <label
@@ -112,9 +136,10 @@ export default function Register() {
                 <input
                   type="text"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => { setName(e.target.value); clearFieldError("name"); }}
+                  onBlur={() => validateOne("name")}
+                  aria-invalid={Boolean(fieldErrors.name)}
                   placeholder="John Doe"
-                  required
                   className={`
                     w-full pl-10 pr-4 py-3 rounded-xl transition
                     ${
@@ -122,10 +147,12 @@ export default function Register() {
                         ? "bg-slate-800/50 border-white/10 text-white placeholder:text-slate-500"
                         : "bg-white border-gray-300 text-gray-900 placeholder:text-gray-400"
                     }
-                    border focus:outline-none focus:ring-2 focus:ring-violet-500
+                    border focus:outline-none focus:ring-2
+                    ${fieldErrors.name ? "border-red-500 focus:ring-red-500" : "focus:ring-violet-500"}
                   `}
                 />
               </div>
+              {fieldErrors.name && <p className="mt-1 text-xs text-red-400">{fieldErrors.name}</p>}
             </div>
 
             {/* Email Input */}
@@ -147,9 +174,10 @@ export default function Register() {
                 <input
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => { setEmail(e.target.value); clearFieldError("email"); }}
+                  onBlur={() => validateOne("email")}
+                  aria-invalid={Boolean(fieldErrors.email)}
                   placeholder="your@email.com"
-                  required
                   className={`
                     w-full pl-10 pr-4 py-3 rounded-xl transition
                     ${
@@ -157,10 +185,12 @@ export default function Register() {
                         ? "bg-slate-800/50 border-white/10 text-white placeholder:text-slate-500"
                         : "bg-white border-gray-300 text-gray-900 placeholder:text-gray-400"
                     }
-                    border focus:outline-none focus:ring-2 focus:ring-violet-500
+                    border focus:outline-none focus:ring-2
+                    ${fieldErrors.email ? "border-red-500 focus:ring-red-500" : "focus:ring-violet-500"}
                   `}
                 />
               </div>
+              {fieldErrors.email && <p className="mt-1 text-xs text-red-400">{fieldErrors.email}</p>}
             </div>
 
             {/* Phone Input */}
@@ -182,9 +212,10 @@ export default function Register() {
                 <input
                   type="tel"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => { setPhone(e.target.value); clearFieldError("phone"); }}
+                  onBlur={() => validateOne("phone")}
+                  aria-invalid={Boolean(fieldErrors.phone)}
                   placeholder="+91 98765 43210"
-                  required
                   className={`
                     w-full pl-10 pr-4 py-3 rounded-xl transition
                     ${
@@ -192,10 +223,12 @@ export default function Register() {
                         ? "bg-slate-800/50 border-white/10 text-white placeholder:text-slate-500"
                         : "bg-white border-gray-300 text-gray-900 placeholder:text-gray-400"
                     }
-                    border focus:outline-none focus:ring-2 focus:ring-violet-500
+                    border focus:outline-none focus:ring-2
+                    ${fieldErrors.phone ? "border-red-500 focus:ring-red-500" : "focus:ring-violet-500"}
                   `}
                 />
               </div>
+              {fieldErrors.phone && <p className="mt-1 text-xs text-red-400">{fieldErrors.phone}</p>}
             </div>
 
             {/* Password Input */}
@@ -217,9 +250,10 @@ export default function Register() {
                 <input
                   type="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => { setPassword(e.target.value); clearFieldError("password"); }}
+                  onBlur={() => validateOne("password")}
+                  aria-invalid={Boolean(fieldErrors.password)}
                   placeholder="••••••••"
-                  required
                   className={`
                     w-full pl-10 pr-4 py-3 rounded-xl transition
                     ${
@@ -227,10 +261,14 @@ export default function Register() {
                         ? "bg-slate-800/50 border-white/10 text-white placeholder:text-slate-500"
                         : "bg-white border-gray-300 text-gray-900 placeholder:text-gray-400"
                     }
-                    border focus:outline-none focus:ring-2 focus:ring-violet-500
+                    border focus:outline-none focus:ring-2
+                    ${fieldErrors.password ? "border-red-500 focus:ring-red-500" : "focus:ring-violet-500"}
                   `}
                 />
               </div>
+              {fieldErrors.password
+                ? <p className="mt-1 text-xs text-red-400">{fieldErrors.password}</p>
+                : <p className={`mt-1 text-xs ${isDark ? "text-slate-500" : "text-gray-400"}`}>At least 8 characters</p>}
             </div>
 
             {/* Register Button */}
