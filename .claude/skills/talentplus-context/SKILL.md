@@ -376,6 +376,7 @@ User-directed redesign: modern animated/tastefully-3D UI, **home page (landing.t
 - **login + register responses include `user` {public_id,email,phone,full_name}**; auth-context persists it (login stores `data.user`). Token still `sub=email` (get_current_user unchanged).
 - **Migration:** `migrations/phase8_user_public_id_phone.sql` — MUST run on existing DBs (local Postgres + Supabase); create_all only covers fresh DBs. Backfills public_id via gen_random_uuid, adds unique indexes on public_id+phone.
 - **Frontend:** RegisterRequest.phone required; UserProfile.public_id added; register password min 8 (was 6, mismatched backend); profile page shows "User ID" = public_id. Register form already had the phone field.
+- **Client-side validation (commit cabfee3a):** `lib/validation.ts` (validateName/Email/Phone/Password mirror backend regexes: email `^[^@\s]+@[^@\s]+\.[^@\s]+$`, phone `^\+?[0-9][0-9\s\-()]{6,18}$`, password 8–72). Login + register forms: per-field inline errors (red ring + aria-invalid), validate on blur + submit, clear on edit, `noValidate` on <form> so JS owns messages. Login checks email shape + password PRESENCE only (no length rule; real-credential failures stay the server's generic 401). Verified live.
 - **Google login: DEFERRED** (user chose skip — needs a Google Cloud OAuth client id). Google buttons on login/register are still inert placeholders.
 - **public_id is the user-facing unique id;** interviews/profile still keyed internally by numeric user_id (user chose "add UUID, keep numeric PK" — NOT full re-key). Deeper wiring of public_id into interview/job records is future work if wanted.
 - Verified via SQLite functional test (7 cases) + tsc/build; NOT browser-e2e'd (needs phase8 SQL on a live DB first).
@@ -400,6 +401,7 @@ User-directed redesign: modern animated/tastefully-3D UI, **home page (landing.t
 - Manual migration SQL: `TalentPulseAI-fastAPI/migrations/phase4_add_content_hash_and_embedding_cache.sql`
 
 ## Changelog
+- 2026-07-15 — **Auth form validation** (cabfee3a): lib/validation.ts + inline per-field errors on login/register mirroring backend rules; verified live.
 - 2026-07-15 — **Auth: mandatory unique phone + public_id UUID** (e9aca76b): register requires+dedups phone, per-user public_id handle, responses return user object, phase8 migration. Google login deferred (no OAuth id). See "Auth model".
 - 2026-07-15 — **Fixed online login timeout** (4e28fe55): root cause = Render free-tier cold start (~50s) > 30s axios timeout. Auth calls now 90s + friendly "waking up" message. Ops TODO: keep-warm ping. Flagged stale gemini-2.0-flash in render.yaml.
 - 2026-07-15 — **3D UI deep research done** (verifiers rate-limited; 25 claims manually assessed): OGL shader hero (~20 kB) recommended over three/R3F (~220 kB) for the next hero upgrade; Spline out. See "3D UI Research" section.
