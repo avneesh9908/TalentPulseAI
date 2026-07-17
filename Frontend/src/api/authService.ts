@@ -4,13 +4,22 @@ import type { AuthResponse, LoginRequest, RegisterRequest, UserProfile } from "@
 
 const AUTH = config.ENDPOINTS.AUTH;
 
+// The API is on a free host that spins down when idle; the first request after
+// idle triggers a cold start that can take ~50s. Give auth calls a longer
+// timeout than the 30s default so that first login/register survives it.
+const AUTH_TIMEOUT_MS = 90_000;
+
 export const loginUser = async (payload: LoginRequest): Promise<AuthResponse> => {
-  const { data } = await axiosInstance.post<AuthResponse>(AUTH.LOGIN, payload);
+  const { data } = await axiosInstance.post<AuthResponse>(AUTH.LOGIN, payload, {
+    timeout: AUTH_TIMEOUT_MS,
+  });
   return data;
 };
 
 export const registerUser = async (payload: RegisterRequest): Promise<AuthResponse> => {
-  const { data } = await axiosInstance.post<AuthResponse>(AUTH.REGISTER, payload);
+  const { data } = await axiosInstance.post<AuthResponse>(AUTH.REGISTER, payload, {
+    timeout: AUTH_TIMEOUT_MS,
+  });
   return data;
 };
 

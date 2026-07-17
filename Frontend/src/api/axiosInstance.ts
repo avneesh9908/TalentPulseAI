@@ -40,11 +40,22 @@ axiosInstance.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    const detail: string =
-      error.response?.data?.detail ||
-      error.response?.data?.message ||
-      error.message ||
-      "Something went wrong";
+    // A timeout / network drop usually means the free-tier API is cold-starting
+    // (spins down when idle, ~50s to wake). Show something actionable instead of
+    // the raw "timeout of 30000ms exceeded".
+    const isTimeout =
+      error.code === "ECONNABORTED" ||
+      error.code === "ERR_NETWORK" ||
+      /timeout/i.test(error.message ?? "");
+
+    const detail: string = isTimeout
+      ? "The server is waking up — this can take up to a minute on the first try. Please try again in a moment."
+      : error.response?.data?.detail ||
+        error.response?.data?.message ||
+        error.message ||
+        "Something went wrong";
+
+    if (isTimeout) error.message = detail;
 
     console.error("[API Error]", { status, detail, url: error.config?.url });
     toast.error(detail);
