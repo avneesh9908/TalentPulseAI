@@ -7,7 +7,8 @@
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { isAxiosError } from "axios";
-import { Loader2, Plus, RefreshCw, Search, Settings2, X } from "lucide-react";
+import { motion } from "framer-motion";
+import { Check, Loader2, Plus, RefreshCw, Search, Settings2, Sparkles, X } from "lucide-react";
 import {
   getJobMatches,
   getJobSetup,
@@ -20,6 +21,7 @@ import {
   type MatchStatus,
 } from "@/api/jobService";
 import { Reveal } from "@/components/motion/reveal";
+import { StaggerGroup, StaggerItem } from "@/components/motion/stagger";
 
 type Mode = "loading" | "setup" | "table";
 
@@ -38,6 +40,12 @@ const STATUS_BADGE: Record<MatchStatus, string> = {
   applied: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
   dismissed: "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400",
 };
+
+const FLOW_STEPS = [
+  { title: "Set your targets", desc: "Roles derived from your resume" },
+  { title: "Agent searches", desc: "Company career pages, ranked" },
+  { title: "Review & apply", desc: "Open, apply, track status" },
+];
 
 const FILTERS: Array<{ label: string; value: MatchStatus | "all" }> = [
   { label: "All", value: "all" },
@@ -176,6 +184,9 @@ export default function JobsPage() {
     [matches, filter]
   );
 
+  // Which flow step the user is on: setup → search → review.
+  const activeStep = mode === "setup" ? 0 : matches.length === 0 ? 1 : 2;
+
   if (mode === "loading") {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
@@ -186,16 +197,70 @@ export default function JobsPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-display text-3xl font-bold uppercase tracking-tight text-slate-900 dark:text-white">
-            Job{" "}
-            <span className="bg-gradient-to-r from-violet-500 to-cyan-400 bg-clip-text text-transparent">Search</span>
-          </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            Matches from company career pages, ranked against your resume
-          </p>
+      {/* Flow header — mirrors the interview side's step pages */}
+      <motion.div
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        className="space-y-3"
+      >
+        <div className="flex w-fit items-center gap-2 rounded-full border border-violet-500/30 bg-gradient-to-r from-violet-500/20 to-cyan-500/20 px-3 py-1.5">
+          <Sparkles size={14} className="text-violet-400" />
+          <span className="text-xs font-semibold uppercase tracking-wide text-violet-400">
+            Job Agent
+          </span>
         </div>
+        <h1 className="font-display text-4xl font-bold uppercase tracking-tight text-slate-900 md:text-5xl dark:text-white">
+          Find Your{" "}
+          <span className="bg-gradient-to-r from-violet-500 to-cyan-400 bg-clip-text text-transparent">Next Role</span>
+        </h1>
+        <p className="max-w-xl text-base text-slate-500 dark:text-slate-400">
+          Your resume, matched against live openings on company career pages — ranked, explained,
+          and ready to apply.
+        </p>
+      </motion.div>
+
+      {/* Step rail */}
+      <StaggerGroup className="grid gap-3 sm:grid-cols-3">
+        {FLOW_STEPS.map((step, i) => {
+          const state = i === activeStep ? "active" : i < activeStep ? "done" : "todo";
+          return (
+            <StaggerItem key={step.title}>
+              <div
+                className={`flex h-full items-center gap-3 rounded-2xl border p-4 transition ${
+                  state === "active"
+                    ? "border-violet-400/60 bg-gradient-to-br from-violet-600/15 to-cyan-500/15 dark:border-violet-500/50"
+                    : "border-slate-200 bg-white dark:border-white/10 dark:bg-white/[0.03]"
+                }`}
+              >
+                <span
+                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl font-display font-bold ${
+                    state === "todo"
+                      ? "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500"
+                      : "bg-gradient-to-br from-violet-600 to-cyan-500 text-white"
+                  }`}
+                >
+                  {state === "done" ? <Check size={18} /> : i + 1}
+                </span>
+                <span className="min-w-0">
+                  <span className="block truncate font-semibold text-slate-900 dark:text-white">
+                    {step.title}
+                  </span>
+                  <span className="block truncate text-xs text-slate-500 dark:text-slate-400">
+                    {step.desc}
+                  </span>
+                </span>
+              </div>
+            </StaggerItem>
+          );
+        })}
+      </StaggerGroup>
+
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
+          {mode === "setup"
+            ? "Step 1 — confirm the roles you want to target."
+            : `${matches.length} match${matches.length === 1 ? "" : "es"} found so far.`}
+        </p>
         {mode === "table" && (
           <div className="flex gap-2">
             <button

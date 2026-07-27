@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "@/contexts/use-theme";
 import { useAuth } from "@/contexts/use-auth";
 import {authService} from "@/services/authService";
+import ModeSwitch from "@/components/mode-switch";
 import {
   Menu,
   X,
@@ -92,6 +93,11 @@ export default function Header() {
             </span>
           </motion.button>
 
+          {/* Workspace switcher — Interview side vs Job Search side */}
+          <div className="hidden md:block">
+            <ModeSwitch />
+          </div>
+
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-4">
             {/* Quick Interview Button */}
@@ -99,7 +105,7 @@ export default function Header() {
               onClick={handleQuickInterview}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-500 hover:to-cyan-500 text-white text-sm font-medium transition shadow-lg"
+              className="hidden lg:flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-500 hover:to-cyan-500 text-white text-sm font-medium transition shadow-lg"
             >
               <Zap size={16} />
               Quick Interview
@@ -326,6 +332,9 @@ export default function Header() {
               className={`border-t ${isDark ? "border-white/10" : "border-slate-200"}`}
             >
               <div className="px-4 py-4 space-y-2">
+                {/* Workspace switcher */}
+                <ModeSwitch stacked className="mb-3" onNavigate={() => setMobileMenuOpen(false)} />
+
                 <motion.button
                   onClick={handleQuickInterview}
                   whileTap={{ scale: 0.95 }}
