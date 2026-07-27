@@ -381,6 +381,14 @@ User-directed redesign: modern animated/tastefully-3D UI, **home page (landing.t
 - **public_id is the user-facing unique id;** interviews/profile still keyed internally by numeric user_id (user chose "add UUID, keep numeric PK" — NOT full re-key). Deeper wiring of public_id into interview/job records is future work if wanted.
 - Verified via SQLite functional test (7 cases) + tsc/build; NOT browser-e2e'd (needs phase8 SQL on a live DB first).
 
+## Two-sided workspace (2026-07-17, commit d764e52c)
+The product is now explicitly **two sides: Interview practice + Job Search**, switched globally from the header.
+- `components/mode-switch.tsx` — segmented control (researched pattern: segmented control in top bar for mutually-exclusive global modes; top bar owns app-wide things). Gradient pill slides via `layoutId="mode-switch-pill"` + SPRING. **Active side derived from `useLocation().pathname`** (`/jobs*` → jobs, else interview) so deep links/back-forward stay correct. Clicking the current side is a no-op (doesn't reset progress in that flow). Props: `stacked` (mobile full-width), `onNavigate` (closes mobile menu). Homes: interview → `/interview/select-role`, jobs → `/jobs`.
+- Header: switcher centered desktop (`hidden md:block`), top of mobile menu; "Quick Interview" button demoted to `lg:flex` for space.
+- `/jobs` restyled to mirror interview step pages: JOB AGENT badge chip, display headline "FIND YOUR NEXT ROLE", 3-step rail (`FLOW_STEPS`) driven by `activeStep = mode==="setup" ? 0 : matches.length===0 ? 1 : 2`. All setup/table logic untouched.
+- **Local dev DB drift fixed same session:** `phase4_add_content_hash_and_embedding_cache.sql` had never been applied locally → `/jobs/designations/suggest` 500'd on `resume_documents.content_hash does not exist`. Applied; now returns a graceful 404 ("upload a resume first") for users with no resume. **Local dev DB has phase4 + phase8 applied as of 2026-07-17.**
+- Local test account for verifying protected pages: `localtest10413@test.com` / `secret1234` (has NO resume — job flow stops at the resume-required step).
+
 ## Deployment / Ops
 - **Frontend:** Netlify (static + SPA redirect, `netlify.toml`). **Backend:** Render **free plan** (`render.yaml`, `startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT`). Deployed URLs live in dashboard env vars (`VITE_API_BASE_URL` on Netlify, `ALLOWED_ORIGINS`/`DATABASE_URL`/`GOOGLE_API_KEY` on Render — `sync:false`, not in repo). Local `.env` points frontend at `127.0.0.1:8000`.
 - **Online login "time limit exceeded" — ROOT CAUSE (2026-07-15):** Render free tier **spins down after ~15 min idle**; cold start ~50s > axios 30s timeout → first login after idle times out. **FIX APPLIED (commit 4e28fe55):** login/register get 90s per-request timeout (fast DB endpoints keep 30s); axios interceptor maps timeout/ECONNABORTED/ERR_NETWORK → "server is waking up, try again" (toast + login/register error text). **Still TODO (ops, not code):** keep-warm cron ping (UptimeRobot/cron-job.org every ~10 min) so it never sleeps; OR upgrade Render plan.
@@ -401,6 +409,7 @@ User-directed redesign: modern animated/tastefully-3D UI, **home page (landing.t
 - Manual migration SQL: `TalentPulseAI-fastAPI/migrations/phase4_add_content_hash_and_embedding_cache.sql`
 
 ## Changelog
+- 2026-07-17 — **Two-sided workspace** (d764e52c): Interview/Jobs segmented switcher in header (route-derived active state), /jobs restyled as a 3-step flow page. Also applied missing phase4 migration to local dev DB (fixed designations 500). See "Two-sided workspace".
 - 2026-07-15 — **Auth form validation** (cabfee3a): lib/validation.ts + inline per-field errors on login/register mirroring backend rules; verified live.
 - 2026-07-15 — **Auth: mandatory unique phone + public_id UUID** (e9aca76b): register requires+dedups phone, per-user public_id handle, responses return user object, phase8 migration. Google login deferred (no OAuth id). See "Auth model".
 - 2026-07-15 — **Fixed online login timeout** (4e28fe55): root cause = Render free-tier cold start (~50s) > 30s axios timeout. Auth calls now 90s + friendly "waking up" message. Ops TODO: keep-warm ping. Flagged stale gemini-2.0-flash in render.yaml.
