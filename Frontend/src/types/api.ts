@@ -149,6 +149,8 @@ export interface GeneratedQuestion {
   question: string;
   section: string;
   type: string;
+  /** Ramp position — questions arrive ordered easy → hard. */
+  difficulty_tier?: "basic" | "intermediate" | "advanced";
   expected_signals: string[];
 }
 

@@ -86,6 +86,8 @@ class GeneratedQuestion(BaseModel):
     question: str
     section: str
     type: str
+    # Ramp position: questions are returned easy → hard.
+    difficulty_tier: str = "intermediate"
     expected_signals: List[str] = []
 
 
