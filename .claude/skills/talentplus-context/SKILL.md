@@ -160,6 +160,15 @@ src/
 - **Env note:** app runs from the **global** Python (has `langchain-google-genai` 2.0.10 + fastapi/uvicorn); the `.venv` is stale/incomplete (lacks `langchain-google-genai` and `langchain-community`). (unconfirmed whether venv should be repaired)
 - **2026-06-26 improvements:** personalized RAG retrieval query (uses role/experience/skills instead of a hardcoded string — different chunks per candidate); system+user prompts rewritten to force questions that reference the candidate's actual projects/companies/tools; full traceback logged on LLM failure (was a one-line swallow); `_fallback_questions` rewritten to be content-aware (uses up to 200 chars of real resume text per section with section-specific templates) instead of identical generic templates.
 
+### Question difficulty ladder (added 2026-07-17, commit 1ab30c96) — easy → tricky
+User requirement: interviews must OPEN on basics ("what is / why is" — TypeScript, OOP pillars, interface, variables, loops) and only then get tricky.
+- Tiers `basic | intermediate | advanced` (`_TIER_*`, `_TIER_ORDER`); split `_BASIC_COUNT=2`, `_INTERMEDIATE_COUNT=2`, rest advanced (of `_MAX_QUESTIONS=6`).
+- `_BASIC_CONCEPT_BANK`: keyword→2 easy concept Qs for typescript/javascript/react/python/java/c++/node/sql/mongo/oop/data, matched against `skills + role` lowercased; `_GENERIC_BASICS` (variable scope, for-vs-while, functions, array-vs-object) tops up unknown stacks. `_basic_questions()` builds them with section `"fundamentals"` and `_BASIC_SIGNALS`.
+- **The old system prompt BANNED generic questions — that's why every interview opened at max difficulty.** Now the prompt mandates the ramp and asks for `difficulty_tier` per question.
+- `_order_by_tier()` re-sorts (stable) so the ramp holds even if the LLM returns jumbled output; if the LLM emits no basic tier, real warm-ups are prepended. Unknown/missing tier defaults to intermediate (never jumps ahead of warm-ups).
+- Advanced fallback Qs rewritten to be genuinely tricky (hardest bug → diagnosis → trade-off accepted → hindsight).
+- `difficulty_tier` added to `GeneratedQuestion` (pydantic default "intermediate") + frontend `GeneratedQuestion` type (optional union). Frontend does not yet DISPLAY the tier — possible future polish (e.g. badge per question).
+
 ### Web-researched question blending (added 2026-07-02)
 - `question_research_service.research_common_questions(role, experience, skills)` → `{topics[], common_questions[], source}` — Gemini + `tools=[{"google_search": {}}]` grounding (free tier) researches what interviewers most commonly ask this profile; fallback chain: grounded web → ungrounded LLM knowledge → None. Never raises. Cached per (role, experience, top-5 skills) for process lifetime — wizard roles are a fixed set, so repeats cost 0 API calls.
 - `question_service.generate_questions(..., research=)` blends it: LLM prompt gets a research block + instruction "4 resume-grounded + 2 adapted from commonly-asked, personalized to the resume". Deterministic fallback also appends up to 2 researched questions (section `"industry"`).
@@ -418,6 +427,7 @@ The product is now explicitly **two sides: Interview practice + Job Search**, sw
 - Manual migration SQL: `TalentPulseAI-fastAPI/migrations/phase4_add_content_hash_and_embedding_cache.sql`
 
 ## Changelog
+- 2026-07-17 — **Question difficulty ladder** (1ab30c96): interviews now open with basic "what is/why is" fundamentals from the candidate's stack, then applied resume Qs, then tricky ones; tier enforced server-side even on jumbled LLM output. Root cause of the old behavior: the prompt explicitly banned generic questions.
 - 2026-07-17 — **Parent landing + two parallel product pages** (e7288871): `/` advertises both sides with a hover-split "Pick Your Side"; `/practice` (interview) and `/find-jobs` (jobs) are twins on a shared SiteHeader/SiteFooter. Landing chunk 22→5.31 kB gzip. See "Public site structure".
 - 2026-07-17 — **Two-sided workspace** (d764e52c): Interview/Jobs segmented switcher in header (route-derived active state), /jobs restyled as a 3-step flow page. Also applied missing phase4 migration to local dev DB (fixed designations 500). See "Two-sided workspace".
 - 2026-07-15 — **Auth form validation** (cabfee3a): lib/validation.ts + inline per-field errors on login/register mirroring backend rules; verified live.
