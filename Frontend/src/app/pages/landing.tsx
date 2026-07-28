@@ -1,153 +1,143 @@
+/**
+ * Parent landing page — the entry point for the whole product.
+ *
+ * Its job is to advertise BOTH sides (interview practice + job search), let a
+ * visitor sign in / sign up, and then DIVIDE them into the side they came for.
+ * The split section is the centerpiece: pick a lane, and every following
+ * section explains how the two lanes feed each other.
+ */
 import { useRef, useState } from "react";
 import { useTheme } from "@/contexts/use-theme";
+import { motion, useMotionValue, useScroll, useSpring, useTransform } from "framer-motion";
 import {
-  motion,
-  useMotionValue,
-  useScroll,
-  useSpring,
-  useTransform,
-} from "framer-motion";
-import {
-  Menu, X, ArrowRight, Sparkles, Mic, BarChart3,
-  Code, Brain, Target, Play, ChevronRight, ChevronDown,
-  Github, Twitter, Linkedin, Sun, Moon
+  ArrowRight, Sparkles, Mic, Briefcase, FileText, Target,
+  BarChart3, Building2, ChevronDown, Play,
 } from "lucide-react";
-import { LimelightNav } from "@/components/ui/limelight-nav";
-import { ArcGalleryHero } from "@/components/ui/arc-gallery-hero";
-import { CircularFlipGallery } from "@/components/ui/circular-flip-gallery";
+import SiteHeader from "@/components/landing/site-header";
+import SiteFooter from "@/components/landing/site-footer";
 import { CardStack } from "@/components/ui/card-stack";
-import { ImageAutoSlider } from "@/components/ui/image-auto-slider";
-import { ImageSwiper } from "@/components/ui/image-swiper";
-import { SocialIcons } from "@/components/ui/social-icons";
 import { Marquee } from "@/components/ui/marquee";
 import { Reveal } from "@/components/motion/reveal";
 import { StaggerGroup, StaggerItem } from "@/components/motion/stagger";
 import { CountUp } from "@/components/motion/count-up";
-import { ClipReveal } from "@/components/motion/clip-reveal";
 import { useMotionSafe } from "@/components/motion/use-motion-safe";
 import { staggerChild, staggerParent } from "@/lib/motion";
 import arcInterview from "@/assets/landing/arc-interview.svg";
+import arcScore from "@/assets/landing/arc-score.svg";
 import arcResume from "@/assets/landing/arc-resume.svg";
 import arcOffer from "@/assets/landing/arc-offer.svg";
-import arcScore from "@/assets/landing/arc-score.svg";
-import arcQuestion from "@/assets/landing/arc-question.svg";
-import arcAnalytics from "@/assets/landing/arc-analytics.svg";
-import arcVoice from "@/assets/landing/arc-voice.svg";
-import arcFeedback from "@/assets/landing/arc-feedback.svg";
-import tourDashboard from "@/assets/landing/tour-dashboard.svg";
 import tourInterview from "@/assets/landing/tour-interview.svg";
 import tourResults from "@/assets/landing/tour-results.svg";
 
+/** The two sides of the product — the whole page funnels into these. */
+const SIDES = [
+  {
+    id: "interview",
+    eyebrow: "Side One",
+    title: "Practice Interviews",
+    tagline: "Rehearse under real pressure, get scored in seconds.",
+    href: "/practice",
+    cta: "Start practicing",
+    icon: Mic,
+    art: tourInterview,
+    accent: "from-violet-600 to-fuchsia-500",
+    glow: "rgba(139,92,246,0.55)",
+    points: [
+      "AI questions built from your own resume",
+      "Answer by voice or video, like the real thing",
+      "Instant score, strengths and fixes",
+    ],
+  },
+  {
+    id: "jobs",
+    eyebrow: "Side Two",
+    title: "Find Matching Jobs",
+    tagline: "An agent watches career pages so you don't have to.",
+    href: "/find-jobs",
+    cta: "Find me jobs",
+    icon: Briefcase,
+    art: tourResults,
+    accent: "from-cyan-500 to-emerald-400",
+    glow: "rgba(6,182,212,0.55)",
+    points: [
+      "Scans company career pages for openings",
+      "Ranks every role against your resume",
+      "One table: applied, pending, why it fits",
+    ],
+  },
+] as const;
+
+/** How the two sides share one resume and feed each other. */
+const FLOW = [
+  { icon: FileText, title: "Upload once", desc: "Your resume is parsed, stripped of personal data, and indexed." },
+  { icon: Target, title: "Pick your lane", desc: "Practice an interview, hunt for jobs — or run both together." },
+  { icon: BarChart3, title: "Get scored", desc: "Answers judged against real signals; jobs ranked by real fit." },
+  { icon: Building2, title: "Land the role", desc: "Walk into the interview you practised, for the job we found." },
+];
+
+const STATS = [
+  { value: "50K+", label: "Interviews Conducted" },
+  { value: "85%", label: "Success Rate" },
+  { value: "24/7", label: "AI Availability" },
+  { value: "4.9★", label: "User Rating" },
+];
+
+const TESTIMONIALS = [
+  { quote: "I practised on Monday and applied to three matched roles the same night. Both sides of the app fed each other.", name: "Priya S.", role: "Frontend Developer" },
+  { quote: "The questions actually came from my resume — my real projects, my stack. Nothing else felt this close to the real thing.", name: "Rahul M.", role: "Backend Engineer" },
+  { quote: "The job agent surfaced an opening I'd never have found, and I'd already rehearsed that exact interview.", name: "Ananya K.", role: "Data Analyst" },
+];
+
+const NAV_ITEMS = [
+  { id: "sides", label: "Two Sides", href: "#sides" },
+  { id: "how", label: "How It Works", href: "#how" },
+  { id: "practice", label: "Interviews", href: "/practice" },
+  { id: "jobs", label: "Jobs", href: "/find-jobs" },
+  { id: "demo", label: "Demo", href: "/demo" },
+];
+
+const MARQUEE_ITEMS = [
+  "AI Mock Interviews", "Resume-Matched Jobs", "Instant Scoring",
+  "Career Page Agent", "Voice & Video Answers", "One Resume, Both Sides",
+];
+
+const HEADLINE = ["One", "Platform.", "Two", "Ways", "In."];
+
 export default function LandingPage() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { isDark, toggleTheme } = useTheme();
+  const { isDark } = useTheme();
   const motionSafe = useMotionSafe();
+  const [hovered, setHovered] = useState<string | null>(null);
   const [finePointer] = useState(
     () => typeof window !== "undefined" && window.matchMedia("(pointer: fine)").matches
   );
-  // Fan stacks use fixed pixel card sizes — fit them to the viewport once.
   const [stackCardWidth] = useState(() =>
     typeof window === "undefined" ? 520 : Math.min(520, window.innerWidth - 72)
   );
 
-  // Hero scroll choreography
   const heroRef = useRef<HTMLElement>(null);
   const { scrollYProgress: heroProgress } = useScroll({
     target: heroRef,
     offset: ["start start", "end start"],
   });
-  const heroTextY = useTransform(heroProgress, [0, 1], [0, 90]);
-  const heroTextOpacity = useTransform(heroProgress, [0, 0.75], [1, 0]);
+  const heroY = useTransform(heroProgress, [0, 1], [0, 90]);
+  const heroOpacity = useTransform(heroProgress, [0, 0.75], [1, 0]);
 
-  // Page scroll progress bar
   const { scrollYProgress: pageProgress } = useScroll();
   const progressScale = useSpring(pageProgress, { stiffness: 120, damping: 30 });
 
-  // Cursor glow (desktop + motion-safe only)
   const glowX = useMotionValue(-600);
   const glowY = useMotionValue(-600);
   const glowXs = useSpring(glowX, { stiffness: 60, damping: 20 });
   const glowYs = useSpring(glowY, { stiffness: 60, damping: 20 });
   const glowEnabled = motionSafe && finePointer;
 
-  const interviewTracks = [
-    { name: "Python Interview", icon: "🐍", color: "from-blue-500 to-cyan-500", topics: "Core Python, DSA, OOP" },
-    { name: "JavaScript Interview", icon: "⚡", color: "from-yellow-500 to-orange-500", topics: "ES6+, Async, DOM" },
-    { name: "React Interview", icon: "⚛️", color: "from-cyan-500 to-blue-500", topics: "Hooks, State, Components" },
-    { name: "C++ DSA", icon: "💻", color: "from-violet-500 to-purple-500", topics: "STL, Algorithms, Pointers" },
-    { name: "Node.js Backend", icon: "🟢", color: "from-emerald-500 to-teal-500", topics: "Express, APIs, MongoDB" },
-    { name: "Data Science", icon: "📊", color: "from-pink-500 to-rose-500", topics: "Pandas, ML, Statistics" },
-  ];
-
-  const features = [
-    { icon: Sparkles, title: "AI-Generated Questions", desc: "Dynamic, role-specific questions powered by AI" },
-    { icon: Mic, title: "Video & Voice Analysis", desc: "Advanced cheating detection & behavior analysis" },
-    { icon: BarChart3, title: "Performance Analytics", desc: "Detailed reports with skill-wise breakdown" },
-    { icon: Target, title: "Resume-Based", desc: "Questions personalized to your experience" },
-    { icon: Code, title: "Real Simulations", desc: "Practice like it's a real interview" },
-    { icon: Brain, title: "AI Feedback", desc: "Instant improvement tips from AI mentor" },
-  ];
-
-  const steps = [
-    { icon: Target, title: "Choose Interview", desc: "Select role, technology & difficulty level", color: "from-blue-500 to-cyan-500" },
-    { icon: Mic, title: "AI Interview", desc: "Answer AI-generated questions via video/audio", color: "from-violet-500 to-purple-500" },
-    { icon: BarChart3, title: "Instant Report", desc: "Get score, strengths & improvement tips", color: "from-emerald-500 to-teal-500" },
-  ];
-
-  const stats = [
-    { value: "50K+", label: "Interviews Conducted" },
-    { value: "85%", label: "Success Rate" },
-    { value: "24/7", label: "AI Availability" },
-    { value: "4.9★", label: "User Rating" },
-  ];
-
-  const tourSlides = [
-    { src: tourInterview, alt: "Live AI interview screen with question, camera and timer", caption: "Answer AI questions live — with voice, video and a timer" },
-    { src: tourResults, alt: "Results screen with overall score, strengths and improvements", caption: "Instant scored report with strengths & next steps" },
-    { src: tourDashboard, alt: "Dashboard with interview stats and progress charts", caption: "Track your progress across every practice interview" },
-  ];
-
-  // Placeholder testimonials (marketing copy — replace with real user quotes)
-  const testimonials = [
-    { quote: "The questions actually came from my resume — my real projects, my stack. Way closer to a real interview than anything else I tried.", name: "Priya S.", role: "Frontend Developer" },
-    { quote: "Practiced three nights in a row, walked into my on-site relaxed. The instant feedback on my weak answers is what did it.", name: "Rahul M.", role: "Backend Engineer" },
-    { quote: "The score report told me exactly what to fix — fewer buzzwords, more numbers. Two weeks later I cleared my first tech round.", name: "Ananya K.", role: "Data Analyst" },
-  ];
-
-  const navItems = [
-    { id: "features", label: "Features", href: "#features" },
-    { id: "how-it-works", label: "How It Works", href: "#how-it-works" },
-    { id: "tracks", label: "Tracks", href: "#tracks" },
-    { id: "explore", label: "Explore", href: "/explore" },
-    { id: "demo", label: "Demo", href: "/demo" },
-  ];
-
-  const marqueeItems = [
-    "AI-Powered Interviews", "Resume-Based Questions", "Instant Scoring",
-    "Voice & Video Answers", "Personalized Feedback", "Real Interview Pressure",
-  ];
-
-  const arcImages = [
-    arcResume, arcQuestion, arcInterview, arcVoice,
-    arcScore, arcAnalytics, arcFeedback, arcOffer,
-  ];
-
-  const headlineTop = "Practice Real AI Interviews.";
-  const headlineBottom = "Get Instant Feedback.";
-
-  const subTextClass = isDark ? "text-slate-400" : "text-slate-500";
-  const sectionBgClass = isDark ? "bg-slate-900/50" : "bg-slate-50";
-  const glassCard = isDark
-    ? "border-white/10 bg-white/[0.04] text-white"
-    : "border-slate-200 bg-white text-slate-900 shadow-sm";
+  const subText = isDark ? "text-slate-400" : "text-slate-500";
+  const sectionBg = isDark ? "bg-slate-900/50" : "bg-slate-50";
 
   return (
     <div className={`min-h-screen overflow-x-clip transition-colors duration-300 ${
-      isDark
-        ? "bg-slate-950 text-white"
-        : "bg-white text-slate-900"
+      isDark ? "bg-slate-950 text-white" : "bg-white text-slate-900"
     }`}>
-      {/* Scroll progress bar */}
       {motionSafe && (
         <motion.div
           className="fixed left-0 right-0 top-0 z-[60] h-1 origin-left bg-gradient-to-r from-violet-600 to-cyan-500"
@@ -155,162 +145,27 @@ export default function LandingPage() {
         />
       )}
 
-      {/* ── Header ── */}
-      <header className={`relative z-50 sticky top-0 backdrop-blur-xl border-b ${
-        isDark
-          ? "bg-slate-950/70 border-white/10 text-white"
-          : "bg-white/70 border-slate-200 text-slate-900"
-      }`}>
-        <nav className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            {/* Logo */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="flex items-center gap-3"
-            >
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-cyan-500 shadow-lg flex items-center justify-center">
-                <Sparkles className="text-white" size={20} />
-              </div>
-              <span className="text-xl font-bold font-display">
-                TalentPulse<span className="text-cyan-500">AI</span>
-              </span>
-            </motion.div>
+      <SiteHeader navItems={NAV_ITEMS} />
 
-            {/* Desktop Menu — limelight nav */}
-            <div className="hidden md:block">
-              <LimelightNav items={navItems} />
-            </div>
-
-            {/* Desktop CTA + Theme toggle */}
-            <div className="hidden md:flex items-center gap-3">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={toggleTheme}
-                aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-                className={`p-2 rounded-lg transition ${
-                  isDark
-                    ? "bg-slate-800 text-yellow-300 hover:bg-slate-700"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                }`}
-              >
-                {isDark ? <Sun size={18} /> : <Moon size={18} />}
-              </motion.button>
-
-              <a href="/auth/login">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-                    isDark
-                      ? "bg-slate-800 hover:bg-slate-700 text-white"
-                      : "bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200"
-                  }`}
-                >
-                  Login
-                </motion.button>
-              </a>
-              <a href="/auth/register">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="px-4 py-2 rounded-lg bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-500 hover:to-cyan-500 text-white text-sm font-medium transition shadow-lg"
-                >
-                  Get Started Free
-                </motion.button>
-              </a>
-            </div>
-
-            {/* Mobile right controls */}
-            <div className="flex items-center gap-2 md:hidden">
-              <button
-                onClick={toggleTheme}
-                aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-                className={`p-2 rounded-lg transition ${
-                  isDark ? "bg-slate-800 text-yellow-300" : "bg-slate-100 text-slate-600"
-                }`}
-              >
-                {isDark ? <Sun size={20} /> : <Moon size={20} />}
-              </button>
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
-                className={`p-2 rounded-lg transition ${
-                  isDark ? "hover:bg-white/10 text-white" : "hover:bg-slate-100 text-slate-700"
-                }`}
-              >
-                {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-              </button>
-            </div>
-          </div>
-
-          {/* Mobile Menu */}
-          {mobileMenuOpen && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className={`md:hidden mt-4 py-4 border-t ${
-                isDark ? "border-white/10" : "border-slate-200"
-              }`}
-            >
-              <div className="flex flex-col gap-4">
-                {navItems.map((item) => (
-                  <a
-                    key={item.id}
-                    href={item.href}
-                    className={`transition text-sm font-medium ${
-                      isDark ? "text-slate-300 hover:text-white" : "text-slate-600 hover:text-violet-600"
-                    }`}
-                  >
-                    {item.label}
-                  </a>
-                ))}
-                <div className={`flex flex-col gap-2 pt-4 border-t ${
-                  isDark ? "border-white/10" : "border-slate-200"
-                }`}>
-                  <a
-                    href="/auth/login"
-                    className={`px-4 py-2 rounded-lg text-center text-sm font-medium ${
-                      isDark ? "bg-slate-800 text-white" : "bg-slate-100 text-slate-700 border border-slate-200"
-                    }`}
-                  >
-                    Login
-                  </a>
-                  <a
-                    href="/auth/register"
-                    className="px-4 py-2 rounded-lg bg-gradient-to-r from-violet-600 to-cyan-600 text-white text-center text-sm font-medium"
-                  >
-                    Get Started
-                  </a>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </nav>
-      </header>
-
-      {/* ── Hero — immersive, type-first ── */}
+      {/* ── Hero — advertises both sides ── */}
       <section
         ref={heroRef}
-        className="relative flex min-h-[92vh] items-center justify-center overflow-hidden px-6"
+        className="relative flex min-h-[88vh] items-center justify-center overflow-hidden px-6"
         onMouseMove={
           glowEnabled
             ? (e) => {
-                const rect = e.currentTarget.getBoundingClientRect();
-                glowX.set(e.clientX - rect.left);
-                glowY.set(e.clientY - rect.top);
+                const r = e.currentTarget.getBoundingClientRect();
+                glowX.set(e.clientX - r.left);
+                glowY.set(e.clientY - r.top);
               }
             : undefined
         }
       >
-        {/* Backdrop: glow orbs + dot grid */}
         <div className="pointer-events-none absolute inset-0">
-          <div className={`absolute -top-32 left-1/4 h-[480px] w-[480px] rounded-full blur-3xl ${
+          <div className={`absolute -top-32 left-1/4 h-[460px] w-[460px] rounded-full blur-3xl ${
             isDark ? "bg-violet-600/25" : "bg-violet-300/40"
           }`} />
-          <div className={`absolute -bottom-40 right-1/5 h-[520px] w-[520px] rounded-full blur-3xl ${
+          <div className={`absolute -bottom-40 right-1/5 h-[500px] w-[500px] rounded-full blur-3xl ${
             isDark ? "bg-cyan-500/20" : "bg-cyan-200/50"
           }`} />
           <div
@@ -322,7 +177,6 @@ export default function LandingPage() {
               WebkitMaskImage: "radial-gradient(ellipse 80% 70% at 50% 40%, black 40%, transparent 100%)",
             }}
           />
-          {/* Cursor-follow glow */}
           {glowEnabled && (
             <motion.div
               className={`absolute h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[110px] ${
@@ -333,24 +187,22 @@ export default function LandingPage() {
           )}
         </div>
 
-        {/* Arc gallery + copy */}
-        <div className="relative z-10 w-full pt-6">
-        <ArcGalleryHero images={arcImages}>
         <motion.div
-          className="mx-auto max-w-5xl px-2 pb-20 text-center"
-          style={motionSafe ? { y: heroTextY, opacity: heroTextOpacity } : undefined}
+          className="relative z-10 mx-auto max-w-5xl py-24 text-center"
+          style={motionSafe ? { y: heroY, opacity: heroOpacity } : undefined}
         >
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className={`mb-8 inline-block rounded-full border px-4 py-2 text-sm ${
+            className={`mb-8 inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm ${
               isDark
                 ? "border-violet-500/30 bg-violet-500/20 text-violet-300"
                 : "border-violet-200 bg-violet-50 text-violet-600"
             }`}
           >
-            🚀 AI-Powered Interview Platform
+            <Sparkles size={14} />
+            Interview practice + job search, in one place
           </motion.div>
 
           <motion.h1
@@ -359,17 +211,17 @@ export default function LandingPage() {
             animate="visible"
             variants={staggerParent(0.08, 0.15)}
           >
-            <span className="block text-[clamp(2.5rem,7.5vw,6.5rem)]">
-              {headlineTop.split(" ").map((word, i) => (
+            <span className="block text-[clamp(2.75rem,8vw,7rem)]">
+              {HEADLINE.slice(0, 2).map((w, i) => (
                 <motion.span key={i} variants={staggerChild(40, 0.5)} className="inline-block whitespace-pre">
-                  {word}{" "}
+                  {w}{" "}
                 </motion.span>
               ))}
             </span>
-            <span className="block bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-400 bg-clip-text text-transparent text-[clamp(2.5rem,7.5vw,6.5rem)]">
-              {headlineBottom.split(" ").map((word, i) => (
+            <span className="block bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-400 bg-clip-text text-transparent text-[clamp(2.75rem,8vw,7rem)]">
+              {HEADLINE.slice(2).map((w, i) => (
                 <motion.span key={i} variants={staggerChild(40, 0.5)} className="inline-block whitespace-pre">
-                  {word}{" "}
+                  {w}{" "}
                 </motion.span>
               ))}
             </span>
@@ -379,265 +231,264 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.7 }}
-            className={`mx-auto mb-10 mt-8 max-w-2xl text-lg md:text-xl ${subTextClass}`}
+            className={`mx-auto mb-10 mt-8 max-w-2xl text-lg md:text-xl ${subText}`}
           >
-            TalentPulseAI simulates real interviews using advanced AI. Answer via video/audio, get scored in seconds, and improve with personalized smart feedback.
+            Rehearse the interview with an AI that reads your resume — and let an agent hunt the
+            jobs worth applying to. Same resume, two engines, one login.
           </motion.p>
 
+          {/* Dual CTA — the choice starts here */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.85 }}
             className="flex flex-col justify-center gap-4 sm:flex-row"
           >
-            <a href="/demo">
+            <a href="/practice">
               <motion.button
                 whileHover={{ scale: 1.06 }}
                 whileTap={{ scale: 0.95 }}
-                className="flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-cyan-600 px-9 py-4 text-lg font-semibold text-white shadow-[0_0_40px_-8px_rgba(139,92,246,0.7)] transition hover:from-violet-500 hover:to-cyan-500"
+                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-500 px-9 py-4 text-lg font-semibold text-white shadow-[0_0_40px_-8px_rgba(139,92,246,0.7)]"
               >
-                <Play size={20} />
-                Try Free Demo
+                <Mic size={20} />
+                I want to practice
               </motion.button>
             </a>
-            <a href="/auth/register">
+            <a href="/find-jobs">
               <motion.button
                 whileHover={{ scale: 1.06 }}
                 whileTap={{ scale: 0.95 }}
-                className={`flex items-center justify-center gap-2 rounded-2xl border px-9 py-4 text-lg font-semibold transition ${
-                  isDark
-                    ? "border-white/15 bg-white/5 text-white hover:bg-white/10"
-                    : "border-slate-200 bg-white text-slate-800 shadow-sm hover:bg-slate-50"
-                }`}
+                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-500 to-emerald-400 px-9 py-4 text-lg font-semibold text-white shadow-[0_0_40px_-8px_rgba(6,182,212,0.7)]"
               >
-                Get Started Free
-                <ArrowRight size={20} />
+                <Briefcase size={20} />
+                I want a job
               </motion.button>
             </a>
           </motion.div>
-        </motion.div>
-        </ArcGalleryHero>
-        </div>
 
-        {/* Scroll hint */}
+          <motion.a
+            href="#sides"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.1 }}
+            className={`mt-8 inline-block text-sm underline-offset-4 hover:underline ${subText}`}
+          >
+            Not sure? See both sides
+          </motion.a>
+        </motion.div>
+
         <motion.div
           className="absolute bottom-6 left-1/2 -translate-x-1/2"
           animate={motionSafe ? { y: [0, 8, 0] } : undefined}
           transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
           aria-hidden="true"
         >
-          <ChevronDown className={subTextClass} size={26} />
+          <ChevronDown className={subText} size={26} />
         </motion.div>
       </section>
 
-      {/* ── Marquee band ── */}
+      {/* ── Marquee ── */}
       <div className="-rotate-1 scale-[1.02]">
         <Marquee
-          items={marqueeItems}
-          className="border-y border-black/10 bg-gradient-to-r from-violet-600 to-cyan-600 py-4 font-display text-lg font-bold uppercase tracking-widest text-white md:text-2xl"
+          items={MARQUEE_ITEMS}
+          className="border-y border-black/10 bg-gradient-to-r from-violet-600 via-fuchsia-500 to-cyan-600 py-4 font-display text-lg font-bold uppercase tracking-widest text-white md:text-2xl"
         />
       </div>
 
-      {/* ── Stats — giant count-ups ── */}
+      {/* ── THE DIVIDE — pick your side ── */}
+      <section id="sides" className="px-6 py-28">
+        <div className="mx-auto max-w-7xl">
+          <Reveal className="mb-16 text-center">
+            <h2 className="font-display text-[clamp(2.25rem,5vw,4.5rem)] font-bold uppercase leading-none tracking-tight">
+              Pick Your{" "}
+              <span className="bg-gradient-to-r from-violet-500 to-cyan-400 bg-clip-text text-transparent">Side</span>
+            </h2>
+            <p className={`mt-4 text-xl ${subText}`}>
+              Two products, one account. Switch between them any time.
+            </p>
+          </Reveal>
+
+          {/* Hovering one side expands it and dims the other */}
+          <div className="flex flex-col gap-6 lg:flex-row lg:gap-5">
+            {SIDES.map((side) => {
+              const Icon = side.icon;
+              const isHovered = hovered === side.id;
+              const isDimmed = hovered !== null && !isHovered;
+              return (
+                <motion.a
+                  key={side.id}
+                  href={side.href}
+                  onMouseEnter={() => setHovered(side.id)}
+                  onMouseLeave={() => setHovered(null)}
+                  onFocus={() => setHovered(side.id)}
+                  onBlur={() => setHovered(null)}
+                  layout
+                  animate={{
+                    flexGrow: isHovered ? 1.35 : 1,
+                    opacity: isDimmed ? 0.62 : 1,
+                  }}
+                  transition={{ type: "spring", stiffness: 220, damping: 26 }}
+                  whileTap={{ scale: 0.99 }}
+                  className={`group relative flex-1 overflow-hidden rounded-[2rem] border p-8 md:p-10 ${
+                    isDark
+                      ? "border-white/10 bg-white/[0.03]"
+                      : "border-slate-200 bg-white shadow-sm"
+                  }`}
+                >
+                  {/* accent wash */}
+                  <div
+                    className={`pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-gradient-to-br ${side.accent} opacity-20 blur-3xl transition-opacity duration-500 group-hover:opacity-40`}
+                  />
+
+                  <div className="relative z-10 flex h-full flex-col">
+                    <span className={`text-xs font-semibold uppercase tracking-[0.2em] ${subText}`}>
+                      {side.eyebrow}
+                    </span>
+
+                    <div
+                      className={`mt-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br ${side.accent} shadow-lg`}
+                      style={{ boxShadow: `0 0 40px -10px ${side.glow}` }}
+                    >
+                      <Icon className="text-white" size={30} />
+                    </div>
+
+                    <h3 className="mt-6 font-display text-3xl font-bold uppercase leading-none tracking-tight md:text-4xl">
+                      {side.title}
+                    </h3>
+                    <p className={`mt-3 text-lg ${subText}`}>{side.tagline}</p>
+
+                    <ul className="mt-7 space-y-3">
+                      {side.points.map((p) => (
+                        <li key={p} className="flex items-start gap-3 text-sm">
+                          <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-gradient-to-r ${side.accent}`} />
+                          <span className={subText}>{p}</span>
+                        </li>
+                      ))}
+                    </ul>
+
+                    {/* preview art — grows on hover */}
+                    <motion.div
+                      className="mt-8 overflow-hidden rounded-2xl border border-black/5 dark:border-white/10"
+                      animate={{ opacity: isHovered ? 1 : 0.75 }}
+                    >
+                      <img
+                        src={side.art}
+                        alt=""
+                        loading="lazy"
+                        className="aspect-video w-full object-cover"
+                      />
+                    </motion.div>
+
+                    <span
+                      className={`mt-8 inline-flex items-center gap-2 self-start rounded-xl bg-gradient-to-r ${side.accent} px-6 py-3 font-semibold text-white transition-transform group-hover:gap-3`}
+                    >
+                      {side.cta}
+                      <ArrowRight size={18} />
+                    </span>
+                  </div>
+                </motion.a>
+              );
+            })}
+          </div>
+
+          <p className={`mt-8 text-center text-sm ${subText}`}>
+            Already have an account?{" "}
+            <a href="/auth/login" className="font-semibold text-violet-500 hover:underline">Log in</a>
+            {" · "}New here?{" "}
+            <a href="/auth/register" className="font-semibold text-cyan-500 hover:underline">Create one free</a>
+          </p>
+        </div>
+      </section>
+
+      {/* ── Shared flow — how the sides connect ── */}
+      <section id="how" className={`px-6 py-28 ${sectionBg}`}>
+        <div className="mx-auto max-w-6xl">
+          <Reveal className="mb-16 text-center">
+            <h2 className="font-display text-[clamp(2.25rem,5vw,4.5rem)] font-bold uppercase leading-none tracking-tight">
+              One Resume,{" "}
+              <span className="bg-gradient-to-r from-violet-500 to-cyan-400 bg-clip-text text-transparent">Both Engines</span>
+            </h2>
+            <p className={`mt-4 text-xl ${subText}`}>
+              Upload once — practice and job matching run off the same profile.
+            </p>
+          </Reveal>
+
+          <StaggerGroup className="grid gap-5 md:grid-cols-4">
+            {FLOW.map((step, i) => {
+              const Icon = step.icon;
+              return (
+                <StaggerItem key={step.title}>
+                  <div
+                    className={`relative h-full rounded-3xl border p-6 ${
+                      isDark ? "border-white/10 bg-white/[0.03]" : "border-slate-200 bg-white shadow-sm"
+                    }`}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`font-display text-5xl font-bold leading-none text-transparent ${
+                        isDark
+                          ? "[-webkit-text-stroke:1.5px_rgba(139,92,246,0.45)]"
+                          : "[-webkit-text-stroke:1.5px_rgba(139,92,246,0.3)]"
+                      }`}
+                    >
+                      0{i + 1}
+                    </span>
+                    <div className="mt-4 flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-cyan-500">
+                      <Icon className="text-white" size={22} />
+                    </div>
+                    <h3 className="mt-4 font-display text-xl font-bold">{step.title}</h3>
+                    <p className={`mt-2 text-sm leading-relaxed ${subText}`}>{step.desc}</p>
+                  </div>
+                </StaggerItem>
+              );
+            })}
+          </StaggerGroup>
+
+          {/* the split, drawn */}
+          <Reveal className="mt-14">
+            <div className={`flex flex-col items-center gap-4 rounded-3xl border p-8 md:flex-row md:justify-center md:gap-8 ${
+              isDark ? "border-white/10 bg-white/[0.03]" : "border-slate-200 bg-white"
+            }`}>
+              <img src={arcResume} alt="" className="h-24 w-auto rounded-xl" loading="lazy" />
+              <ArrowRight className={`${subText} rotate-90 md:rotate-0`} size={24} />
+              <div className="flex gap-4">
+                <img src={arcInterview} alt="" className="h-24 w-auto rounded-xl" loading="lazy" />
+                <img src={arcScore} alt="" className="h-24 w-auto rounded-xl" loading="lazy" />
+              </div>
+              <ArrowRight className={`${subText} rotate-90 md:rotate-0`} size={24} />
+              <img src={arcOffer} alt="" className="h-24 w-auto rounded-xl" loading="lazy" />
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ── Stats ── */}
       <section className="px-6 py-24">
         <StaggerGroup className="mx-auto grid max-w-6xl grid-cols-2 gap-10 md:grid-cols-4">
-          {stats.map((stat, i) => (
-            <StaggerItem key={i} className="text-center">
+          {STATS.map((stat) => (
+            <StaggerItem key={stat.label} className="text-center">
               <CountUp
                 value={stat.value}
-                className={`font-display text-5xl font-bold md:text-7xl ${
-                  isDark ? "text-white" : "text-slate-900"
-                }`}
+                className={`font-display text-5xl font-bold md:text-7xl ${isDark ? "text-white" : "text-slate-900"}`}
               />
-              <div className={`mt-3 text-sm uppercase tracking-wider ${subTextClass}`}>{stat.label}</div>
+              <div className={`mt-3 text-sm uppercase tracking-wider ${subText}`}>{stat.label}</div>
             </StaggerItem>
           ))}
         </StaggerGroup>
       </section>
 
-      {/* ── How It Works — huge numbered rows ── */}
-      <section id="how-it-works" className={`px-6 py-28 ${sectionBgClass}`}>
-        <div className="mx-auto max-w-6xl">
-          <Reveal className="mb-20">
-            <h2 className="font-display text-[clamp(2.25rem,5vw,4.5rem)] font-bold uppercase leading-none tracking-tight">
-              How It{" "}
-              <span className="bg-gradient-to-r from-violet-500 to-cyan-400 bg-clip-text text-transparent">Works</span>
-            </h2>
-            <p className={`mt-4 text-xl ${subTextClass}`}>Get started in 3 simple steps</p>
-          </Reveal>
-
-          <div className="space-y-8">
-            {steps.map((step, i) => (
-              <Reveal key={i} delay={i * 0.08}>
-                <motion.div
-                  whileHover={{ x: 12 }}
-                  className={`flex flex-col items-start gap-6 rounded-3xl border p-8 backdrop-blur-xl md:flex-row md:items-center md:gap-12 md:p-10 ${glassCard}`}
-                >
-                  <span
-                    aria-hidden="true"
-                    className={`font-display text-7xl font-bold leading-none text-transparent md:text-9xl ${
-                      isDark
-                        ? "[-webkit-text-stroke:2px_rgba(139,92,246,0.5)]"
-                        : "[-webkit-text-stroke:2px_rgba(139,92,246,0.35)]"
-                    }`}
-                  >
-                    0{i + 1}
-                  </span>
-                  <div className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br shadow-lg ${step.color}`}>
-                    <step.icon className="text-white" size={30} />
-                  </div>
-                  <div>
-                    <h3 className="font-display text-2xl font-bold md:text-3xl">{step.title}</h3>
-                    <p className={`mt-2 text-lg ${subTextClass}`}>{step.desc}</p>
-                  </div>
-                </motion.div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Features — fan card stack ── */}
-      <section id="features" className="px-6 py-28">
-        <div className="mx-auto max-w-6xl">
-          <Reveal className="mb-16 text-center">
-            <h2 className="font-display text-[clamp(2.25rem,5vw,4.5rem)] font-bold uppercase leading-none tracking-tight">
-              Why{" "}
-              <span className="bg-gradient-to-r from-violet-500 to-cyan-400 bg-clip-text text-transparent">TalentPulseAI?</span>
-            </h2>
-            <p className={`mt-4 text-xl ${subTextClass}`}>Powerful features to ace your interviews</p>
-          </Reveal>
-
-          <Reveal>
-            <CardStack
-              items={features.map((f, i) => ({
-                id: f.title,
-                title: f.title,
-                description: f.desc,
-                icon: f.icon,
-                imageSrc: [arcQuestion, tourInterview, tourDashboard, arcResume, arcInterview, arcFeedback][i],
-              }))}
-              cardWidth={stackCardWidth}
-              cardHeight={300}
-              maxVisible={5}
-              autoAdvance
-              intervalMs={3200}
-              renderCard={(item) => {
-                const Icon = item.icon;
-                return (
-                  <div className="relative h-full w-full bg-slate-950">
-                    {/* Full-bleed artwork */}
-                    <img
-                      src={item.imageSrc}
-                      alt=""
-                      className="absolute inset-0 h-full w-full object-cover"
-                      draggable={false}
-                      loading="eager"
-                    />
-                    {/* Readability gradient */}
-                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
-                    {/* Content over the image */}
-                    <div className="relative z-10 flex h-full flex-col justify-end p-6">
-                      <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-white/15 backdrop-blur">
-                        <Icon className="text-white" size={22} />
-                      </div>
-                      <h3 className="font-display text-2xl font-bold text-white">{item.title}</h3>
-                      <p className="mt-1 text-sm leading-relaxed text-white/80">{item.description}</p>
-                    </div>
-                  </div>
-                );
-              }}
-            />
-          </Reveal>
-        </div>
-      </section>
-
-      {/* ── Image auto-slider band ── */}
-      <ImageAutoSlider
-        className={`border-y ${isDark ? "border-white/10" : "border-slate-200"}`}
-        images={[
-          { src: tourInterview },
-          { src: arcScore },
-          { src: tourResults },
-          { src: arcAnalytics },
-          { src: tourDashboard },
-          { src: arcFeedback },
-        ]}
-      />
-
-      {/* ── Interview Tracks — interactive selector ── */}
-      <section id="tracks" className={`px-6 py-28 ${sectionBgClass}`}>
-        <div className="mx-auto max-w-7xl">
-          <Reveal className="mb-20 text-center">
-            <h2 className="font-display text-[clamp(2.25rem,5vw,4.5rem)] font-bold uppercase leading-none tracking-tight">
-              Interview{" "}
-              <span className="bg-gradient-to-r from-violet-500 to-cyan-400 bg-clip-text text-transparent">Tracks</span>
-            </h2>
-            <p className={`mt-4 text-xl ${subTextClass}`}>Choose your domain and start practicing</p>
-          </Reveal>
-
-          <Reveal>
-            <CircularFlipGallery
-              radius={280}
-              items={interviewTracks.map((track) => ({
-                id: track.name,
-                front: (
-                  <>
-                    <span className="text-5xl" aria-hidden="true">{track.icon}</span>
-                    <span className="font-display text-lg font-bold leading-tight">{track.name}</span>
-                    <span className={`text-xs ${subTextClass}`}>Hover to flip</span>
-                  </>
-                ),
-                back: (
-                  <>
-                    <span className={`text-sm ${subTextClass}`}>{track.topics}</span>
-                    <span className={`flex items-center justify-center font-semibold ${
-                      isDark ? "text-violet-400" : "text-violet-600"
-                    }`}>
-                      Start Practice
-                      <ChevronRight size={20} />
-                    </span>
-                  </>
-                ),
-              }))}
-            />
-          </Reveal>
-        </div>
-      </section>
-
-      {/* ── Product tour — image swiper in glow frame ── */}
-      <section className="px-6 py-28">
-        <div className="mx-auto max-w-5xl">
-          <Reveal className="mb-20 text-center">
-            <h2 className="font-display text-[clamp(2.25rem,5vw,4.5rem)] font-bold uppercase leading-none tracking-tight">
-              See It In{" "}
-              <span className="bg-gradient-to-r from-violet-500 to-cyan-400 bg-clip-text text-transparent">Action</span>
-            </h2>
-            <p className={`mt-4 text-xl ${subTextClass}`}>From first question to final report</p>
-          </Reveal>
-          <ClipReveal>
-            <div className="relative">
-              <div className="pointer-events-none absolute -inset-6 rounded-[2rem] bg-gradient-to-r from-violet-600/25 to-cyan-500/25 blur-2xl" />
-              <div className="relative">
-                <ImageSwiper slides={tourSlides} />
-              </div>
-            </div>
-          </ClipReveal>
-        </div>
-      </section>
-
       {/* ── Testimonials ── */}
-      <section className={`px-6 py-28 ${sectionBgClass}`}>
+      <section className={`px-6 py-28 ${sectionBg}`}>
         <div className="mx-auto max-w-7xl">
-          <Reveal className="mb-20 text-center">
+          <Reveal className="mb-16 text-center">
             <h2 className="font-display text-[clamp(2.25rem,5vw,4.5rem)] font-bold uppercase leading-none tracking-tight">
               Loved by{" "}
               <span className="bg-gradient-to-r from-violet-500 to-cyan-400 bg-clip-text text-transparent">Candidates</span>
             </h2>
-            <p className={`mt-4 text-xl ${subTextClass}`}>Real practice, real confidence, real offers</p>
+            <p className={`mt-4 text-xl ${subText}`}>Real practice, real matches, real offers</p>
           </Reveal>
           <CardStack
-            items={testimonials.map((t) => ({
+            items={TESTIMONIALS.map((t) => ({
               id: t.name,
               title: t.name,
               description: t.role,
@@ -654,9 +505,7 @@ export default function LandingPage() {
                   isDark ? "bg-slate-900 text-white" : "bg-white text-slate-900"
                 }`}
               >
-                <blockquote className="text-base leading-relaxed md:text-lg">
-                  “{item.quote}”
-                </blockquote>
+                <blockquote className="text-base leading-relaxed md:text-lg">“{item.quote}”</blockquote>
                 <figcaption className="mt-6 flex items-center gap-3">
                   <span
                     className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-violet-600 to-cyan-500 text-sm font-bold text-white"
@@ -666,7 +515,7 @@ export default function LandingPage() {
                   </span>
                   <span className="text-left">
                     <span className="block text-sm font-semibold">{item.title}</span>
-                    <span className={`block text-xs ${subTextClass}`}>{item.description}</span>
+                    <span className={`block text-xs ${subText}`}>{item.description}</span>
                   </span>
                 </figcaption>
               </figure>
@@ -675,109 +524,55 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── CTA finale — massive type ── */}
+      {/* ── CTA finale ── */}
       <section className="relative overflow-hidden px-6 py-32">
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute left-1/2 top-1/2 h-[560px] w-[900px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-r from-violet-600/30 to-cyan-500/30 blur-[130px]" />
+          <div className="absolute left-1/2 top-1/2 h-[520px] w-[880px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-r from-violet-600/30 to-cyan-500/30 blur-[130px]" />
         </div>
         <div className="relative mx-auto max-w-5xl text-center">
           <Reveal>
-            <h2 className="font-display text-[clamp(2.5rem,8vw,7rem)] font-bold uppercase leading-[0.95] tracking-tight">
-              Ready to{" "}
+            <h2 className="font-display text-[clamp(2.5rem,8vw,6.5rem)] font-bold uppercase leading-[0.95] tracking-tight">
+              Start on{" "}
               <span className="bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-400 bg-clip-text text-transparent">
-                Crack
-              </span>{" "}
-              Your Next Interview?
+                Either Side
+              </span>
             </h2>
           </Reveal>
           <Reveal delay={0.15}>
-            <p className={`mx-auto mb-10 mt-6 max-w-2xl text-xl ${subTextClass}`}>
-              Start your AI-powered mock interview today and land your dream tech job.
+            <p className={`mx-auto mb-10 mt-6 max-w-2xl text-xl ${subText}`}>
+              One free account unlocks both. Practice tonight, apply tomorrow.
             </p>
-            <a href="/demo" className="inline-block">
-              <motion.button
-                whileHover={{ scale: 1.07 }}
-                whileTap={{ scale: 0.95 }}
-                className="flex items-center gap-3 rounded-2xl bg-gradient-to-r from-violet-600 to-cyan-600 px-10 py-5 text-xl font-bold text-white shadow-[0_0_60px_-10px_rgba(139,92,246,0.8)] transition hover:from-violet-500 hover:to-cyan-500"
-              >
-                Start Free Interview Now
-                <ArrowRight size={26} />
-              </motion.button>
-            </a>
+            <div className="flex flex-col justify-center gap-4 sm:flex-row">
+              <a href="/auth/register">
+                <motion.button
+                  whileHover={{ scale: 1.06 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="flex w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-violet-600 to-cyan-600 px-10 py-5 text-xl font-bold text-white shadow-[0_0_60px_-10px_rgba(139,92,246,0.8)]"
+                >
+                  Create free account
+                  <ArrowRight size={24} />
+                </motion.button>
+              </a>
+              <a href="/demo">
+                <motion.button
+                  whileHover={{ scale: 1.06 }}
+                  whileTap={{ scale: 0.95 }}
+                  className={`flex w-full items-center justify-center gap-2 rounded-2xl border px-10 py-5 text-xl font-semibold transition ${
+                    isDark
+                      ? "border-white/15 bg-white/5 text-white hover:bg-white/10"
+                      : "border-slate-200 bg-white text-slate-800 shadow-sm hover:bg-slate-50"
+                  }`}
+                >
+                  <Play size={20} />
+                  Try the demo
+                </motion.button>
+              </a>
+            </div>
           </Reveal>
         </div>
       </section>
 
-      {/* ── Footer ── */}
-      <footer className={`relative border-t px-6 py-12 ${
-        isDark ? "border-white/10" : "border-slate-200"
-      }`}>
-        <div className="mx-auto max-w-7xl">
-          <div className="mb-12 grid gap-12 md:grid-cols-4">
-            {/* Brand */}
-            <div>
-              <div className="mb-4 flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-cyan-500 shadow-lg">
-                  <Sparkles className="text-white" size={20} />
-                </div>
-                <span className="font-display text-xl font-bold">
-                  TalentPulse<span className="text-cyan-500">AI</span>
-                </span>
-              </div>
-              <p className={`text-sm ${subTextClass}`}>
-                AI-powered interview platform to help you ace your tech interviews.
-              </p>
-              <SocialIcons
-                className="mt-4"
-                links={[
-                  { label: "Twitter", href: "#", icon: <Twitter size={16} /> },
-                  { label: "GitHub", href: "#", icon: <Github size={16} /> },
-                  { label: "LinkedIn", href: "#", icon: <Linkedin size={16} /> },
-                ]}
-              />
-            </div>
-
-            {/* Product */}
-            <div>
-              <h3 className="mb-4 font-bold">Product</h3>
-              <ul className={`space-y-2 text-sm ${subTextClass}`}>
-                <li><a href="/explore" className={`hover:${isDark ? "text-white" : "text-violet-600"} transition`}>Explore</a></li>
-                <li><a href="/demo" className={`hover:${isDark ? "text-white" : "text-violet-600"} transition`}>Demo</a></li>
-                <li><a href="#features" className={`hover:${isDark ? "text-white" : "text-violet-600"} transition`}>Features</a></li>
-                <li><a href="#tracks" className={`hover:${isDark ? "text-white" : "text-violet-600"} transition`}>Tracks</a></li>
-              </ul>
-            </div>
-
-            {/* Company */}
-            <div>
-              <h3 className="mb-4 font-bold">Company</h3>
-              <ul className={`space-y-2 text-sm ${subTextClass}`}>
-                <li><a href="#" className="transition hover:text-violet-600">About Us</a></li>
-                <li><a href="#" className="transition hover:text-violet-600">Blog</a></li>
-                <li><a href="#" className="transition hover:text-violet-600">Careers</a></li>
-                <li><a href="#" className="transition hover:text-violet-600">Contact</a></li>
-              </ul>
-            </div>
-
-            {/* Legal */}
-            <div>
-              <h3 className="mb-4 font-bold">Legal</h3>
-              <ul className={`space-y-2 text-sm ${subTextClass}`}>
-                <li><a href="#" className="transition hover:text-violet-600">Privacy Policy</a></li>
-                <li><a href="#" className="transition hover:text-violet-600">Terms of Service</a></li>
-                <li><a href="#" className="transition hover:text-violet-600">Cookie Policy</a></li>
-              </ul>
-            </div>
-          </div>
-
-          <div className={`flex flex-col items-center justify-between gap-4 border-t pt-8 text-sm md:flex-row ${subTextClass} ${
-            isDark ? "border-white/10" : "border-slate-200"
-          }`}>
-            <p>© {new Date().getFullYear()} TalentPulseAI. All rights reserved.</p>
-            <p>Made with ❤️ for aspiring developers</p>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

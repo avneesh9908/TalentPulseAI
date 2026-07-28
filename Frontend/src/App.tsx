@@ -16,6 +16,8 @@ const Login = lazy(() => import("@/app/pages/auth/login"));
 const Register = lazy(() => import("@/app/pages/auth/register"));
 const Dashboard = lazy(() => import("@/app/pages/dashboard/dashboard"));
 const LandingPage = lazy(() => import("@/app/pages/landing"));
+const PracticePage = lazy(() => import("@/app/pages/practice"));
+const FindJobsPage = lazy(() => import("@/app/pages/find-jobs"));
 const UsersPage = lazy(() => import("@/app/pages/users/users"));
 const SelectRole = lazy(() => import("@/app/pages/interview/select-role"));
 const SelectProfile = lazy(() => import("@/app/pages/interview/select-profile"));
@@ -42,8 +44,11 @@ function App() {
           <ThemeProvider>
             <Suspense fallback={<PageFallback />}>
             <Routes>
-            {/* LANDING PAGE - ENTRY POINT */}
+            {/* LANDING PAGE - ENTRY POINT (divides into the two product sides) */}
             <Route path="/" element={<LandingPage />} />
+            {/* PUBLIC PRODUCT PAGES — one per side */}
+            <Route path="/practice" element={<PracticePage />} />
+            <Route path="/find-jobs" element={<FindJobsPage />} />
 
             {/* /demo links on landing page redirect to the interview flow */}
             <Route path="/demo" element={<Navigate to="/interview/select-role" replace />} />

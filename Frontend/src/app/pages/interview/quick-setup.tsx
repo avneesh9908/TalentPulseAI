@@ -75,7 +75,7 @@ const SUGGESTED_SKILLS = [
   "Performance", "Accessibility", "Webpack", "Vite",
 ];
 
-// ─── SectionLabel ─────────────────────────────────────────────────────────────
+
 function SectionLabel({ icon: Icon, label, isDark }: SectionLabelProps) {
   return (
     <div className="flex items-center gap-2 mb-4">
@@ -89,7 +89,7 @@ function SectionLabel({ icon: Icon, label, isDark }: SectionLabelProps) {
   );
 }
 
-// ─── Main ─────────────────────────────────────────────────────────────────────
+
 export default function QuickSetupPage() {
   const { isDark } = useTheme();
   const navigate = useNavigate();
@@ -100,7 +100,7 @@ export default function QuickSetupPage() {
   const [skills, setSkills]         = useState<string[]>([]);
   const [customSkill, setCustomSkill] = useState("");
 
-  // Guard: must have completed steps 1 and 2 before arriving here
+
   if (!selectedRole) {
     navigate("/interview/select-role", { replace: true });
     return null;
@@ -130,13 +130,11 @@ export default function QuickSetupPage() {
 
   const canContinue = experience !== null && difficulty !== null && skills.length > 0;
 
-  // Handle continue - save to local state and submit interview setup (FINAL STEP)
   const handleContinue = async () => {
     if (!experience || !difficulty || skills.length === 0) return;
     try {
       clearError();
-      // Pass values: context state from prior steps is updated asynchronously, so submit
-      // must receive experience/difficulty/skills or it would read stale nulls.
+ 
       await submitInterviewSetup({
         experience,
         difficulty,
