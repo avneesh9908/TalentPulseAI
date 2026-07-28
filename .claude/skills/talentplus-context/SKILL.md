@@ -381,6 +381,15 @@ User-directed redesign: modern animated/tastefully-3D UI, **home page (landing.t
 - **public_id is the user-facing unique id;** interviews/profile still keyed internally by numeric user_id (user chose "add UUID, keep numeric PK" — NOT full re-key). Deeper wiring of public_id into interview/job records is future work if wanted.
 - Verified via SQLite functional test (7 cases) + tsc/build; NOT browser-e2e'd (needs phase8 SQL on a live DB first).
 
+## Public site structure (2026-07-17, commit e7288871) — parent + two product pages
+- **`/` = PARENT landing** (`app/pages/landing.tsx`): advertises BOTH sides, header has login/sign-up, dual hero CTA ("I want to practice" / "I want a job"), then the **"Pick Your Side" split** — `SIDES` array rendered as two panels; hovering one animates `flexGrow: 1.35` and dims the other to 0.62 (framer `layout` + spring). Then shared flow (`FLOW`: one resume → both engines), stats CountUp, testimonials CardStack, dual CTA.
+- **`/practice`** (`app/pages/practice.tsx`) = interview product page — this is the OLD landing content (arc hero, features fan, flip-ring tracks, tour swiper), copied and re-shelled. Cross-links to /find-jobs.
+- **`/find-jobs`** (`app/pages/find-jobs.tsx`) = the parallel job product page — agent hero (cyan/emerald accent vs violet), 3-step how-it-works, feature CardStack fan (image-filled), ImageAutoSlider band, **static demo status table** (Applied/Pending+reason/New) under ClipReveal. Cross-links to /practice.
+- **Shared shell:** `components/landing/site-header.tsx` (logo→/, LimelightNav from `navItems` prop, theme toggle, Login + Get Started, mobile menu) and `site-footer.tsx` (Product column links both sides). Both use plain `<a>` = full page loads, matching prior landing behavior.
+- Route registration in App.tsx (lazy). **Colour convention: interview side = violet/fuchsia, job side = cyan/emerald**, parent uses both.
+- Chunk sizes gzip: landing 5.31 (was ~22 — heavy components moved out), practice 8.32, find-jobs 5.48.
+- Verified live: all three render, cross-links present, 0 broken images, 0 console errors.
+
 ## Two-sided workspace (2026-07-17, commit d764e52c)
 The product is now explicitly **two sides: Interview practice + Job Search**, switched globally from the header.
 - `components/mode-switch.tsx` — segmented control (researched pattern: segmented control in top bar for mutually-exclusive global modes; top bar owns app-wide things). Gradient pill slides via `layoutId="mode-switch-pill"` + SPRING. **Active side derived from `useLocation().pathname`** (`/jobs*` → jobs, else interview) so deep links/back-forward stay correct. Clicking the current side is a no-op (doesn't reset progress in that flow). Props: `stacked` (mobile full-width), `onNavigate` (closes mobile menu). Homes: interview → `/interview/select-role`, jobs → `/jobs`.
@@ -409,6 +418,7 @@ The product is now explicitly **two sides: Interview practice + Job Search**, sw
 - Manual migration SQL: `TalentPulseAI-fastAPI/migrations/phase4_add_content_hash_and_embedding_cache.sql`
 
 ## Changelog
+- 2026-07-17 — **Parent landing + two parallel product pages** (e7288871): `/` advertises both sides with a hover-split "Pick Your Side"; `/practice` (interview) and `/find-jobs` (jobs) are twins on a shared SiteHeader/SiteFooter. Landing chunk 22→5.31 kB gzip. See "Public site structure".
 - 2026-07-17 — **Two-sided workspace** (d764e52c): Interview/Jobs segmented switcher in header (route-derived active state), /jobs restyled as a 3-step flow page. Also applied missing phase4 migration to local dev DB (fixed designations 500). See "Two-sided workspace".
 - 2026-07-15 — **Auth form validation** (cabfee3a): lib/validation.ts + inline per-field errors on login/register mirroring backend rules; verified live.
 - 2026-07-15 — **Auth: mandatory unique phone + public_id UUID** (e9aca76b): register requires+dedups phone, per-user public_id handle, responses return user object, phase8 migration. Google login deferred (no OAuth id). See "Auth model".
