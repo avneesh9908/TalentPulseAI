@@ -399,7 +399,25 @@ User-directed redesign: modern animated/tastefully-3D UI, **home page (landing.t
 - Chunk sizes gzip: landing 5.31 (was ~22 — heavy components moved out), practice 8.32, find-jobs 5.48.
 - Verified live: all three render, cross-links present, 0 broken images, 0 console errors.
 
-## Two-sided workspace (2026-07-17, commit d764e52c)
+## App information architecture (2026-07-17, commit c49ddb98) — CURRENT
+```
+PUBLIC      /            parent landing (advertises both, login/signup)
+            /practice    interview product page
+            /find-jobs   job product page
+            /auth/login, /auth/register
+APP (protected, shared Header)
+  COMMON    /dashboard   THE HUB (both sides launch from here)
+            /profile     account (shows public_id)
+  SIDE A    /interview/select-role → select-profile → quick-setup → start → result
+  SIDE B    /jobs        setup → search → matches table
+```
+- **`components/app-nav.tsx`** (replaced `mode-switch.tsx`, deleted): ONE primary nav, three destinations **Dashboard · Interview · Jobs**, sliding pill `layoutId="app-nav-pill"`. Active state from `pathname.startsWith(match)`; **shared pages like /profile intentionally highlight nothing** (the old 2-item switcher wrongly showed Interview active everywhere). Re-clicking the current section is a no-op (preserves in-flow progress). Props `stacked`/`onNavigate` for mobile.
+- **Header:** logo → `/dashboard` (the hub, not landing); avatar dropdown is **account-only** (Profile, Logout) — destinations live in AppNav; mobile menu uses stacked AppNav, duplicates removed. "Quick Interview" button is `lg:` only.
+- **Dashboard = hub:** two launcher cards at top (Interview Practice → /interview/select-role, Job Search → /jobs) with side accent colours, above the existing (still mock) stats.
+- **Profile:** quick links to Dashboard / Start interview / Find jobs so it isn't a dead end.
+- Convention reminder: interview side = violet/fuchsia, job side = cyan/emerald.
+
+## Two-sided workspace (2026-07-17, commit d764e52c) — SUPERSEDED by the IA above (ModeSwitch → AppNav)
 The product is now explicitly **two sides: Interview practice + Job Search**, switched globally from the header.
 - `components/mode-switch.tsx` — segmented control (researched pattern: segmented control in top bar for mutually-exclusive global modes; top bar owns app-wide things). Gradient pill slides via `layoutId="mode-switch-pill"` + SPRING. **Active side derived from `useLocation().pathname`** (`/jobs*` → jobs, else interview) so deep links/back-forward stay correct. Clicking the current side is a no-op (doesn't reset progress in that flow). Props: `stacked` (mobile full-width), `onNavigate` (closes mobile menu). Homes: interview → `/interview/select-role`, jobs → `/jobs`.
 - Header: switcher centered desktop (`hidden md:block`), top of mobile menu; "Quick Interview" button demoted to `lg:flex` for space.
@@ -427,6 +445,7 @@ The product is now explicitly **two sides: Interview practice + Job Search**, sw
 - Manual migration SQL: `TalentPulseAI-fastAPI/migrations/phase4_add_content_hash_and_embedding_cache.sql`
 
 ## Changelog
+- 2026-07-17 — **App IA finalized** (c49ddb98): AppNav (Dashboard·Interview·Jobs) replaces ModeSwitch; logo→hub; avatar menu account-only; dashboard gets both-side launchers; profile gets cross-links. No false active state on shared pages. See "App information architecture".
 - 2026-07-17 — **Question difficulty ladder** (1ab30c96): interviews now open with basic "what is/why is" fundamentals from the candidate's stack, then applied resume Qs, then tricky ones; tier enforced server-side even on jumbled LLM output. Root cause of the old behavior: the prompt explicitly banned generic questions.
 - 2026-07-17 — **Parent landing + two parallel product pages** (e7288871): `/` advertises both sides with a hover-split "Pick Your Side"; `/practice` (interview) and `/find-jobs` (jobs) are twins on a shared SiteHeader/SiteFooter. Landing chunk 22→5.31 kB gzip. See "Public site structure".
 - 2026-07-17 — **Two-sided workspace** (d764e52c): Interview/Jobs segmented switcher in header (route-derived active state), /jobs restyled as a 3-step flow page. Also applied missing phase4 migration to local dev DB (fixed designations 500). See "Two-sided workspace".
