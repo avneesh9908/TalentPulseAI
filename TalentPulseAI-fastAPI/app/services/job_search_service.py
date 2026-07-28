@@ -53,6 +53,32 @@ def resolve_resume_document(
     return doc
 
 
+def list_resumes(db: Session, user_id: int) -> List[Dict]:
+    """
+    Resumes this user has indexed, newest first — so the job side can choose
+    its OWN source explicitly instead of silently inheriting whichever resume
+    the interview flow happened to upload last.
+    """
+    docs = (
+        db.query(ResumeDocument)
+        .filter(ResumeDocument.user_id == user_id)
+        .order_by(ResumeDocument.id.desc())
+        .all()
+    )
+    return [
+        {
+            "id": d.id,
+            "file_name": d.file_name or "Resume",
+            "role": d.role,
+            "experience": d.experience,
+            "skills": list(d.skills or [])[:8],
+            "source": d.source,
+            "created_at": d.created_at.isoformat() if d.created_at else None,
+        }
+        for d in docs
+    ]
+
+
 def _resume_text(doc: ResumeDocument, limit: int = _RESUME_PROMPT_CHARS) -> str:
     sections = doc.parsed_sections or {}
     joined = "\n\n".join(f"{name}: {text}" for name, text in sections.items() if text)

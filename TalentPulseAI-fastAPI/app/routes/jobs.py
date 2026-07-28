@@ -13,6 +13,7 @@ from app.models.user import User
 from app.schemas.job_search_schema import (
     DesignationSuggestRequest,
     DesignationSuggestResponse,
+    ResumeOption,
     JobMatchesResponse,
     JobMatchOut,
     JobSearchRunResponse,
@@ -53,6 +54,15 @@ def suggest_designations(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Designation suggestion failed: {e}",
         )
+
+
+@router.get("/resumes", response_model=List[ResumeOption])
+def list_resumes(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Resumes available to the job agent — the job side picks its own."""
+    return job_search_service.list_resumes(db, current_user.id)
 
 
 @router.get("/setup", response_model=JobSetupResponse)

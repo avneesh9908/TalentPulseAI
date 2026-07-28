@@ -38,6 +38,7 @@ export const config = {
     // Job Search Agent endpoints
     JOBS: {
       SETUP: "/jobs/setup",
+      RESUMES: "/jobs/resumes",
       DESIGNATIONS_SUGGEST: "/jobs/designations/suggest",
       SEARCH: "/jobs/search",
       MATCHES: "/jobs/matches",

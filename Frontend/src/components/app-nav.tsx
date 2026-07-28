@@ -11,14 +11,20 @@
  */
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Briefcase, LayoutDashboard, Mic } from "lucide-react";
+import { Briefcase, Home, LayoutDashboard, Mic } from "lucide-react";
 import { SPRING } from "@/lib/motion";
 
 const DESTINATIONS = [
-  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, home: "/dashboard", match: ["/dashboard"] },
-  { id: "interview", label: "Interview", icon: Mic, home: "/interview/select-role", match: ["/interview"] },
-  { id: "jobs", label: "Jobs", icon: Briefcase, home: "/jobs", match: ["/jobs"] },
+  // Home is the public landing page — matched exactly, since every path
+  // starts with "/" and would otherwise always look active.
+  { id: "home", label: "Home", icon: Home, home: "/", match: ["/"], exact: true },
+  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, home: "/dashboard", match: ["/dashboard"], exact: false },
+  { id: "interview", label: "Interview", icon: Mic, home: "/interview/select-role", match: ["/interview"], exact: false },
+  { id: "jobs", label: "Jobs", icon: Briefcase, home: "/jobs", match: ["/jobs"], exact: false },
 ] as const;
+
+const isIn = (dest: (typeof DESTINATIONS)[number], pathname: string) =>
+  dest.exact ? pathname === dest.home : dest.match.some((m) => pathname.startsWith(m));
 
 interface AppNavProps {
   className?: string;
@@ -30,7 +36,10 @@ interface AppNavProps {
 export default function AppNav({ className = "", stacked = false, onNavigate }: AppNavProps) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const activeId = DESTINATIONS.find((d) => d.match.some((m) => pathname.startsWith(m)))?.id;
+  // Most specific wins: check the non-exact sections before falling back to Home.
+  const activeId =
+    DESTINATIONS.filter((d) => !d.exact).find((d) => isIn(d, pathname))?.id ??
+    DESTINATIONS.filter((d) => d.exact).find((d) => isIn(d, pathname))?.id;
 
   return (
     <nav
@@ -49,7 +58,7 @@ export default function AppNav({ className = "", stacked = false, onNavigate }: 
             aria-current={active ? "page" : undefined}
             onClick={() => {
               // Already inside this section? don't reset progress within it.
-              if (!dest.match.some((m) => pathname.startsWith(m))) navigate(dest.home);
+              if (!isIn(dest, pathname)) navigate(dest.home);
               onNavigate?.();
             }}
             className={`relative flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold transition-colors ${

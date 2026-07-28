@@ -11,6 +11,7 @@ import { motion } from "framer-motion";
 import { Check, Loader2, Plus, RefreshCw, Search, Settings2, Sparkles, X } from "lucide-react";
 import {
   getJobMatches,
+  getJobResumes,
   getJobSetup,
   runJobSearch,
   saveJobSetup,
@@ -19,6 +20,7 @@ import {
   type JobMatch,
   type JobSetup,
   type MatchStatus,
+  type ResumeOption,
 } from "@/api/jobService";
 import { Reveal } from "@/components/motion/reveal";
 import { StaggerGroup, StaggerItem } from "@/components/motion/stagger";
@@ -42,7 +44,7 @@ const STATUS_BADGE: Record<MatchStatus, string> = {
 };
 
 const FLOW_STEPS = [
-  { title: "Set your targets", desc: "Roles derived from your resume" },
+  { title: "Resume & targets", desc: "Pick a resume, confirm the roles" },
   { title: "Agent searches", desc: "Company career pages, ranked" },
   { title: "Review & apply", desc: "Open, apply, track status" },
 ];
@@ -72,6 +74,9 @@ export default function JobsPage() {
   const [notice, setNotice] = useState<string | null>(null);
 
   // Setup-mode state
+  const [resumes, setResumes] = useState<ResumeOption[]>([]);
+  // The job agent uses its OWN resume choice, independent of the interview flow.
+  const [resumeId, setResumeId] = useState<number | null>(null);
   const [chips, setChips] = useState<string[]>([]);
   const [chipInput, setChipInput] = useState("");
   const [suggesting, setSuggesting] = useState(false);
@@ -89,6 +94,17 @@ export default function JobsPage() {
 
   const enterSetupMode = useCallback(async (existing?: JobSetup | null) => {
     setMode("setup");
+
+    // The job side picks its own resume — load the choices, defaulting to the
+    // one already saved for jobs (not whatever the interview flow last used).
+    try {
+      const available = await getJobResumes();
+      setResumes(available);
+      setResumeId(existing?.resume_document_id ?? available[0]?.id ?? null);
+    } catch {
+      // Non-fatal: the backend still falls back to the latest resume.
+    }
+
     if (existing?.target_designations?.length) {
       setChips(existing.target_designations);
       return;
@@ -139,7 +155,10 @@ export default function JobsPage() {
     setSaving(true);
     setError(null);
     try {
-      const saved = await saveJobSetup({ target_designations: chips });
+      const saved = await saveJobSetup({
+        target_designations: chips,
+        resume_document_id: resumeId,
+      });
       setSetup(saved);
       setMode("table");
       await loadMatches();
@@ -296,7 +315,71 @@ export default function JobsPage() {
 
       {mode === "setup" && (
         <Reveal>
-        <section className="space-y-4 rounded-lg border border-slate-300 p-5 shadow-sm dark:border-slate-700">
+        <section className="space-y-6 rounded-lg border border-slate-300 p-5 shadow-sm dark:border-slate-700">
+          {/* Step 1a — the job side's OWN resume, separate from the interview's */}
+          <div className="space-y-3">
+            <div>
+              <h2 className="text-lg font-medium text-slate-900 dark:text-white">
+                Resume for job search
+              </h2>
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                Choose which resume the agent matches jobs against. This is separate from the
+                resume your mock interviews use — you can point each side at a different one.
+              </p>
+            </div>
+
+            {resumes.length === 0 ? (
+              <div className="rounded-lg border border-dashed border-slate-300 p-4 text-sm dark:border-slate-700">
+                <p className="text-slate-600 dark:text-slate-300">
+                  No resume indexed yet. Upload one in the interview flow and it becomes available
+                  here too.
+                </p>
+                <a
+                  href="/interview/select-role"
+                  className="mt-2 inline-flex items-center gap-1 font-medium text-violet-600 hover:underline dark:text-violet-400"
+                >
+                  Upload a resume →
+                </a>
+              </div>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {resumes.map((r) => {
+                  const selected = r.id === resumeId;
+                  return (
+                    <button
+                      key={r.id}
+                      type="button"
+                      onClick={() => setResumeId(r.id)}
+                      aria-pressed={selected}
+                      className={`rounded-xl border p-4 text-left transition ${
+                        selected
+                          ? "border-violet-400/70 bg-violet-50 dark:border-violet-500/50 dark:bg-violet-900/20"
+                          : "border-slate-200 hover:border-violet-300 dark:border-slate-700 dark:hover:border-violet-500/40"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <span className="truncate font-medium text-slate-900 dark:text-white">
+                          {r.file_name}
+                        </span>
+                        {selected && <Check size={16} className="shrink-0 text-violet-500" />}
+                      </div>
+                      <p className="mt-1 truncate text-xs text-slate-500 dark:text-slate-400">
+                        {[r.role, r.experience].filter(Boolean).join(" · ") || "Indexed resume"}
+                      </p>
+                      {r.skills.length > 0 && (
+                        <p className="mt-2 truncate text-xs text-slate-400 dark:text-slate-500">
+                          {r.skills.slice(0, 4).join(", ")}
+                        </p>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <div className="h-px bg-slate-200 dark:bg-slate-700" />
+
           <div>
             <h2 className="text-lg font-medium text-slate-900 dark:text-white">
               Target designations

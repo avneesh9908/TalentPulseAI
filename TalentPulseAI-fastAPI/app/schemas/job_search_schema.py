@@ -14,6 +14,17 @@ class DesignationSuggestResponse(BaseModel):
     source: str  # "llm" | "fallback"
 
 
+class ResumeOption(BaseModel):
+    """A resume the user can point the job agent at (independent of interviews)."""
+    id: int
+    file_name: str
+    role: Optional[str] = None
+    experience: Optional[str] = None
+    skills: List[str] = Field(default_factory=list)
+    source: Optional[str] = None
+    created_at: Optional[str] = None
+
+
 class JobSetupRequest(BaseModel):
     resume_document_id: Optional[int] = None  # default: latest resume
     # User-confirmed target job titles (editable chips; may differ from resume history).

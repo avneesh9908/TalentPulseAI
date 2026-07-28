@@ -82,6 +82,22 @@ export interface TargetCompany {
   is_active: boolean;
 }
 
+export interface ResumeOption {
+  id: number;
+  file_name: string;
+  role: string | null;
+  experience: string | null;
+  skills: string[];
+  source: string | null;
+  created_at: string | null;
+}
+
+/** Resumes the job agent can use — chosen independently of the interview flow. */
+export const getJobResumes = async (): Promise<ResumeOption[]> => {
+  const { data } = await axiosInstance.get<ResumeOption[]>(config.ENDPOINTS.JOBS.RESUMES);
+  return data;
+};
+
 export const getJobSetup = async (): Promise<JobSetup> => {
   const { data } = await axiosInstance.get<JobSetup>(config.ENDPOINTS.JOBS.SETUP);
   return data;
