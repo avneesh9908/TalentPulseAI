@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "@/contexts/use-theme";
 import { useAuth } from "@/contexts/use-auth";
 import {authService} from "@/services/authService";
-import ModeSwitch from "@/components/mode-switch";
+import AppNav from "@/components/app-nav";
 import {
   Menu,
   X,
@@ -16,8 +16,6 @@ import {
   Sun,
   Moon,
   Bell,
-  LayoutDashboard,
-  Briefcase,
 } from "lucide-react";
 
 export default function Header() {
@@ -57,12 +55,6 @@ export default function Header() {
     setDropdownOpen(false);
   };
 
-  const handleJobs = () => {
-    navigate("/jobs");
-    setMobileMenuOpen(false);
-    setDropdownOpen(false);
-  };
-
   const handleLogout = () => {
     logout();
     setMobileMenuOpen(false);
@@ -79,10 +71,12 @@ export default function Header() {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Logo */}
+          {/* Logo → back to the shared hub */}
           <motion.button
+            onClick={handleDashboard}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
+            aria-label="Go to dashboard"
             className="flex items-center gap-2 group"
           >
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-cyan-500 flex items-center justify-center shadow-lg group-hover:shadow-violet-500/50">
@@ -93,9 +87,9 @@ export default function Header() {
             </span>
           </motion.button>
 
-          {/* Workspace switcher — Interview side vs Job Search side */}
+          {/* Primary nav — Dashboard hub + the two product sides */}
           <div className="hidden md:block">
-            <ModeSwitch />
+            <AppNav />
           </div>
 
           {/* Desktop Navigation */}
@@ -221,30 +215,7 @@ export default function Header() {
                         {displayName}
                       </div>
                       <div className={`my-1 ${isDark ? "bg-white/10" : "bg-slate-100"} h-px`} />
-                      <button
-                        onClick={handleDashboard}
-                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition ${
-                          isDark
-                            ? "text-slate-300 hover:bg-white/10 hover:text-white"
-                            : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                        }`}
-                      >
-                        <LayoutDashboard size={16} />
-                        Dashboard
-                      </button>
-
-                      <button
-                        onClick={handleJobs}
-                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition ${
-                          isDark
-                            ? "text-slate-300 hover:bg-white/10 hover:text-white"
-                            : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                        }`}
-                      >
-                        <Briefcase size={16} />
-                        Job Search
-                      </button>
-
+                      {/* Destinations live in the primary nav; this menu is account-only. */}
                       <button
                         onClick={handleProfile}
                         className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition ${
@@ -333,7 +304,7 @@ export default function Header() {
             >
               <div className="px-4 py-4 space-y-2">
                 {/* Workspace switcher */}
-                <ModeSwitch stacked className="mb-3" onNavigate={() => setMobileMenuOpen(false)} />
+                <AppNav stacked className="mb-3" onNavigate={() => setMobileMenuOpen(false)} />
 
                 <motion.button
                   onClick={handleQuickInterview}
@@ -342,32 +313,6 @@ export default function Header() {
                 >
                   <Zap size={16} />
                   Quick Interview
-                </motion.button>
-
-                <motion.button
-                  onClick={handleDashboard}
-                  whileTap={{ scale: 0.95 }}
-                  className={`w-full flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition ${
-                    isDark
-                      ? "text-slate-300 hover:bg-white/10"
-                      : "text-slate-600 hover:bg-slate-100"
-                  }`}
-                >
-                  <LayoutDashboard size={16} />
-                  Dashboard
-                </motion.button>
-
-                <motion.button
-                  onClick={handleJobs}
-                  whileTap={{ scale: 0.95 }}
-                  className={`w-full flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition ${
-                    isDark
-                      ? "text-slate-300 hover:bg-white/10"
-                      : "text-slate-600 hover:bg-slate-100"
-                  }`}
-                >
-                  <Briefcase size={16} />
-                  Job Search
                 </motion.button>
 
                 <motion.button

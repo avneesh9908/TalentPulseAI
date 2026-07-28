@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 import { useTheme } from "@/contexts/use-theme";
 import {authService} from "@/services/authService";
 import {
@@ -8,6 +9,8 @@ import {
   FileText,
   Lock,
   ArrowRight,
+  LayoutDashboard,
+  Mic,
 } from "lucide-react";
 
 export default function Profile() {
@@ -40,6 +43,35 @@ export default function Profile() {
           <p className={`text-lg ${isDark ? "text-slate-400" : "text-slate-600"}`}>
             Manage your account settings and personal information
           </p>
+
+          {/* Both sides reachable from the shared account page */}
+          <div className="mt-5 flex flex-wrap gap-3">
+            <Link
+              to="/dashboard"
+              className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition ${
+                isDark
+                  ? "border-white/10 bg-white/5 text-white hover:bg-white/10"
+                  : "border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50"
+              }`}
+            >
+              <LayoutDashboard size={16} />
+              Dashboard
+            </Link>
+            <Link
+              to="/interview/select-role"
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-500 px-4 py-2 text-sm font-semibold text-white shadow-lg"
+            >
+              <Mic size={16} />
+              Start interview
+            </Link>
+            <Link
+              to="/jobs"
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-400 px-4 py-2 text-sm font-semibold text-white shadow-lg"
+            >
+              <Briefcase size={16} />
+              Find jobs
+            </Link>
+          </div>
         </div>
 
         {/* Profile Card */}

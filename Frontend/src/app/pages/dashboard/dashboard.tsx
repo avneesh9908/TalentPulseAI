@@ -18,7 +18,8 @@ import {
   Area,
   AreaChart,
 } from "recharts";
-import { Menu, X, Users, Calendar, BarChart2, Bell, Trophy, Target, TrendingUp, Zap, Award, Clock, Star, ChevronRight, Activity } from "lucide-react";
+import { Menu, X, Users, Calendar, BarChart2, Bell, Trophy, Target, TrendingUp, Zap, Award, Clock, Star, ChevronRight, Activity, Mic, Briefcase } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 // ---------- Mock Data ----------
 const stats = [
@@ -144,6 +145,7 @@ export default function UserDashboardPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const { isDark, toggleTheme } = useTheme();
+  const navigate = useNavigate();
   const currentUser = authService.getCurrentUserFromStorage();
   const displayName = currentUser?.full_name ?? currentUser?.email ?? "there";
  
@@ -316,7 +318,7 @@ export default function UserDashboardPage() {
                     Welcome back,{" "}
                     <span className="bg-gradient-to-r from-violet-500 to-cyan-400 bg-clip-text text-transparent">{displayName}</span>
                   </h1>
-                  <p className={isDark ? "text-slate-400" : "text-gray-600"}>Track your progress and prepare for upcoming interviews</p>
+                  <p className={isDark ? "text-slate-400" : "text-gray-600"}>Your hub for both sides — practice interviews and hunt for jobs</p>
                 </div>
 
                 <div className="hidden md:flex items-center gap-3">
@@ -346,6 +348,65 @@ export default function UserDashboardPage() {
                   <div className="w-10 h-10 rounded-full bg-gradient-primary flex items-center justify-center text-white font-bold shadow-lg">A</div>
                 </div>
               </motion.div>
+
+              {/* Two sides — the hub's job is to launch either one */}
+              <div className="grid gap-4 sm:grid-cols-2 mb-6">
+                {[
+                  {
+                    id: "interview",
+                    label: "Interview Practice",
+                    desc: "Rehearse with AI questions built from your resume",
+                    action: "Start an interview",
+                    to: "/interview/select-role",
+                    icon: Mic,
+                    accent: "from-violet-600 to-fuchsia-500",
+                  },
+                  {
+                    id: "jobs",
+                    label: "Job Search",
+                    desc: "Let the agent scan career pages and rank matches",
+                    action: "Find matching jobs",
+                    to: "/jobs",
+                    icon: Briefcase,
+                    accent: "from-cyan-500 to-emerald-400",
+                  },
+                ].map((side, i) => (
+                  <motion.button
+                    key={side.id}
+                    type="button"
+                    onClick={() => navigate(side.to)}
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.05 + i * 0.08 }}
+                    whileHover={{ y: -4 }}
+                    whileTap={{ scale: 0.99 }}
+                    className={`group relative overflow-hidden rounded-2xl border p-6 text-left transition ${
+                      isDark
+                        ? "border-white/10 bg-slate-900/60 backdrop-blur-xl"
+                        : "border-gray-200 bg-white shadow-md"
+                    }`}
+                  >
+                    <div className={`pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-gradient-to-br ${side.accent} opacity-20 blur-2xl transition-opacity group-hover:opacity-40`} />
+                    <div className="relative z-10">
+                      <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${side.accent} shadow-lg`}>
+                        <side.icon className="text-white" size={24} />
+                      </div>
+                      <h3 className={`font-display text-xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
+                        {side.label}
+                      </h3>
+                      <p className={`mt-1 text-sm ${isDark ? "text-slate-400" : "text-gray-600"}`}>
+                        {side.desc}
+                      </p>
+                      <span className={`mt-4 inline-flex items-center gap-2 text-sm font-semibold transition-all group-hover:gap-3 ${
+                        isDark ? "text-violet-300" : "text-violet-600"
+                      }`}>
+                        {side.action}
+                        <ChevronRight size={16} />
+                      </span>
+                    </div>
+                  </motion.button>
+                ))}
+              </div>
 
               {/* Stats Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
