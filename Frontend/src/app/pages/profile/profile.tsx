@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type ComponentType } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { useTheme } from "@/contexts/use-theme";
@@ -16,11 +16,15 @@ import {
   LayoutDashboard,
   Mic,
   Award,
-  BarChart3,
   CalendarClock,
   Loader2,
   PlayCircle,
   RefreshCw,
+  CheckCircle2,
+  Clock,
+  TrendingUp,
+  Trophy,
+  UserRound,
 } from "lucide-react";
 
 /** An interview is finished only once it has been scored. */
@@ -46,6 +50,14 @@ const formatDate = (value: string | null) => {
   if (!value) return "—";
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
+};
+
+const formatShortDate = (value: string | null) => {
+  if (!value) return "—";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? value
+    : date.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 };
 
 export default function Profile() {
@@ -142,33 +154,42 @@ export default function Profile() {
     [navigate]
   );
 
-  const cardClass = isDark
-    ? "bg-slate-800/50 border-white/10"
-    : "bg-white border-slate-200";
+  const panelClass = isDark
+    ? "bg-slate-900/60 border-white/10"
+    : "bg-white border-slate-200 shadow-sm";
   const mutedText = isDark ? "text-slate-400" : "text-slate-600";
+  const innerBorder = isDark ? "border-white/10" : "border-slate-200";
+
+  const panelHeading = (
+    label: string,
+    Icon: ComponentType<{ size?: number | string; className?: string }>,
+    accent: string
+  ) => (
+    <div className={`flex items-center gap-2 border-b px-5 py-4 ${innerBorder}`}>
+      <Icon size={18} className={accent} />
+      <h2 className="font-semibold">{label}</h2>
+    </div>
+  );
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-      >
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="font-display text-4xl md:text-5xl font-bold uppercase tracking-tight mb-2">
-            Your{" "}
-            <span className="bg-gradient-to-r from-violet-500 to-cyan-400 bg-clip-text text-transparent">Profile</span>
-          </h1>
-          <p className={`text-lg ${mutedText}`}>
-            Your account, your interview history and the resumes on file
-          </p>
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+        {/* Header — title and actions share one row so they don't stack */}
+        <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <h1 className="font-display text-3xl md:text-4xl font-bold uppercase tracking-tight">
+              Your{" "}
+              <span className="bg-gradient-to-r from-violet-500 to-cyan-400 bg-clip-text text-transparent">Profile</span>
+            </h1>
+            <p className={`mt-1 ${mutedText}`}>
+              Your account, your interview history and the resumes on file
+            </p>
+          </div>
 
-          {/* Both sides reachable from the shared account page */}
-          <div className="mt-5 flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-2">
             <Link
               to="/dashboard"
-              className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition ${
+              className={`inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-sm font-medium transition ${
                 isDark
                   ? "border-white/10 bg-white/5 text-white hover:bg-white/10"
                   : "border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50"
@@ -179,14 +200,14 @@ export default function Profile() {
             </Link>
             <Link
               to="/interview/select-role"
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-500 px-4 py-2 text-sm font-semibold text-white shadow-lg"
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-500 px-3.5 py-2 text-sm font-semibold text-white shadow-lg"
             >
               <Mic size={16} />
               Start interview
             </Link>
             <Link
               to="/jobs"
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-400 px-4 py-2 text-sm font-semibold text-white shadow-lg"
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-400 px-3.5 py-2 text-sm font-semibold text-white shadow-lg"
             >
               <Briefcase size={16} />
               Find jobs
@@ -195,7 +216,7 @@ export default function Profile() {
         </div>
 
         {loading && (
-          <div className={`mb-6 flex items-center gap-3 rounded-xl border p-4 text-sm ${cardClass} ${mutedText}`}>
+          <div className={`mb-5 flex items-center gap-3 rounded-xl border p-4 text-sm ${panelClass} ${mutedText}`}>
             <Loader2 size={16} className="animate-spin" />
             Loading your account…
           </div>
@@ -203,7 +224,7 @@ export default function Profile() {
 
         {loadError && (
           <div
-            className={`mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border p-4 text-sm ${
+            className={`mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border p-4 text-sm ${
               isDark ? "border-amber-500/30 bg-amber-500/10 text-amber-300" : "border-amber-200 bg-amber-50 text-amber-700"
             }`}
           >
@@ -211,7 +232,7 @@ export default function Profile() {
             <button
               type="button"
               onClick={() => void loadOverview()}
-              className="inline-flex items-center gap-2 rounded-lg px-3 py-1.5 font-semibold text-white bg-amber-600 hover:bg-amber-700"
+              className="inline-flex items-center gap-2 rounded-lg bg-amber-600 px-3 py-1.5 font-semibold text-white hover:bg-amber-700"
             >
               <RefreshCw size={14} />
               Retry
@@ -219,367 +240,336 @@ export default function Profile() {
           </div>
         )}
 
-        {/* Profile Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-          className={`rounded-xl border p-8 ${cardClass}`}
-        >
-          {/* Profile Picture & Basic Info */}
-          <div className="flex items-start gap-6 mb-8 pb-8 border-b border-white/10">
-            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-violet-500 to-cyan-500 flex items-center justify-center text-white text-3xl font-bold shadow-lg">
-              {initial}
+        {/* Practice summary — one compact row instead of a paragraph */}
+        <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {[
+            { id: "completed", label: "Completed", value: stats ? stats.completed : null, icon: CheckCircle2, accent: "text-emerald-400" },
+            { id: "unfinished", label: "Not completed", value: stats ? stats.unfinished : null, icon: Clock, accent: "text-amber-400" },
+            { id: "avg", label: "Average score", value: stats?.average_score ?? null, icon: TrendingUp, accent: "text-violet-400" },
+            { id: "best", label: "Best score", value: stats?.best_score ?? null, icon: Trophy, accent: "text-cyan-400" },
+          ].map((tile) => (
+            <div key={tile.id} className={`rounded-xl border p-4 ${panelClass}`}>
+              <div className="flex items-center gap-2">
+                <tile.icon size={15} className={tile.accent} />
+                <p className={`text-xs ${mutedText}`}>{tile.label}</p>
+              </div>
+              <p className="mt-1 text-2xl font-bold">{tile.value ?? "—"}</p>
             </div>
+          ))}
+        </div>
 
-            <div className="flex-1">
-              <h2 className="text-2xl font-bold mb-2">{userData.name}</h2>
-              <p className={mutedText}>
-                {latest?.role
-                  ? `${latest.role} · ${latest.experience}`
-                  : dataLoaded
-                    ? "No interviews yet"
-                    : "—"}
+        {/* Three vertical partitions — account | interviews | resumes */}
+        <div className="grid items-start gap-6 lg:grid-cols-3">
+          {/* ── Partition 1: account ─────────────────────────────────── */}
+          <Reveal className={`rounded-2xl border ${panelClass}`}>
+            {panelHeading("Account", UserRound, "text-violet-400")}
+
+            <div className="p-5">
+              <div className="flex items-center gap-4">
+                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-cyan-500 text-2xl font-bold text-white shadow-lg">
+                  {initial}
+                </div>
+                <div className="min-w-0">
+                  <h3 className="truncate text-lg font-bold">{userData.name}</h3>
+                  <p className={`truncate text-sm ${mutedText}`}>
+                    {latest?.role
+                      ? `${latest.role} · ${latest.experience}`
+                      : dataLoaded
+                        ? "No interviews yet"
+                        : "—"}
+                  </p>
+                </div>
+              </div>
+
+              <dl className="mt-5 space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-violet-500/20">
+                    <Mail size={17} className="text-violet-400" />
+                  </div>
+                  <div className="min-w-0">
+                    <dt className={`text-xs ${mutedText}`}>Email address</dt>
+                    <dd className="truncate text-sm font-medium">{userData.email}</dd>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-cyan-500/20">
+                    <Phone size={17} className="text-cyan-400" />
+                  </div>
+                  <div className="min-w-0">
+                    <dt className={`text-xs ${mutedText}`}>Phone number</dt>
+                    <dd className="truncate text-sm font-medium">{userData.phone}</dd>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-500/20">
+                    <CheckCircle2 size={17} className="text-emerald-400" />
+                  </div>
+                  <div className="min-w-0">
+                    <dt className={`text-xs ${mutedText}`}>User ID</dt>
+                    <dd className="truncate font-mono text-xs">
+                      <span className="select-all">{userData.publicId}</span>
+                    </dd>
+                  </div>
+                </div>
+              </dl>
+
+              <button
+                type="button"
+                className={`mt-5 flex w-full items-center justify-between rounded-lg border p-3 transition ${
+                  isDark ? "border-white/10 hover:bg-white/5" : "border-slate-200 hover:bg-slate-50"
+                }`}
+              >
+                <span className="flex items-center gap-2.5">
+                  <Lock size={17} className="text-blue-500" />
+                  <span className="text-sm font-medium">Change password</span>
+                </span>
+                <ArrowRight size={16} className="text-slate-400" />
+              </button>
+
+              <p className={`mt-3 text-xs ${mutedText}`}>
+                💡 Editing your details and changing your password are coming soon.
               </p>
-              <p className="mt-2 font-mono text-xs text-slate-500">
-                User ID: <span className="select-all">{userData.publicId}</span>
-              </p>
             </div>
-          </div>
+          </Reveal>
 
-          {/* Personal Information */}
-          <div className="space-y-6 mb-8">
-            <h3 className="text-xl font-bold">Personal Information</h3>
+          {/* ── Partition 2: interviews ───────────────────────────────── */}
+          <Reveal className={`rounded-2xl border ${panelClass}`}>
+            {panelHeading("Interviews", Award, "text-emerald-400")}
 
-            {/* Email */}
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-lg bg-violet-500/20 flex items-center justify-center">
-                <Mail size={20} className="text-violet-400" />
-              </div>
-              <div>
-                <p className={`text-sm ${mutedText}`}>Email Address</p>
-                <p className="font-medium">{userData.email}</p>
-              </div>
-            </div>
+            <div className="p-5">
+              {reportError && (
+                <p className={`mb-3 text-sm ${isDark ? "text-amber-300" : "text-amber-700"}`}>{reportError}</p>
+              )}
 
-            {/* Phone */}
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center">
-                <Phone size={20} className="text-cyan-400" />
-              </div>
-              <div>
-                <p className={`text-sm ${mutedText}`}>Phone Number</p>
-                <p className="font-medium">{userData.phone}</p>
-              </div>
-            </div>
-
-            {/* Practice summary — real counts for this user */}
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">
-                <BarChart3 size={20} className="text-emerald-400" />
-              </div>
-              <div>
-                <p className={`text-sm ${mutedText}`}>Practice So Far</p>
-                <p className="font-medium">
-                  {stats
-                    ? [
-                        `${stats.completed} completed`,
-                        stats.unfinished > 0 ? `${stats.unfinished} unfinished` : null,
-                        stats.average_score !== null ? `avg ${stats.average_score}` : null,
-                        stats.best_score !== null ? `best ${stats.best_score}` : null,
-                      ]
-                        .filter(Boolean)
-                        .join(" · ")
-                    : "—"}
+              {unfinishedSetup && (
+                <p className={`mb-4 text-xs leading-relaxed ${mutedText}`}>
+                  You also have an unfinished {unfinishedSetup.role} setup from{" "}
+                  {formatShortDate(unfinishedSetup.started_at)}. It can't be resumed — start a new
+                  interview to practise that role.
                 </p>
-              </div>
-            </div>
-          </div>
+              )}
 
-          {/* Latest interview — status + the action that follows from it */}
-          <div className="space-y-4 mb-8 pb-8 border-b border-white/10">
-            <h3 className="text-xl font-bold">Latest Interview</h3>
-
-            {reportError && (
-              <p className={`text-sm ${isDark ? "text-amber-300" : "text-amber-700"}`}>{reportError}</p>
-            )}
-
-            {unfinishedSetup && (
-              <p className={`text-sm ${mutedText}`}>
-                You also have an unfinished {unfinishedSetup.role} setup from{" "}
-                {formatDate(unfinishedSetup.started_at)}. It can't be resumed — start a new
-                interview to practise that role.
-              </p>
-            )}
-
-            {!dataLoaded && !loading && (
-              <p className={`text-sm ${mutedText}`}>
-                Your interview history couldn't be loaded, so it isn't shown here.
-              </p>
-            )}
-
-            {dataLoaded && !latest && (
-              <div className={`rounded-lg border p-4 ${isDark ? "border-white/10" : "border-slate-200"}`}>
+              {!dataLoaded && !loading && (
                 <p className={`text-sm ${mutedText}`}>
-                  You haven't taken an interview yet. Your status and score will show up here.
+                  Your interview history couldn't be loaded, so it isn't shown here.
                 </p>
-                <Link
-                  to="/interview/select-role"
-                  className="mt-3 inline-flex items-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700"
-                >
-                  <Mic size={16} />
-                  Take your first interview
-                </Link>
-              </div>
-            )}
+              )}
 
-            {latest && (
-              <Reveal>
-                <div className={`rounded-lg border p-5 ${isDark ? "border-white/10 bg-slate-950/40" : "border-slate-200 bg-slate-50"}`}>
-                  <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-semibold">{latest.role}</p>
-                        <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${statusClasses(latest)}`}>
+              {dataLoaded && !latest && (
+                <div className={`rounded-xl border p-4 ${innerBorder}`}>
+                  <p className={`text-sm ${mutedText}`}>
+                    You haven't taken an interview yet. Your status and score will show up here.
+                  </p>
+                  <Link
+                    to="/interview/select-role"
+                    className="mt-3 inline-flex items-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700"
+                  >
+                    <Mic size={16} />
+                    Take your first interview
+                  </Link>
+                </div>
+              )}
+
+              {latest && (
+                <div className={`rounded-xl border p-4 ${isDark ? "border-white/10 bg-slate-950/40" : "border-slate-200 bg-slate-50"}`}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className={`text-[11px] uppercase tracking-wider ${mutedText}`}>Latest</p>
+                      <div className="mt-0.5 flex flex-wrap items-center gap-2">
+                        <p className="truncate font-semibold">{latest.role}</p>
+                        <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${statusClasses(latest)}`}>
                           {statusLabel(latest)}
                         </span>
                       </div>
-                      <p className={`mt-1 text-sm ${mutedText}`}>
+                      <p className={`mt-1 text-xs ${mutedText}`}>
                         {latest.experience} · {latest.difficulty}
-                        {latest.skills.length > 0 && ` · ${latest.skills.slice(0, 4).join(", ")}`}
                       </p>
-                      <p className={`mt-2 flex items-center gap-2 text-xs ${mutedText}`}>
-                        <CalendarClock size={14} />
+                      {latest.skills.length > 0 && (
+                        <p className={`text-xs ${mutedText}`}>{latest.skills.slice(0, 4).join(", ")}</p>
+                      )}
+                      <p className={`mt-2 flex items-center gap-1.5 text-xs ${mutedText}`}>
+                        <CalendarClock size={13} />
                         {isComplete(latest)
-                          ? `Completed ${formatDate(latest.completed_at)}`
+                          ? formatDate(latest.completed_at)
                           : `Started ${formatDate(latest.started_at)}`}
                       </p>
                     </div>
 
                     {isComplete(latest) && typeof latest.score === "number" && (
-                      <div className="text-right">
-                        <p className={`text-4xl font-bold ${scoreTone(latest.score)}`}>{latest.score}</p>
-                        <p className={`text-xs ${mutedText}`}>out of 100</p>
+                      <div className="shrink-0 text-right">
+                        <p className={`text-3xl font-bold leading-none ${scoreTone(latest.score)}`}>{latest.score}</p>
+                        <p className={`text-[11px] ${mutedText}`}>/ 100</p>
                       </div>
                     )}
                   </div>
 
-                  <div className="mt-4 flex flex-wrap gap-3">
+                  <div className="mt-3">
                     {isComplete(latest) ? (
                       <button
                         type="button"
                         onClick={() => void openReport(latest.interview_id)}
                         disabled={openingReport === latest.interview_id}
-                        className="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700 disabled:opacity-60"
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700 disabled:opacity-60"
                       >
                         {openingReport === latest.interview_id ? (
-                          <Loader2 size={16} className="animate-spin" />
+                          <Loader2 size={15} className="animate-spin" />
                         ) : (
-                          <Award size={16} />
+                          <Award size={15} />
                         )}
                         View report
                       </button>
                     ) : (
                       <Link
                         to="/interview/select-role"
-                        className="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700"
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700"
                       >
-                        <PlayCircle size={16} />
+                        <PlayCircle size={15} />
                         Start a new interview
                       </Link>
                     )}
-                    <Link
-                      to="/dashboard"
-                      className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition ${
-                        isDark
-                          ? "border-white/10 text-white hover:bg-white/5"
-                          : "border-slate-200 text-slate-700 hover:bg-white"
-                      }`}
-                    >
-                      <LayoutDashboard size={16} />
-                      Dashboard
-                    </Link>
                   </div>
                 </div>
-              </Reveal>
-            )}
+              )}
 
-            {earlier.length > 0 && (
-              <div className="space-y-2">
-                <p className={`text-sm font-semibold ${mutedText}`}>
-                  Earlier interviews
-                  {stats && stats.completed > history.length && (
-                    <span className="font-normal">
-                      {" "}
-                      — showing {history.length} of {stats.completed} completed
-                    </span>
-                  )}
-                </p>
-                {earlier.map((interview) => (
-                  <div
-                    key={interview.interview_id}
-                    className={`flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3 ${
-                      isDark ? "border-white/10" : "border-slate-200"
-                    }`}
-                  >
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="truncate text-sm font-medium">{interview.role}</p>
-                        <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${statusClasses(interview)}`}>
-                          {statusLabel(interview)}
-                        </span>
-                      </div>
-                      <p className={`text-xs ${mutedText}`}>
-                        {isComplete(interview)
-                          ? formatDate(interview.completed_at)
-                          : formatDate(interview.started_at)}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      {typeof interview.score === "number" && (
-                        <span className={`text-sm font-bold ${scoreTone(interview.score)}`}>
-                          {interview.score}
-                        </span>
-                      )}
-                      {isComplete(interview) && (
-                        <button
-                          type="button"
-                          onClick={() => void openReport(interview.interview_id)}
-                          disabled={openingReport === interview.interview_id}
-                          className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition disabled:opacity-60 ${
-                            isDark
-                              ? "border-white/10 text-white hover:bg-white/5"
-                              : "border-slate-200 text-slate-700 hover:bg-slate-50"
-                          }`}
-                        >
-                          {openingReport === interview.interview_id ? (
-                            <Loader2 size={14} className="animate-spin" />
-                          ) : (
-                            <Award size={14} />
+              {earlier.length > 0 && (
+                <div className="mt-4">
+                  <p className={`mb-2 text-xs font-semibold uppercase tracking-wider ${mutedText}`}>
+                    Earlier
+                    {stats && stats.completed > history.length && (
+                      <span className="font-normal normal-case tracking-normal">
+                        {" "}
+                        · {history.length} of {stats.completed}
+                      </span>
+                    )}
+                  </p>
+                  <div className="space-y-2">
+                    {earlier.map((interview) => (
+                      <div
+                        key={interview.interview_id}
+                        className={`flex items-center justify-between gap-3 rounded-lg border p-2.5 ${innerBorder}`}
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium">{interview.role}</p>
+                          <p className={`text-xs ${mutedText}`}>
+                            {formatShortDate(
+                              isComplete(interview) ? interview.completed_at : interview.started_at
+                            )}
+                          </p>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-2">
+                          {typeof interview.score === "number" && (
+                            <span className={`text-sm font-bold ${scoreTone(interview.score)}`}>
+                              {interview.score}
+                            </span>
                           )}
-                          Report
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Resume & Documents — the resumes actually indexed for this user */}
-          <div className="space-y-4 mb-8 pb-8 border-b border-white/10">
-            <h3 className="text-xl font-bold">Resume & Documents</h3>
-
-            {!dataLoaded ? (
-              !loading && (
-                <p className={`text-sm ${mutedText}`}>
-                  Your resumes couldn't be loaded, so they aren't shown here.
-                </p>
-              )
-            ) : resumes.length === 0 ? (
-              <div className={`rounded-lg border p-4 ${isDark ? "border-white/10" : "border-slate-200"}`}>
-                <div className="flex items-center gap-3">
-                  <FileText size={20} className="text-orange-500" />
-                  <div>
-                    <p className="font-medium">No resume on file</p>
-                    <p className={`text-sm ${mutedText}`}>
-                      Upload one in the interview setup — both the interview and job agent use it.
-                    </p>
+                          {isComplete(interview) && (
+                            <button
+                              type="button"
+                              onClick={() => void openReport(interview.interview_id)}
+                              disabled={openingReport === interview.interview_id}
+                              aria-label={`Open ${interview.role} report`}
+                              className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition disabled:opacity-60 ${
+                                isDark
+                                  ? "border-white/10 text-white hover:bg-white/5"
+                                  : "border-slate-200 text-slate-700 hover:bg-slate-50"
+                              }`}
+                            >
+                              {openingReport === interview.interview_id ? (
+                                <Loader2 size={13} className="animate-spin" />
+                              ) : (
+                                <Award size={13} />
+                              )}
+                              Report
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-                <Link
-                  to="/interview/select-profile"
-                  className="mt-3 inline-flex items-center gap-2 rounded-lg bg-orange-600 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-700"
-                >
-                  Upload resume
-                  <ArrowRight size={16} />
-                </Link>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {resumes.map((resume) => (
-                  <div
-                    key={resume.id}
-                    className={`flex flex-wrap items-center justify-between gap-3 rounded-lg border p-4 ${
-                      isDark ? "border-white/10" : "border-slate-200"
-                    }`}
+              )}
+            </div>
+          </Reveal>
+
+          {/* ── Partition 3: resumes ──────────────────────────────────── */}
+          <Reveal className={`rounded-2xl border ${panelClass}`}>
+            {panelHeading("Resumes & documents", FileText, "text-orange-400")}
+
+            <div className="p-5">
+              {!dataLoaded ? (
+                !loading && (
+                  <p className={`text-sm ${mutedText}`}>
+                    Your resumes couldn't be loaded, so they aren't shown here.
+                  </p>
+                )
+              ) : resumes.length === 0 ? (
+                <div className={`rounded-xl border p-4 ${innerBorder}`}>
+                  <div className="flex items-center gap-2.5">
+                    <FileText size={18} className="text-orange-500" />
+                    <p className="text-sm font-medium">No resume on file</p>
+                  </div>
+                  <p className={`mt-1 text-sm ${mutedText}`}>
+                    Upload one in the interview setup — both the interview and job agent use it.
+                  </p>
+                  <Link
+                    to="/interview/select-profile"
+                    className="mt-3 inline-flex items-center gap-2 rounded-lg bg-orange-600 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-700"
                   >
-                    <div className="flex min-w-0 items-center gap-3">
-                      <FileText size={20} className="shrink-0 text-orange-500" />
-                      <div className="min-w-0">
-                        <p className="truncate font-medium">{resume.file_name}</p>
-                        <p className={`text-sm ${mutedText}`}>
-                          {resume.role} · {resume.experience}
-                          {resume.skills.length > 0 && ` · ${resume.skills.slice(0, 4).join(", ")}`}
-                        </p>
-                        <p className="text-xs text-slate-500">Added {formatDate(resume.created_at)}</p>
+                    Upload resume
+                    <ArrowRight size={15} />
+                  </Link>
+                </div>
+              ) : (
+                <div className="space-y-2.5">
+                  {resumes.map((resume) => (
+                    <div key={resume.id} className={`rounded-xl border p-3 ${innerBorder}`}>
+                      <div className="flex items-start gap-2.5">
+                        <FileText size={17} className="mt-0.5 shrink-0 text-orange-500" />
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium">{resume.file_name}</p>
+                          <p className={`text-xs ${mutedText}`}>
+                            {resume.role} · {resume.experience}
+                          </p>
+                          {resume.skills.length > 0 && (
+                            <p className={`truncate text-xs ${mutedText}`}>
+                              {resume.skills.slice(0, 4).join(", ")}
+                            </p>
+                          )}
+                          <p className="mt-0.5 text-xs text-slate-500">
+                            Added {formatShortDate(resume.created_at)}
+                          </p>
+                        </div>
                       </div>
                     </div>
+                  ))}
+
+                  <div className="flex flex-wrap gap-2 pt-1">
                     <Link
                       to="/jobs"
-                      className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${
+                      className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-cyan-500 to-emerald-400 px-3.5 py-2 text-sm font-semibold text-white shadow-lg"
+                    >
+                      <Briefcase size={15} />
+                      Match jobs
+                    </Link>
+                    <Link
+                      to="/interview/select-profile"
+                      className={`inline-flex items-center gap-2 rounded-lg border px-3.5 py-2 text-sm font-semibold transition ${
                         isDark
                           ? "border-white/10 text-white hover:bg-white/5"
                           : "border-slate-200 text-slate-700 hover:bg-slate-50"
                       }`}
                     >
-                      <Briefcase size={14} />
-                      Match jobs
+                      Upload another
+                      <ArrowRight size={15} />
                     </Link>
                   </div>
-                ))}
-                <Link
-                  to="/interview/select-profile"
-                  className={`inline-flex items-center gap-2 text-sm font-semibold ${
-                    isDark ? "text-violet-300 hover:text-violet-200" : "text-violet-700 hover:text-violet-800"
-                  }`}
-                >
-                  Upload another resume
-                  <ArrowRight size={14} />
-                </Link>
-              </div>
-            )}
-          </div>
-
-          {/* Account Settings */}
-          <div className="space-y-4">
-            <h3 className="text-xl font-bold mb-4">Account Settings</h3>
-            <button
-              type="button"
-              className={`w-full flex items-center justify-between p-4 rounded-lg border transition ${
-                isDark
-                  ? "border-white/10 hover:bg-white/5"
-                  : "border-slate-200 hover:bg-slate-50"
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <Lock size={20} className="text-blue-500" />
-                <div className="text-left">
-                  <p className="font-medium">Change Password</p>
-                  <p className={`text-sm ${mutedText}`}>Update your password</p>
                 </div>
-              </div>
-              <ArrowRight size={20} className="text-slate-400" />
-            </button>
-          </div>
-        </motion.div>
-
-        {/* Coming Soon Notice */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className={`mt-8 p-4 rounded-lg border ${
-            isDark
-              ? "bg-blue-500/10 border-blue-500/30"
-              : "bg-blue-50 border-blue-200"
-          }`}
-        >
-          <p className={`text-sm ${isDark ? "text-blue-300" : "text-blue-700"}`}>
-            💡 Editing your details and changing your password are coming soon.
-          </p>
-        </motion.div>
+              )}
+            </div>
+          </Reveal>
+        </div>
       </motion.div>
     </div>
   );
