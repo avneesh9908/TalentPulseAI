@@ -198,13 +198,16 @@ export interface InterviewFeedbackReport {
   overall_feedback: string;
   question_feedback: InterviewQuestionFeedback[];
   next_steps: string[];
+  /** How many questions were asked. Absent on interviews submitted before it was recorded. */
+  total_questions?: number;
 }
 
 export interface InterviewSubmitResponse {
   interview_id: string;
   status: "submitted";
+  /** Null is possible on rows whose completed_at was never backfilled. */
+  completed_at: string | null;
   score: number;
-  completed_at: string;
   message: string;
   feedback: InterviewFeedbackReport;
 }

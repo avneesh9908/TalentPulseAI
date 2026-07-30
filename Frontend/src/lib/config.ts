@@ -49,6 +49,7 @@ export const config = {
     // User profile endpoints
     PROFILE: {
       GET: "/user/profile",
+      OVERVIEW: "/user/overview",
       UPDATE: "/user/profile/update",
       UPLOAD_FILE: "/user/profile/upload",
     },

@@ -142,6 +142,16 @@ def generate_interview_questions(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Question generation failed: {e}")
 
 
+# Registered before /{interview_id} so the literal path wins the match.
+@router.get("/list")
+def list_interviews(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    interviews = interview_service.list_interviews(db, current_user.id)
+    return {"total": len(interviews), "interviews": interviews}
+
+
 @router.get("/{interview_id}")
 def get_interview(
     interview_id: str,

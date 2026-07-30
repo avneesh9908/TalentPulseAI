@@ -89,8 +89,8 @@ export const submitInterview = async (
 
 export const getInterviewResults = async (
   interviewId: string
-): Promise<Record<string, unknown>> => {
+): Promise<InterviewSubmitResponse> => {
   const endpoint = buildUrl(config.ENDPOINTS.INTERVIEW.RESULTS, { id: interviewId });
-  const { data } = await axiosInstance.get<Record<string, unknown>>(endpoint);
+  const { data } = await axiosInstance.get<InterviewSubmitResponse>(endpoint);
   return data;
 };

@@ -28,6 +28,33 @@ def create_interview(db: Session, user_id: int, payload: InterviewSetupRequest) 
     return record
 
 
+def summarize_interview(record: Interview) -> Dict:
+    """Flat per-interview summary used by history/overview endpoints (no answers/feedback payload)."""
+    feedback = record.feedback if isinstance(record.feedback, dict) else {}
+    return {
+        "interview_id": record.interview_id,
+        "role": record.role,
+        "experience": record.experience,
+        "difficulty": record.difficulty,
+        "skills": list(record.skills or []),
+        "status": record.status,
+        "score": feedback.get("score"),
+        "started_at": record.started_at.isoformat() if record.started_at else None,
+        "completed_at": record.completed_at.isoformat() if record.completed_at else None,
+    }
+
+
+def list_interviews(db: Session, user_id: int, limit: Optional[int] = None) -> List[Dict]:
+    query = (
+        db.query(Interview)
+        .filter(Interview.user_id == user_id)
+        .order_by(Interview.id.desc())
+    )
+    if limit is not None:
+        query = query.limit(limit)
+    return [summarize_interview(record) for record in query.all()]
+
+
 def get_interview(db: Session, user_id: int, interview_id: str) -> Optional[Interview]:
     return (
         db.query(Interview)
@@ -58,6 +85,11 @@ def submit_interview(
         experience=interview.experience or "",
         difficulty=interview.difficulty or "",
     )
+    # How many questions were asked only exists in the submit payload. Persist it
+    # inside the feedback blob (no new column) so a report reopened later can still
+    # say "answered 3 of 8" instead of implying every question was answered.
+    if questions:
+        feedback["total_questions"] = len(questions)
     interview.status = "submitted"
     interview.answers = answers
     interview.feedback = feedback
