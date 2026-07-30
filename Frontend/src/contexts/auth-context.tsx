@@ -65,8 +65,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       authService.setUser(rawUser as UserProfile);
     }
     setToken(accessToken);
-    // Redirect to interview flow after login
-    navigate("/interview/select-role");
+    // Land on the hub — it carries account details, results and both launchers.
+    navigate("/dashboard");
   }, [navigate, request]);
 
   const register = useCallback(async (name: string, email: string, phone: string, password: string) => {

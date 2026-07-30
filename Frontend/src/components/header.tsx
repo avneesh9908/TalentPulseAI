@@ -49,8 +49,9 @@ export default function Header() {
     setDropdownOpen(false);
   };
 
+  // Account details now live on the dashboard alongside results and resumes.
   const handleProfile = () => {
-    navigate("/profile");
+    navigate("/dashboard");
     setMobileMenuOpen(false);
     setDropdownOpen(false);
   };
@@ -225,7 +226,7 @@ export default function Header() {
                         }`}
                       >
                         <User size={16} />
-                        Profile
+                        Account
                       </button>
 
                       <div
@@ -325,7 +326,7 @@ export default function Header() {
                   }`}
                 >
                   <User size={16} />
-                  Profile
+                  Account
                 </motion.button>
 
                 <div

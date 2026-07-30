@@ -24,7 +24,6 @@ const SelectProfile = lazy(() => import("@/app/pages/interview/select-profile"))
 const QuickSetup = lazy(() => import("@/app/pages/interview/quick-setup"));
 const InterviewNow = lazy(() => import("@/app/pages/interview/interview-now"));
 const InterviewResult = lazy(() => import("@/app/pages/interview/interview-result"));
-const Profile = lazy(() => import("@/app/pages/profile/profile"));
 const JobsPage = lazy(() => import("@/app/pages/jobs/jobs"));
 
 const PageFallback = () => (
@@ -161,17 +160,8 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            {/* PROTECTED PROFILE */}
-            <Route
-              path="/profile"
-              element={
-                <ProtectedRoute>
-                  <ProtectedLayout>
-                    <Profile />
-                  </ProtectedLayout>
-                </ProtectedRoute>
-              }
-            />
+            {/* Profile merged into the dashboard — kept so old links still resolve */}
+            <Route path="/profile" element={<Navigate to="/dashboard" replace />} />
 
             {/* FALLBACK */}
             <Route path="*" element={<Navigate to="/auth/login" replace />} />

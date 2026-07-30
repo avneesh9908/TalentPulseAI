@@ -38,5 +38,17 @@ def get_overview(db: Session, user: User) -> Dict:
         # Scored interviews only — these are the ones with a report to open.
         # stats.completed is the true total, so the client can disclose truncation.
         "recent_completed": completed[:5],
+        # Oldest-first so a chart reads left-to-right; capped for readability.
+        "score_trend": [
+            {
+                "interview_id": i["interview_id"],
+                "role": i["role"],
+                "score": i["score"],
+                "completed_at": i["completed_at"],
+            }
+            for i in reversed(
+                [c for c in completed if isinstance(c["score"], (int, float))][:12]
+            )
+        ],
         "resumes": job_search_service.list_resumes(db, user.id),
     }
