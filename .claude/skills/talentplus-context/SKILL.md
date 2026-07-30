@@ -3,7 +3,7 @@
 ## Overview
 TalentPulseAI is a full-stack AI-powered mock-interview platform. Users upload a resume or select an existing profile, configure an interview (role, experience, difficulty, skills), then take a live interview with Web Speech API transcription and video recording. The backend uses RAG (resume chunked into a pgvector store) to supply context for question generation. Answers are scored automatically and a feedback report is returned.
 
-**Completion state:** ~85% complete. Core auth, full interview setup → execution → scoring → results flow, RAG pipeline, PII stripping, embedding dedup, and UI flow guards are all done. Dashboard shows mock data. Profile page is wired to read real user data but has no editing. No Alembic migrations (tables created via `create_all`).
+**Completion state:** ~85% complete. Core auth, full interview setup → execution → scoring → results flow, RAG pipeline, PII stripping, embedding dedup, and UI flow guards are all done. Dashboard still shows mock data (and now visibly contradicts the profile's real numbers). Profile is a real per-user account page (identity, interview history/status, resumes, report re-open) but has no editing. No Alembic migrations (tables created via `create_all`).
 
 ## Stack & Tooling
 
@@ -65,7 +65,7 @@ app/
     resume.py           ResumeDocument, ResumeChunk, EmbeddingCache
   routes/
     auth.py             POST /auth/register, POST /auth/login
-    user.py             GET /user/profile
+    user.py             GET /user/profile, GET /user/overview
     interview.py        All interview + RAG endpoints (thin glue)
   schemas/
     user_schema.py      UserCreate, UserLogin
@@ -73,7 +73,8 @@ app/
     resume_rag_schema.py ResumeIndexRequest/Response, ContextRetrieveRequest/Response
   services/
     auth_service.py     signup_user(), login_user()
-    interview_service.py create_interview(), get_interview(), submit_interview()
+    user_service.py     get_overview() — profile-page payload (identity + stats + latest/recent interviews + resumes)
+    interview_service.py create_interview(), get_interview(), submit_interview(), summarize_interview(), list_interviews()
     scoring_service.py  score_answer(), build_interview_feedback()
     resume_rag_service.py ResumeRAGService (index_resume, retrieve_context) + get_rag_service() singleton
     embedding_service.py Provider dispatch (Google/Cursor), LocalHashEmbeddings fallback, PGVector factory
@@ -99,7 +100,7 @@ src/
       quick-setup.tsx   Step 3 — experience/difficulty/skills + API submission (step guard: needs role+profile)
       interview-now.tsx Step 4 — live interview (Web Speech API, 2-min timer, video)
       interview-result.tsx Results (reads from location.state OR sessionStorage fallback)
-    profile/profile.tsx  Reads real user from localStorage via authService
+    profile/profile.tsx  Per-user account page — fetches GET /user/overview (identity, stats, latest interview status, history, resumes)
     users/users.tsx      User list (admin)
   contexts/
     auth-context.tsx     token, isAuthenticated, login/register/logout; redirects to /interview/select-role after login
@@ -227,7 +228,7 @@ User requirement: interviews must OPEN on basics ("what is / why is" — TypeScr
 - No test suite
 - No real-time collaboration features
 - Dashboard analytics are currently mock data (charts, stats, upcoming interviews, recent attempts)
-- Profile page has no editing capability yet (read-only from localStorage)
+- Profile page has no editing capability yet (data is real and server-fed; only editing is missing)
 
 ## Completion Status
 
@@ -249,7 +250,8 @@ User requirement: interviews must OPEN on basics ("what is / why is" — TypeScr
 | Dashboard real analytics | ❌ Not started |
 | Profile editing | ❌ Not started |
 | "Use Existing Profile" flow | ❌ Not started |
-| Interview list / history | ❌ Not started |
+| Interview list / history | ✅ Done (GET /interview/list + history on profile) |
+| Profile shows real per-user data | ✅ Done (GET /user/overview) |
 | Alembic migrations | ❌ Not started |
 | Docker / deployment | ❌ Not started |
 | CI/CD | ❌ Not started |
@@ -418,6 +420,24 @@ APP (protected, shared Header)
 - **Profile:** quick links to Dashboard / Start interview / Find jobs so it isn't a dead end.
 - Convention reminder: interview side = violet/fuchsia, job side = cyan/emerald.
 
+## Profile = real per-user account page (2026-07-29) — access-scoped, latest interview status, resumes
+User ask: "full flow — show profile according to access per user, latest interview status, resume profile."
+- **`GET /user/overview`** (`routes/user.py` → NEW `services/user_service.py::get_overview`) is the single payload the profile page needs. Everything is derived from the JWT's `current_user` — **no client-supplied user id anywhere**, so cross-user reads are impossible by construction (verified: 44-case SQLite functional test incl. Alice-cannot-see-Bob assertions).
+  Shape: `user{public_id,email,full_name,phone}`, `stats{total_interviews,completed,unfinished,average_score,best_score}`, `latest_interview`, `latest_completed`, `recent_completed[≤5]`, `resumes[]`.
+- **`GET /user/profile`** extended to return `public_id/full_name/phone` (was only `id`+`email`).
+- **`GET /interview/list`** added — **must stay registered ABOVE `/{interview_id}`** or the literal path is swallowed by the catch-all (asserted in the test).
+- `interview_service.summarize_interview()` / `list_interviews()` produce flat per-interview summaries that deliberately **omit the `answers`/`feedback` blobs** (only `score` is lifted out).
+- **`latest_completed` vs `latest_interview` — the important subtlety.** A row is INSERTed the moment the setup wizard finishes, so abandoned setups are the norm, not an edge case (local dev DB: user 1 has **27 interviews, only 4 submitted**). Taking `interviews[0]` would mean the profile almost always headlines an abandoned stub and hides the user's real last score. The page therefore headlines `latest_completed`, and separately discloses the unfinished setup ("It can't be resumed — start a new interview").
+- **`recent_completed` is scored-only** so history isn't a wall of "Not completed" stubs; truncation is disclosed ("showing 5 of N completed") because `stats.completed` carries the true count.
+- **`feedback["total_questions"]`** is now written by `submit_interview` (count of the `questions` array in the submit payload) — stored **inside the existing feedback JSON, so no migration**. Without it, a report reopened later reported "answered 3/3" for an interview where 3 of 8 were answered. Absent on rows submitted before this change → falls back to `question_feedback.length`.
+- **Frontend** `profile/profile.tsx`: server is the source of truth, cached login payload is the fallback. `openReport(interviewId)` fetches `GET /interview/{id}/results`, writes the same `{result,totalQuestions,answeredQuestions}` shape + `talentpulse_last_result` sessionStorage key that a fresh submit writes, then navigates to `/interview/result` — so the existing report page works unchanged and survives refresh. `getUserOverview()` in `api/userService.ts`; `ENDPOINTS.PROFILE.OVERVIEW`.
+- **Never assert emptiness you can't verify:** `dataLoaded = overview !== null` gates every empty state. On a failed fetch the page says "couldn't be loaded", NOT "no interviews"/"no resume" (that bug shipped briefly and was caught live by stopping the backend).
+- **Status vocabulary:** the backend only ever writes `initialized` or `submitted` (3 write sites, verified). UI labels them "Not completed" / "Completed" — **never "In progress"**, and never offers to resume: no questions/answers exist server-side before submit, so resumption is impossible.
+- Verified: 44/44 backend checks; tsc + eslint + build clean; live on localhost with 4 seeded interviews — populated, empty, and API-down states all correct, 0 console errors, report round-trip + refresh OK.
+- **Deferred (found by review, NOT fixed — all pre-existing or out of scope):** `talentpulse_last_result` is not cleared by `authService.clearClientSession()` → a report can outlive logout in a shared tab (fix: add the removeItem there; also covers interview-now.tsx:317); `axiosInstance` only rewrites `error.message` for timeouts, so inline banners app-wide show axios's generic string instead of the FastAPI `detail`; **dashboard is still mock and now visibly contradicts the profile's real numbers** (feed it this same endpoint); `/user/profile` still returns the internal sequential `id`; `list_resumes` is reached through `job_search_service`, bypassing the `ENABLE_JOB_SEARCH` gate (flag is never actually false); no pagination for >5 completed and `/interview/list` is unbounded + currently unused; "Change Password" is an inert button with full affordance.
+- **Local dev seeded test data:** `localtest10413@test.com` (user id 3) now has 4 seeded interviews (2 submitted 72/84, 1 initialized, 1 abandoned "Data Analyst") + 1 fake `sample-resume.pdf` row, added to verify this page. Delete by `interview_id LIKE 'interview_3_seed%'` if unwanted.
+- `.claude/launch.json` gained a **`backend`** config (uvicorn --reload on 127.0.0.1:8000) so the API can be started via the preview tooling alongside `frontend`.
+
 ## Two-sided workspace (2026-07-17, commit d764e52c) — SUPERSEDED by the IA above (ModeSwitch → AppNav)
 The product is now explicitly **two sides: Interview practice + Job Search**, switched globally from the header.
 - `components/mode-switch.tsx` — segmented control (researched pattern: segmented control in top bar for mutually-exclusive global modes; top bar owns app-wide things). Gradient pill slides via `layoutId="mode-switch-pill"` + SPRING. **Active side derived from `useLocation().pathname`** (`/jobs*` → jobs, else interview) so deep links/back-forward stay correct. Clicking the current side is a no-op (doesn't reset progress in that flow). Props: `stacked` (mobile full-width), `onNavigate` (closes mobile menu). Homes: interview → `/interview/select-role`, jobs → `/jobs`.
@@ -446,6 +466,7 @@ The product is now explicitly **two sides: Interview practice + Job Search**, sw
 - Manual migration SQL: `TalentPulseAI-fastAPI/migrations/phase4_add_content_hash_and_embedding_cache.sql`
 
 ## Changelog
+- 2026-07-29 — **Profile is now a real per-user account page**: new `GET /user/overview` (+ `user_service.py`, `GET /interview/list`, `summarize_interview`/`list_interviews`) feeds identity, stats, latest interview status and resumes, all scoped to the JWT user. Key insight: abandoned setup rows are the norm (27 rows / 4 submitted for user 1), so the page headlines `latest_completed` and discloses the unfinished setup instead of showing a stub as "latest". `feedback["total_questions"]` now persisted so reopened reports stop claiming every question was answered. Empty states never assert emptiness on a failed fetch. 44/44 functional checks + live verification. See "Profile = real per-user account page".
 - 2026-07-17 — **Home button + job-side resume choice** (42f4bb0c): AppNav gains exact-matched Home→landing; new GET /jobs/resumes lets the job agent target its own resume (separate from the interview's), with selectable cards + empty state in job setup.
 - 2026-07-17 — **App IA finalized** (c49ddb98): AppNav (Dashboard·Interview·Jobs) replaces ModeSwitch; logo→hub; avatar menu account-only; dashboard gets both-side launchers; profile gets cross-links. No false active state on shared pages. See "App information architecture".
 - 2026-07-17 — **Question difficulty ladder** (1ab30c96): interviews now open with basic "what is/why is" fundamentals from the candidate's stack, then applied resume Qs, then tricky ones; tier enforced server-side even on jumbled LLM output. Root cause of the old behavior: the prompt explicitly banned generic questions.
