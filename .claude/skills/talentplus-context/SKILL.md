@@ -3,7 +3,7 @@
 ## Overview
 TalentPulseAI is a full-stack AI-powered mock-interview platform. Users upload a resume or select an existing profile, configure an interview (role, experience, difficulty, skills), then take a live interview with Web Speech API transcription and video recording. The backend uses RAG (resume chunked into a pgvector store) to supply context for question generation. Answers are scored automatically and a feedback report is returned.
 
-**Completion state:** ~85% complete. Core auth, full interview setup → execution → scoring → results flow, RAG pipeline, PII stripping, embedding dedup, and UI flow guards are all done. **The dashboard is the single merged account+analytics page** — real per-user data throughout (identity, stats, score chart, interview history, resumes); `/profile` is merged into it and now redirects there. Editing your details / changing password is still not built. No Alembic migrations (tables created via `create_all`).
+**Completion state:** ~85% complete. Core auth, full interview setup → execution → scoring → results flow, RAG pipeline, PII stripping, embedding dedup, and UI flow guards are all done. Dashboard still shows mock data; `/profile` is a real per-user account page (identity, interview history/status, resumes, report re-open) with no editing. A dashboard/profile merge was attempted twice on 2026-07-30 and reverted at the user's request — read "Dashboard/profile merge — ATTEMPTED TWICE AND REVERTED" before touching the dashboard. No Alembic migrations (tables created via `create_all`).
 
 ## Stack & Tooling
 
@@ -93,14 +93,14 @@ src/
   app/pages/
     landing.tsx         Public landing page (/demo → /interview/select-role)
     auth/               login.tsx, register.tsx, protected-route.tsx, layout.tsx
-    dashboard/          dashboard.tsx THE merged hub — real GET /user/overview data: account details, stats, score chart, latest interview + history w/ report re-open, resumes, both side launchers
+    dashboard/          dashboard.tsx (MOCK data — real user name only; a merge with profile was tried and reverted, see "Dashboard/profile merge — REVERTED")
     interview/
       select-role.tsx   Step 1 — role selection (8 roles)
       select-profile.tsx Step 2 — upload resume or existing profile (step guard: needs role)
       quick-setup.tsx   Step 3 — experience/difficulty/skills + API submission (step guard: needs role+profile)
       interview-now.tsx Step 4 — live interview (Web Speech API, 2-min timer, video)
       interview-result.tsx Results (reads from location.state OR sessionStorage fallback)
-    (profile/profile.tsx DELETED 2026-07-30 — merged into dashboard.tsx; /profile route is a <Navigate to="/dashboard">)
+    profile/profile.tsx  Per-user account page — fetches GET /user/overview (identity, stats, latest interview status, history w/ report re-open, resumes)
     users/users.tsx      User list (admin)
   contexts/
     auth-context.tsx     token, isAuthenticated, login/register/logout; **redirects to /dashboard after login** (was /interview/select-role)
@@ -227,7 +227,7 @@ User requirement: interviews must OPEN on basics ("what is / why is" — TypeScr
 - "Use Existing Profile" in the interview wizard is disabled/Coming Soon
 - No test suite
 - No real-time collaboration features
-- Dashboard analytics are REAL as of 2026-07-30 (stats, score chart, latest interview, recent list, account, resumes). Four sections remain design placeholders and are kept **with a "Sample" badge** at the user's explicit request: Skill Analysis radar, Upcoming, AI Suggestions, Achievements. Keep the badge until real data backs them.
+- Dashboard analytics are still mock data (charts, stats, upcoming interviews, recent attempts, achievements). Wiring them to real data was attempted twice on 2026-07-30 and reverted at the user's request — see "Dashboard/profile merge — REVERTED" before trying again.
 - Profile page has no editing capability yet (data is real and server-fed; only editing is missing)
 
 ## Completion Status
@@ -246,8 +246,8 @@ User requirement: interviews must OPEN on basics ("what is / why is" — TypeScr
 | Step guards on interview flow | ✅ Done |
 | Google AI embeddings (free) | ✅ Done |
 | Backend service split | ✅ Done |
-| Dashboard (merged hub, real data) | ✅ Done |
-| Dashboard real analytics | ✅ Done (stats + score chart from /user/overview) |
+| Dashboard (UI shell) | ✅ Done (mock data) |
+| Dashboard real analytics | ❌ Not started (attempted + reverted 2026-07-30) |
 | Profile editing | ❌ Not started |
 | "Use Existing Profile" flow | ❌ Not started |
 | Interview list / history | ✅ Done (GET /interview/list + history on profile) |
@@ -430,8 +430,8 @@ User ask: "full flow — show profile according to access per user, latest inter
 - **`latest_completed` vs `latest_interview` — the important subtlety.** A row is INSERTed the moment the setup wizard finishes, so abandoned setups are the norm, not an edge case (local dev DB: user 1 has **27 interviews, only 4 submitted**). Taking `interviews[0]` would mean the profile almost always headlines an abandoned stub and hides the user's real last score. The page therefore headlines `latest_completed`, and separately discloses the unfinished setup ("It can't be resumed — start a new interview").
 - **`recent_completed` is scored-only** so history isn't a wall of "Not completed" stubs; truncation is disclosed ("showing 5 of N completed") because `stats.completed` carries the true count.
 - **`feedback["total_questions"]`** is now written by `submit_interview` (count of the `questions` array in the submit payload) — stored **inside the existing feedback JSON, so no migration**. Without it, a report reopened later reported "answered 3/3" for an interview where 3 of 8 were answered. Absent on rows submitted before this change → falls back to `question_feedback.length`.
-- **MERGED INTO THE DASHBOARD 2026-07-30** (see "Dashboard = merged account + analytics hub" below). The bullets below describe logic that now lives in `dashboard/dashboard.tsx`; `profile/profile.tsx` was deleted.
-- **Frontend** (originally `profile/profile.tsx`): server is the source of truth, cached login payload is the fallback. `openReport(interviewId)` fetches `GET /interview/{id}/results`, writes the same `{result,totalQuestions,answeredQuestions}` shape + `talentpulse_last_result` sessionStorage key that a fresh submit writes, then navigates to `/interview/result` — so the existing report page works unchanged and survives refresh. `getUserOverview()` in `api/userService.ts`; `ENDPOINTS.PROFILE.OVERVIEW`.
+- **This page is CURRENT and lives at `/profile`.** A merge into the dashboard was tried on 2026-07-30 and fully reverted — see "Dashboard/profile merge — REVERTED".
+- **Frontend** `profile/profile.tsx`: server is the source of truth, cached login payload is the fallback. `openReport(interviewId)` fetches `GET /interview/{id}/results`, writes the same `{result,totalQuestions,answeredQuestions}` shape + `talentpulse_last_result` sessionStorage key that a fresh submit writes, then navigates to `/interview/result` — so the existing report page works unchanged and survives refresh. `getUserOverview()` in `api/userService.ts`; `ENDPOINTS.PROFILE.OVERVIEW`.
 - **Never assert emptiness you can't verify:** `dataLoaded = overview !== null` gates every empty state. On a failed fetch the page says "couldn't be loaded", NOT "no interviews"/"no resume" (that bug shipped briefly and was caught live by stopping the backend).
 - **Status vocabulary:** the backend only ever writes `initialized` or `submitted` (3 write sites, verified). UI labels them "Not completed" / "Completed" — **never "In progress"**, and never offers to resume: no questions/answers exist server-side before submit, so resumption is impossible.
 - Verified: 44/44 backend checks; tsc + eslint + build clean; live on localhost with 4 seeded interviews — populated, empty, and API-down states all correct, 0 console errors, report round-trip + refresh OK.
@@ -439,19 +439,14 @@ User ask: "full flow — show profile according to access per user, latest inter
 - **Local dev seeded test data:** `localtest10413@test.com` (user id 3) now has 4 seeded interviews (2 submitted 72/84, 1 initialized, 1 abandoned "Data Analyst") + 1 fake `sample-resume.pdf` row, added to verify this page. Delete by `interview_id LIKE 'interview_3_seed%'` if unwanted.
 - `.claude/launch.json` gained a **`backend`** config (uvicorn --reload on 127.0.0.1:8000) so the API can be started via the preview tooling alongside `frontend`.
 
-## Dashboard = merged account + analytics hub (2026-07-30) — CURRENT
-User ask: "after login render on home / dashboard profile merge give all detail in dashboard / all details shift on dashboard show profile type and dashboard."
-- **Login now lands on `/dashboard`** (`auth-context.login` → `navigate("/dashboard")`, was `/interview/select-role`). Register auto-logins, so it follows too.
-- **`/profile` is merged away:** route is `<Route path="/profile" element={<Navigate to="/dashboard" replace />} />` (kept so old links/bookmarks resolve); `app/pages/profile/profile.tsx` **deleted**; header avatar menu item relabelled **"Account"** and points at `/dashboard`.
-- **`dashboard.tsx` now holds everything**, all from one `GET /user/overview` call: welcome line, the two side launchers (Interview Practice / Job Search), 4 real stat cards (Interviews Completed +unfinished hint · Average · Best · Resumes On File), a real **Score History** area chart, the Latest Interview card (status/score/View report + unfinished-setup disclosure + earlier-interviews list with per-row Report), an **Your Account** card (avatar, name, email, phone, public_id) and a **Resumes** card. Same `openReport()` contract as before (fetch results → sessionStorage + navigate to `/interview/result`).
-- **`score_trend` added to `/user/overview`**: scored interviews only, **oldest-first**, capped at 12, each `{interview_id, role, score, completed_at}`. Chart renders only at ≥2 points (1 point = "complete another to see a trend", 0 = empty state); a real `ReferenceLine` at `stats.average_score` replaced the old invented "target" series.
-- ⚠️ **First attempt DELETED the placeholder sections; user rejected that** ("i want to like not remove anythings on dashboard keep everything only adjust"). **Current rule: keep every section, badge the un-backed ones.** The original dashboard was restored from 753c1e02 and the real data + account/resume cards were added into it.
-  - **Real (per-user, from /user/overview):** stat cards (Total · Completed · Not Completed · Average +best hint), Performance Over Time chart + its Best/Improvement/Completed tiles, NEW Latest Interview card, Recent list (real scored interviews, each with View report), NEW Your Account card, NEW Resumes card, welcome name, avatars, today's date.
-  - **Placeholder, kept but flagged with `<SampleBadge />`** (amber "Sample" chip + honest subtitle): Skill Analysis radar (no per-skill scores exist), Upcoming (no scheduling concept), AI Suggestions, Achievements. `scoreHistoryPlaceholder` also backs the chart when the user has <2 scored interviews, badged in that state. **Don't un-badge or reintroduce these as real without real data behind them.**
-  - `StatCard` lost the invented `change` percentages and gained an optional factual `hint`. Sidebar nav items now navigate for real (Dashboard/Interview/Job Search) and it gained an account snapshot; dead "Join"/"View all"/"Full history" buttons dropped.
-  - Dashboard chunk 399 → 417 kB raw (114.7 → 118.7 gzip) — grew because the page now holds both the original sections and the merged account/resume/latest-interview content.
-- 🔴 **`CountUp` GOTCHA (fixed, but know why):** `CountUp` is scroll-triggered (`useInView once`) and its state starts at `"0" + suffix`, so **until it scrolls into view it renders `0`**. Harmless for the landing page's decorative "50K+", but on a stat card "0 Interviews Completed" is indistinguishable from real data — and it was reproducing exactly that (all four cards read 0 in a 393px-tall viewport). Fixed by adding an opt-in **`startOnMount`** prop (`shouldRun = startOnMount || inView`); the dashboard passes it. Default stays `false` so landing/practice counters keep their scroll-triggered behaviour (re-verified live: 50K+/85%/24/7/4.9★ still animate). **Any future real-data CountUp must pass `startOnMount`.**
-- Verified: 47/47 backend checks; tsc + eslint + build clean; live — stats 2/78/84/1 matching seeded data, chart with 2 points + avg line, `/profile`→`/dashboard` redirect, report re-open (score 84, 0 console errors), correct on mobile 375px with cards off-screen. Login redirect verified by code only (can't submit credentials).
+## Dashboard/profile merge — ATTEMPTED TWICE AND REVERTED (2026-07-30)
+User asked to merge the profile into the dashboard ("dashboard profile merge give all detail in dashboard"), then rejected both attempts and asked for the original back: **"this is not look good please restore original dashboard and profile"**. `dashboard.tsx`, `profile.tsx`, `App.tsx`, `header.tsx`, `count-up.tsx`, `api/userService.ts` and `services/user_service.py` were all restored byte-identical to 753c1e02 (verified: empty diff). **Current state = separate `/dashboard` (mock) and `/profile` (real) pages.**
+- **Attempt 1** rewrote the dashboard around `/user/overview` and **deleted** the un-backed sections (skill radar, Upcoming, Achievements, AI Suggestions, sidebar). Rejected: *"i want to like not remove anythings on dashboard keep everything only adjust"*.
+- **Attempt 2** restored every section and added Latest Interview / Your Account / Resumes cards, wired real data into the stat cards + chart + Recent list, and badged the un-backed sections with an amber "Sample" chip. Also rejected on look.
+- **Lesson for next time: don't restructure this dashboard.** The visual design is the user's, and they want it intact. If real analytics are wanted, change data sources in place without moving/removing/relabelling sections, and ask before adding badges or new cards.
+- **What was reverted along with it** (all additive, all gone): `score_trend` on `/user/overview`; `ScoreTrendPoint`/`score_trend` in `api/userService.ts`; the `/profile` → `/dashboard` redirect; the header avatar item going to `/dashboard` and its "Account" relabel; `CountUp`'s `startOnMount` prop; `StatCard`'s `hint` prop.
+- **KEPT (asked for separately, not part of the merge):** `auth-context.login` still navigates to **`/dashboard`** after login (was `/interview/select-role`). One-line change in `contexts/auth-context.tsx` if it should go back.
+- 🔴 **`CountUp` gotcha still LIVE (fix was reverted):** `CountUp` is scroll-triggered (`useInView once`) and its display state starts at `"0" + suffix`, so **any counter below the fold reads `0` until scrolled into view** — confirmed live (dashboard stat cards showed 0/0/0/0% in a short viewport, then 24/15 after scrolling). Harmless for decorative marketing numbers; a real hazard if these ever show real data, because a lingering "0" is indistinguishable from a fact. The fix was an opt-in `startOnMount` prop (`shouldRun = startOnMount || inView`) — re-add it if real numbers land here.
 
 ## Two-sided workspace (2026-07-17, commit d764e52c) — SUPERSEDED by the IA above (ModeSwitch → AppNav)
 The product is now explicitly **two sides: Interview practice + Job Search**, switched globally from the header.
@@ -480,9 +475,7 @@ The product is now explicitly **two sides: Interview practice + Job Search**, sw
 - Existing docs: `Frontend/document/` (API_MANAGEMENT.md, FLOW_DOCUMENTATION.md, INTERVIEW_API_INTEGRATION.md, INTERVIEW_SETUP_PAYLOAD.md, README.md)
 - Manual migration SQL: `TalentPulseAI-fastAPI/migrations/phase4_add_content_hash_and_embedding_cache.sql`
 
-## Changelog
-- 2026-07-30 — **Dashboard restored + profile added into it** (follow-up): the first pass deleted the placeholder sections and the user rejected that — keep every section, wire real data into the ones that can be real, and badge the rest "Sample". Original dashboard restored from 753c1e02; Latest Interview / Your Account / Resumes cards added; stat cards, chart and Recent list now real.
-- 2026-07-30 — **Dashboard + profile merged into one real hub**: login lands on `/dashboard`, `/profile` redirects there (profile.tsx deleted), and the dashboard now serves account details, real stats, a real score-history chart (`score_trend` added to /user/overview), interview history with report re-open, and resumes. All fabricated sections (upcoming interviews, achievements, AI suggestions, skill radar, fake sidebar/date/change-badges) deleted rather than shown next to real data. Found and fixed a real bug: `CountUp` renders `0` until scrolled into view, so all four stat cards showed 0 — new opt-in `startOnMount` prop, required for any real-data counter. See "Dashboard = merged account + analytics hub".
+- 2026-07-30 — **Dashboard/profile merge REVERTED.** Two attempts (delete-placeholders, then keep-everything-and-badge) were both rejected on look; all 7 touched files restored byte-identical to 753c1e02, so `/dashboard` (mock) and `/profile` (real) are separate again. Only the post-login redirect to `/dashboard` was kept. Don't restructure the dashboard — see "Dashboard/profile merge — ATTEMPTED TWICE AND REVERTED" for what was tried, what got reverted, and the still-live `CountUp` scroll-trigger gotcha.
 - 2026-07-29 — **Profile is now a real per-user account page**: new `GET /user/overview` (+ `user_service.py`, `GET /interview/list`, `summarize_interview`/`list_interviews`) feeds identity, stats, latest interview status and resumes, all scoped to the JWT user. Key insight: abandoned setup rows are the norm (27 rows / 4 submitted for user 1), so the page headlines `latest_completed` and discloses the unfinished setup instead of showing a stub as "latest". `feedback["total_questions"]` now persisted so reopened reports stop claiming every question was answered. Empty states never assert emptiness on a failed fetch. 44/44 functional checks + live verification. See "Profile = real per-user account page".
 - 2026-07-17 — **Home button + job-side resume choice** (42f4bb0c): AppNav gains exact-matched Home→landing; new GET /jobs/resumes lets the job agent target its own resume (separate from the interview's), with selectable cards + empty state in job setup.
 - 2026-07-17 — **App IA finalized** (c49ddb98): AppNav (Dashboard·Interview·Jobs) replaces ModeSwitch; logo→hub; avatar menu account-only; dashboard gets both-side launchers; profile gets cross-links. No false active state on shared pages. See "App information architecture".

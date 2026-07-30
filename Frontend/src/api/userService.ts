@@ -34,13 +34,6 @@ export interface ResumeSummary {
   created_at: string | null;
 }
 
-export interface ScoreTrendPoint {
-  interview_id: string;
-  role: string;
-  score: number;
-  completed_at: string | null;
-}
-
 export interface UserOverview {
   user: {
     public_id: string;
@@ -62,8 +55,6 @@ export interface UserOverview {
   latest_completed: InterviewSummary | null;
   /** Up to 5 newest scored interviews; compare with stats.completed for truncation. */
   recent_completed: InterviewSummary[];
-  /** Oldest-first, capped at 12 — for the score chart. */
-  score_trend: ScoreTrendPoint[];
   resumes: ResumeSummary[];
 }
 
