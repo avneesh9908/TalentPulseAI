@@ -50,6 +50,8 @@ export const config = {
     PROFILE: {
       GET: "/user/profile",
       OVERVIEW: "/user/overview",
+      RESUMES: "/user/resumes",
+      RESUME: "/user/resumes/:id",
       UPDATE: "/user/profile/update",
       UPLOAD_FILE: "/user/profile/upload",
     },

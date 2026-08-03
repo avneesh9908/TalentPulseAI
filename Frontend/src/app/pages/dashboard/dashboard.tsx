@@ -23,10 +23,10 @@ import { useNavigate } from "react-router-dom";
 
 // ---------- Mock Data ----------
 const stats = [
-  { id: "total", title: "Total Interviews", value: 24, change: "+12%", icon: Users, color: "from-blue-500 to-cyan-500" },
-  { id: "passed", title: "Passed", value: 15, change: "+8%", icon: Trophy, color: "from-emerald-500 to-teal-500" },
-  { id: "failed", title: "Failed", value: 9, change: "-5%", icon: Target, color: "from-rose-500 to-pink-500" },
-  { id: "avg", title: "Average Score", value: "78%", change: "+18%", icon: TrendingUp, color: "from-violet-500 to-purple-500" },
+  { id: "total", title: "Total Interviews", value: 24, change: "+12%", icon: Users, color: "bg-accent" },
+  { id: "passed", title: "Passed", value: 15, change: "+8%", icon: Trophy, color: "bg-accent" },
+  { id: "failed", title: "Failed", value: 9, change: "-5%", icon: Target, color: "bg-accent" },
+  { id: "avg", title: "Average Score", value: "78%", change: "+18%", icon: TrendingUp, color: "bg-accent" },
 ];
 
 const scoreHistory = [
@@ -48,9 +48,9 @@ const skillRadar = [
 ];
 
 const upcoming = [
-  { id: 1, role: "Frontend Developer", company: "TechCorp", date: "2025-12-15", time: "10:00 AM", type: "Live", difficulty: "Medium", color: "from-blue-500 to-cyan-500" },
-  { id: 2, role: "ML Intern", company: "AI Labs", date: "2025-12-20", time: "02:30 PM", type: "Recorded", difficulty: "Easy", color: "from-emerald-500 to-teal-500" },
-  { id: 3, role: "Product Eng.", company: "StartupX", date: "2026-01-05", time: "11:00 AM", type: "Live", difficulty: "Hard", color: "from-violet-500 to-purple-500" },
+  { id: 1, role: "Frontend Developer", company: "TechCorp", date: "2025-12-15", time: "10:00 AM", type: "Live", difficulty: "Medium", color: "bg-accent" },
+  { id: 2, role: "ML Intern", company: "AI Labs", date: "2025-12-20", time: "02:30 PM", type: "Recorded", difficulty: "Easy", color: "bg-accent" },
+  { id: 3, role: "Product Eng.", company: "StartupX", date: "2026-01-05", time: "11:00 AM", type: "Live", difficulty: "Hard", color: "bg-accent" },
 ];
 
 const recent = [
@@ -101,20 +101,19 @@ function StatCard({ title, value, change, icon: Icon, color }: StatCardProps) {
   return (
     <motion.div
       whileHover={{ y: -4, scale: 1.02 }}
-      className="relative overflow-hidden bg-gradient-to-br from-slate-900/90 to-slate-800/90 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-2xl group dark-mode"
+      className="group relative overflow-hidden rounded-2xl border border-border bg-canvas p-6 shadow-e1"
     >
-      <div className={`absolute inset-0 bg-gradient-to-br ${color} opacity-0 group-hover:opacity-10 transition-opacity duration-300`}></div>
       <div className="relative z-10">
         <div className="flex items-start justify-between mb-4">
-          <div className={`p-3 rounded-xl bg-gradient-to-br ${color} shadow-lg`}>
-            <Icon className="text-white" size={24} />
+          <div className={`p-3 rounded-xl ${color} shadow-e1`}>
+            <Icon className="text-accent-fg" size={24} />
           </div>
-          <div className={`text-sm font-semibold px-2 py-1 rounded-full ${isPositive ? "bg-emerald-500/20 text-emerald-400" : "bg-rose-500/20 text-rose-400"}`}>
+          <div className={`text-sm font-semibold px-2 py-1 rounded-full ${isPositive ? "bg-success-soft text-success" : "bg-danger-soft text-danger"}`}>
             {change}
           </div>
         </div>
-        <div className="text-sm text-slate-400 mb-1 card-subtitle">{title}</div>
-        <div className="font-display text-3xl font-bold text-white card-value">
+        <div className="text-sm text-ink-subtle mb-1 card-subtitle">{title}</div>
+        <div className="text-3xl font-semibold text-ink card-value">
           <CountUp value={String(value)} />
         </div>
       </div>
@@ -125,16 +124,11 @@ function StatCard({ title, value, change, icon: Icon, color }: StatCardProps) {
 interface GlassCardProps {
   children: ReactNode;
   className?: string;
-  isDark?: boolean;
 }
 
-function GlassCard({ children, className = "", isDark = true }: GlassCardProps) {
+function GlassCard({ children, className = "" }: GlassCardProps) {
   return (
-    <div className={`${
-      isDark 
-        ? "bg-gradient-card backdrop-blur-xl border border-white/10" 
-        : "bg-white/80 backdrop-blur-xl border border-gray-200 shadow-lg"
-    } rounded-2xl p-6 ${className}`}>
+    <div className={`rounded-2xl border border-border bg-canvas p-6 shadow-e1 ${className}`}>
       {children}
     </div>
   );
@@ -151,21 +145,7 @@ export default function UserDashboardPage() {
  
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${
-      isDark 
-        ? "bg-dashboard-bg to-slate-950" 
-        : "bg-gradient-to-br from-gray-50 via-white to-gray-100"
-    }`}>
-      {/* Animated background elements */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className={`absolute top-0 left-1/4 w-96 h-96 rounded-full blur-3xl animate-pulse ${
-          isDark ? "bg-violet-500/10" : "bg-violet-500/5"
-        }`}></div>
-        <div className={`absolute bottom-0 right-1/4 w-96 h-96 rounded-full blur-3xl animate-pulse ${
-          isDark ? "bg-cyan-500/10" : "bg-cyan-500/5"
-        }`} style={{ animationDelay: "1s" }}></div>
-      </div>
-
+    <div className="min-h-screen bg-surface">
       {/* Top-level container */}
       <div className="relative z-10 max-w-[1400px] mx-auto px-4 py-6">
         <div className="flex gap-6">
@@ -178,18 +158,15 @@ export default function UserDashboardPage() {
             }`}
           >
             <div className={`${
-              isDark 
-                ? "bg-gradient-card backdrop-blur-xl border border-white/10" 
-                : "bg-white/80 backdrop-blur-xl border border-gray-200 shadow-lg"
-            } rounded-2xl p-4 mb-4`}>
+              "bg-canvas border border-border shadow-e1"} rounded-2xl p-4 mb-4`}>
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 rounded-xl bg-gradient-primary shadow-lg flex items-center justify-center">
+                <div className="w-12 h-12 rounded-xl bg-accent shadow-lg flex items-center justify-center">
                   <Activity className="text-white" size={24} />
                 </div>
                 {!sidebarCollapsed && (
                   <div>
-                    <div className={`font-bold text-lg ${isDark ? "text-white" : "text-gray-900"}`}>TalentPulse</div>
-                    <div className={`text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}>AI Interview Coach</div>
+                    <div className={`font-bold text-lg text-ink`}>TalentPulse</div>
+                    <div className={`text-xs ${"text-ink-subtle"}`}>AI Interview Coach</div>
                   </div>
                 )}
               </div>
@@ -208,13 +185,8 @@ export default function UserDashboardPage() {
                       whileHover={{ x: 4 }}
                       className={`py-3 px-3 rounded-xl transition cursor-pointer flex items-center gap-3 ${
                         item.active
-                          ? isDark 
-                            ? "bg-gradient-to-r from-violet-600/20 to-cyan-600/20 border border-violet-500/30 text-white"
-                            : "bg-gradient-to-r from-violet-500/10 to-cyan-500/10 border border-violet-500/20 text-gray-900"
-                          : isDark
-                            ? "hover:bg-white/5 text-slate-400"
-                            : "hover:bg-gray-100 text-gray-600"
-                      }`}
+                          ? "bg-accent-soft border border-accent/30 text-ink"
+                          : "hover:bg-surface text-ink-muted"}`}
                     >
                       <item.icon size={18} />
                       {!sidebarCollapsed && <span>{item.label}</span>}
@@ -230,10 +202,7 @@ export default function UserDashboardPage() {
                 whileTap={{ scale: 0.98 }}
                 onClick={() => toggleTheme()}
                 className={`w-full py-3 rounded-xl transition font-semibold shadow-lg ${
-                  isDark
-                    ? "bg-slate-800/50 hover:bg-slate-700/50 text-white border border-white/10"
-                    : "bg-gray-100 hover:bg-gray-200 text-gray-900 border border-gray-300"
-                }`}
+                  "bg-surface hover:bg-surface-strong text-ink border border-border"}`}
               >
                 {isDark ? "â˜€ï¸ Light" : "ðŸŒ™ Dark"}
               </motion.button>
@@ -241,7 +210,7 @@ export default function UserDashboardPage() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => setSidebarCollapsed((s) => !s)}
-                className="w-full py-3 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-500 hover:to-cyan-500 transition text-white font-semibold shadow-lg"
+                className="w-full py-3 rounded-xl bg-accent hover:bg-accent-hover transition text-white font-semibold shadow-lg"
               >
                 {sidebarCollapsed ? "â†’" : "Collapse"}
               </motion.button>
@@ -251,15 +220,12 @@ export default function UserDashboardPage() {
           {/* Mobile Topbar & Hamburger */}
           <div className="flex-1">
             <header className={`flex items-center justify-between md:hidden mb-4 ${
-              isDark 
-                ? "bg-gradient-card backdrop-blur-xl border border-white/10" 
-                : "bg-white/80 backdrop-blur-xl border border-gray-200 shadow-lg"
-            } rounded-2xl p-4`}>
+              "bg-canvas border border-border shadow-e1"} rounded-2xl p-4`}>
               <div className="flex items-center gap-3">
                 <IconButton onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-                  {mobileMenuOpen ? <X size={20} className={isDark ? "text-white" : "text-gray-900"} /> : <Menu size={20} className={isDark ? "text-white" : "text-gray-900"} />}
+                  {mobileMenuOpen ? <X size={20} className={"text-ink"} /> : <Menu size={20} className={"text-ink"} />}
                 </IconButton>
-                <div className={`font-bold ${isDark ? "text-white" : "text-gray-900"}`}>TalentPulse</div>
+                <div className={`font-bold text-ink`}>TalentPulse</div>
               </div>
 
               <div className="flex items-center gap-2">
@@ -267,9 +233,9 @@ export default function UserDashboardPage() {
                   {isDark ? <span className="text-xl">â˜€ï¸</span> : <span className="text-xl">ðŸŒ™</span>}
                 </IconButton>
                 <IconButton>
-                  <Bell size={18} className={isDark ? "text-white" : "text-gray-900"} />
+                  <Bell size={18} className={"text-ink"} />
                 </IconButton>
-                <div className="w-10 h-10 rounded-full bg-gradient-primary flex items-center justify-center text-white font-bold shadow-lg">U</div>
+                <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center text-white font-bold shadow-lg">U</div>
               </div>
             </header>
 
@@ -283,16 +249,13 @@ export default function UserDashboardPage() {
                   className="md:hidden mb-4 overflow-hidden"
                 >
                   <div className={`${
-                    isDark 
-                      ? "bg-gradient-card backdrop-blur-xl border border-white/10" 
-                      : "bg-white/80 backdrop-blur-xl border border-gray-200 shadow-lg"
-                  } rounded-2xl p-4`}>
+                    "bg-canvas border border-border shadow-e1"} rounded-2xl p-4`}>
                     <div className="flex flex-col gap-2">
                       {["Dashboard", "My Interviews", "Schedule", "Achievements", "Notifications"].map((item, i) => (
                         <button
                           key={i}
                           className={`text-left py-3 px-4 rounded-xl transition ${
-                            isDark ? "hover:bg-white/5 text-white" : "hover:bg-gray-100 text-gray-900"
+                            "hover:bg-surface text-ink"
                           }`}
                           onClick={() => setMobileMenuOpen(false)}
                         >
@@ -314,11 +277,11 @@ export default function UserDashboardPage() {
                 className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4"
               >
                 <div>
-                  <h1 className={`font-display text-3xl md:text-4xl font-bold uppercase tracking-tight mb-2 ${isDark ? "text-white" : "text-gray-900"}`}>
+                  <h1 className={`font-display text-3xl md:text-4xl font-bold uppercase tracking-tight mb-2 text-ink`}>
                     Welcome back,{" "}
-                    <span className="bg-gradient-to-r from-violet-500 to-cyan-400 bg-clip-text text-transparent">{displayName}</span>
+                    <span className="text-accent-text">{displayName}</span>
                   </h1>
-                  <p className={isDark ? "text-slate-400" : "text-gray-600"}>Your hub for both sides — practice interviews and hunt for jobs</p>
+                  <p className={"text-ink-muted"}>Your hub for both sides — practice interviews and hunt for jobs</p>
                 </div>
 
                 <div className="hidden md:flex items-center gap-3">
@@ -327,25 +290,19 @@ export default function UserDashboardPage() {
                     whileTap={{ scale: 0.95 }}
                     onClick={() => toggleTheme()}
                     className={`p-2 rounded-lg transition ${
-                      isDark 
-                        ? "bg-slate-900/50 backdrop-blur-xl border border-white/10 text-white" 
-                        : "bg-white/80 backdrop-blur-xl border border-gray-300 text-gray-900 shadow-md"
-                    }`}
+                      "bg-canvas border border-border text-ink shadow-e1"}`}
                   >
                     {isDark ? <span className="text-xl">â˜€ï¸</span> : <span className="text-xl">ðŸŒ™</span>}
                   </motion.button>
                   <div className={`flex items-center gap-2 ${
-                    isDark 
-                      ? "bg-slate-900/50 backdrop-blur-xl border border-white/10" 
-                      : "bg-white/80 backdrop-blur-xl border border-gray-300 shadow-md"
-                  } rounded-xl px-4 py-2`}>
-                    <Clock size={16} className="text-cyan-400" />
-                    <div className={`text-sm ${isDark ? "text-white" : "text-gray-900"}`}>Dec 14, 2025</div>
+                    "bg-canvas border border-border shadow-e1"} rounded-xl px-4 py-2`}>
+                    <Clock size={16} className="text-ink-subtle" />
+                    <div className={`text-sm text-ink`}>Dec 14, 2025</div>
                   </div>
-                  <IconButton className={isDark ? "bg-slate-900/50 backdrop-blur-xl border border-white/10" : "bg-white/80 backdrop-blur-xl border border-gray-300 shadow-md"}>
-                    <Bell size={18} className={isDark ? "text-white" : "text-gray-900"} />
+                  <IconButton className={"bg-canvas border border-border shadow-e1"}>
+                    <Bell size={18} className={"text-ink"} />
                   </IconButton>
-                  <div className="w-10 h-10 rounded-full bg-gradient-primary flex items-center justify-center text-white font-bold shadow-lg">A</div>
+                  <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center text-white font-bold shadow-lg">A</div>
                 </div>
               </motion.div>
 
@@ -359,7 +316,7 @@ export default function UserDashboardPage() {
                     action: "Start an interview",
                     to: "/interview/select-role",
                     icon: Mic,
-                    accent: "from-violet-600 to-fuchsia-500",
+                    accent: "bg-accent",
                   },
                   {
                     id: "jobs",
@@ -368,7 +325,7 @@ export default function UserDashboardPage() {
                     action: "Find matching jobs",
                     to: "/jobs",
                     icon: Briefcase,
-                    accent: "from-cyan-500 to-emerald-400",
+                    accent: "bg-accent",
                   },
                 ].map((side, i) => (
                   <motion.button
@@ -381,24 +338,21 @@ export default function UserDashboardPage() {
                     whileHover={{ y: -4 }}
                     whileTap={{ scale: 0.99 }}
                     className={`group relative overflow-hidden rounded-2xl border p-6 text-left transition ${
-                      isDark
-                        ? "border-white/10 bg-slate-900/60 backdrop-blur-xl"
-                        : "border-gray-200 bg-white shadow-md"
-                    }`}
+                      "border-border bg-canvas shadow-e1"}`}
                   >
                     <div className={`pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-gradient-to-br ${side.accent} opacity-20 blur-2xl transition-opacity group-hover:opacity-40`} />
                     <div className="relative z-10">
                       <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${side.accent} shadow-lg`}>
                         <side.icon className="text-white" size={24} />
                       </div>
-                      <h3 className={`font-display text-xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
+                      <h3 className={`font-display text-xl font-bold text-ink`}>
                         {side.label}
                       </h3>
-                      <p className={`mt-1 text-sm ${isDark ? "text-slate-400" : "text-gray-600"}`}>
+                      <p className={`mt-1 text-sm text-ink-muted`}>
                         {side.desc}
                       </p>
                       <span className={`mt-4 inline-flex items-center gap-2 text-sm font-semibold transition-all group-hover:gap-3 ${
-                        isDark ? "text-violet-300" : "text-violet-600"
+                        "text-accent-text"
                       }`}>
                         {side.action}
                         <ChevronRight size={16} />
@@ -431,21 +385,18 @@ export default function UserDashboardPage() {
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ delay: 0.2 }}
                   >
-                    <GlassCard isDark={isDark}>
+                    <GlassCard>
                       <div className="flex items-center justify-between mb-6">
                         <div>
-                          <h3 className={`text-xl font-bold flex items-center gap-2 ${isDark ? "text-white" : "text-gray-900"}`}>
-                            <TrendingUp className="text-cyan-400" size={24} />
+                          <h3 className={`text-xl font-bold flex items-center gap-2 text-ink`}>
+                            <TrendingUp className="text-ink-subtle" size={24} />
                             Performance Over Time
                           </h3>
-                          <p className={`text-sm mt-1 ${isDark ? "text-slate-400" : "text-gray-600"}`}>Your score trend vs target benchmarks</p>
+                          <p className={`text-sm mt-1 text-ink-muted`}>Your score trend vs target benchmarks</p>
                         </div>
                         <div className="flex items-center gap-2">
                           <button className={`py-2 px-4 rounded-lg text-sm transition border ${
-                            isDark 
-                              ? "bg-white/5 hover:bg-white/10 text-white border-white/10" 
-                              : "bg-gray-100 hover:bg-gray-200 text-gray-900 border-gray-300"
-                          }`}>
+                            "bg-surface hover:bg-surface-strong text-ink border-border"}`}>
                             Last 7 weeks
                           </button>
                         </div>
@@ -479,28 +430,19 @@ export default function UserDashboardPage() {
 
                       <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div className={`p-4 rounded-xl ${
-                          isDark 
-                            ? "bg-gradient-to-br from-emerald-500/10 to-teal-500/10 border border-emerald-500/20" 
-                            : "bg-gradient-to-br from-emerald-100 to-teal-100 border border-emerald-300"
-                        }`}>
-                          <div className={`text-xs mb-1 ${isDark ? "text-emerald-400" : "text-emerald-700"}`}>Best Score</div>
-                          <div className={`text-2xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}>90</div>
+                          "bg-success-soft border border-success/25"}`}>
+                          <div className={`text-xs mb-1 ${"text-success"}`}>Best Score</div>
+                          <div className={`text-2xl font-bold text-ink`}>90</div>
                         </div>
                         <div className={`p-4 rounded-xl ${
-                          isDark 
-                            ? "bg-gradient-to-br from-violet-500/10 to-purple-500/10 border border-violet-500/20" 
-                            : "bg-gradient-to-br from-violet-100 to-purple-100 border border-violet-300"
-                        }`}>
-                          <div className={`text-xs mb-1 ${isDark ? "text-violet-400" : "text-violet-700"}`}>Improvement</div>
-                          <div className={`text-2xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}>+18%</div>
+                          "bg-accent-soft border border-accent/25"}`}>
+                          <div className={`text-xs mb-1 ${"text-accent-text"}`}>Improvement</div>
+                          <div className={`text-2xl font-bold text-ink`}>+18%</div>
                         </div>
                         <div className={`p-4 rounded-xl ${
-                          isDark 
-                            ? "bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border border-cyan-500/20" 
-                            : "bg-gradient-to-br from-cyan-100 to-blue-100 border border-cyan-300"
-                        }`}>
-                          <div className={`text-xs mb-1 ${isDark ? "text-cyan-400" : "text-cyan-700"}`}>Current Streak</div>
-                          <div className={`text-2xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}>5 ðŸ”¥</div>
+                          "bg-surface border border-border"}`}>
+                          <div className={`text-xs mb-1 ${"text-accent-text"}`}>Current Streak</div>
+                          <div className={`text-2xl font-bold text-ink`}>5 ðŸ”¥</div>
                         </div>
                       </div>
                     </GlassCard>
@@ -512,14 +454,14 @@ export default function UserDashboardPage() {
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ delay: 0.3 }}
                   >
-                    <GlassCard isDark={isDark}>
+                    <GlassCard>
                       <div className="flex items-center justify-between mb-6">
                         <div>
-                          <h3 className={`text-xl font-bold flex items-center gap-2 ${isDark ? "text-white" : "text-gray-900"}`}>
-                            <Star className="text-violet-400" size={24} />
+                          <h3 className={`text-xl font-bold flex items-center gap-2 text-ink`}>
+                            <Star className="text-accent-text" size={24} />
                             Skill Analysis
                           </h3>
-                          <p className={`text-sm mt-1 ${isDark ? "text-slate-400" : "text-gray-600"}`}>Current vs previous performance</p>
+                          <p className={`text-sm mt-1 text-ink-muted`}>Current vs previous performance</p>
                         </div>
                       </div>
 
@@ -545,14 +487,14 @@ export default function UserDashboardPage() {
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ delay: 0.4 }}
                   >
-                    <GlassCard isDark={isDark}>
+                    <GlassCard>
                       <div className="flex items-center justify-between mb-6">
                         <div>
-                          <h3 className={`text-xl font-bold flex items-center gap-2 ${isDark ? "text-white" : "text-gray-900"}`}>
-                            <Calendar className="text-cyan-400" size={24} />
+                          <h3 className={`text-xl font-bold flex items-center gap-2 text-ink`}>
+                            <Calendar className="text-ink-subtle" size={24} />
                             Upcoming
                           </h3>
-                          <p className={`text-sm mt-1 ${isDark ? "text-slate-400" : "text-gray-600"}`}>{upcoming.length} scheduled</p>
+                          <p className={`text-sm mt-1 text-ink-muted`}>{upcoming.length} scheduled</p>
                         </div>
                       </div>
 
@@ -565,28 +507,25 @@ export default function UserDashboardPage() {
                             transition={{ delay: 0.5 + i * 0.1 }}
                             whileHover={{ scale: 1.02 }}
                             className={`relative overflow-hidden p-4 rounded-xl cursor-pointer group ${
-                              isDark 
-                                ? "bg-gradient-to-br from-slate-800/50 to-slate-700/50 border border-white/10" 
-                                : "bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-300"
-                            }`}
+                              "bg-surface border border-border"}`}
                           >
                             <div className={`absolute inset-0 bg-gradient-to-br ${u.color} opacity-0 group-hover:opacity-10 transition-opacity`}></div>
                             <div className="relative z-10">
                               <div className="flex items-start justify-between mb-2">
                                 <div>
-                                  <div className={`font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>{u.role}</div>
-                                  <div className={`text-xs ${isDark ? "text-slate-400" : "text-gray-600"}`}>{u.company}</div>
+                                  <div className={`font-semibold text-ink`}>{u.role}</div>
+                                  <div className={`text-xs text-ink-muted`}>{u.company}</div>
                                 </div>
                                 <div className={`text-xs px-2 py-1 rounded-full ${
-                                  u.difficulty === "Easy" ? "bg-emerald-500/20 text-emerald-400" :
-                                  u.difficulty === "Medium" ? "bg-yellow-500/20 text-yellow-400" :
-                                  "bg-rose-500/20 text-rose-400"
+                                  u.difficulty === "Easy" ? "bg-success-soft text-success" :
+                                  u.difficulty === "Medium" ? "bg-warning-soft text-warning" :
+                                  "bg-danger-soft text-danger"
                                 }`}>
                                   {u.difficulty}
                                 </div>
                               </div>
                               <div className="flex items-center justify-between">
-                                <div className={`text-xs ${isDark ? "text-slate-400" : "text-gray-600"}`}>
+                                <div className={`text-xs text-ink-muted`}>
                                   {u.date} â€¢ {u.time}
                                 </div>
                                 <button className={`px-3 py-1 rounded-lg bg-gradient-to-br ${u.color} text-white text-xs font-semibold shadow-lg hover:shadow-xl transition`}>
@@ -600,7 +539,7 @@ export default function UserDashboardPage() {
 
                       <div className="mt-4 text-right">
                         <button className={`text-sm flex items-center gap-1 ml-auto transition ${
-                          isDark ? "text-cyan-400 hover:text-cyan-300" : "text-cyan-600 hover:text-cyan-500"
+                          "text-accent-text hover:opacity-80"
                         }`}>
                           View all <ChevronRight size={16} />
                         </button>
@@ -613,14 +552,14 @@ export default function UserDashboardPage() {
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ delay: 0.5 }}
                   >
-                    <GlassCard isDark={isDark}>
+                    <GlassCard>
                       <div className="flex items-center justify-between mb-6">
                         <div>
-                          <h3 className={`text-xl font-bold flex items-center gap-2 ${isDark ? "text-white" : "text-gray-900"}`}>
-                            <Activity className="text-violet-400" size={24} />
+                          <h3 className={`text-xl font-bold flex items-center gap-2 text-ink`}>
+                            <Activity className="text-accent-text" size={24} />
                             Recent
                           </h3>
-                          <p className={`text-sm mt-1 ${isDark ? "text-slate-400" : "text-gray-600"}`}>Last 5 attempts</p>
+                          <p className={`text-sm mt-1 text-ink-muted`}>Last 5 attempts</p>
                         </div>
                       </div>
 
@@ -632,31 +571,28 @@ export default function UserDashboardPage() {
                             animate={{ x: 0, opacity: 1 }}
                             transition={{ delay: 0.6 + i * 0.1 }}
                             className={`p-3 rounded-xl transition cursor-pointer ${
-                              isDark 
-                                ? "bg-gradient-to-br from-slate-800/50 to-slate-700/50 border border-white/10 hover:border-white/20" 
-                                : "bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-300 hover:border-gray-400"
-                            }`}
+                              "bg-surface border border-border hover:border-border-strong"}`}
                           >
                             <div className="flex items-center justify-between mb-2">
                               <div>
-                                <div className={`font-medium text-sm ${isDark ? "text-white" : "text-gray-900"}`}>{r.role}</div>
-                                <div className={`text-xs ${isDark ? "text-slate-400" : "text-gray-600"}`}>{r.company} â€¢ {r.date}</div>
+                                <div className={`font-medium text-sm text-ink`}>{r.role}</div>
+                                <div className={`text-xs text-ink-muted`}>{r.company} â€¢ {r.date}</div>
                               </div>
                               <div className="text-right">
-                                <div className={`font-semibold text-sm ${r.result === "Pass" ? "text-emerald-400" : "text-rose-400"}`}>
+                                <div className={`font-semibold text-sm ${r.result === "Pass" ? "text-success" : "text-danger"}`}>
                                   {r.result}
                                 </div>
-                                <div className={`text-xs ${isDark ? "text-slate-400" : "text-gray-600"}`}>Score: {r.score}</div>
+                                <div className={`text-xs text-ink-muted`}>Score: {r.score}</div>
                               </div>
                             </div>
-                            <div className={`text-xs italic ${isDark ? "text-slate-500" : "text-gray-500"}`}>{r.feedback}</div>
+                            <div className={`text-xs italic ${"text-ink-subtle"}`}>{r.feedback}</div>
                           </motion.div>
                         ))}
                       </div>
 
                       <div className="mt-4 text-right">
                         <button className={`text-sm flex items-center gap-1 ml-auto transition ${
-                          isDark ? "text-violet-400 hover:text-violet-300" : "text-violet-600 hover:text-violet-500"
+                          "text-accent-text hover:opacity-80"
                         }`}>
                           Full history <ChevronRight size={16} />
                         </button>
@@ -673,36 +609,33 @@ export default function UserDashboardPage() {
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.6 }}
                 >
-                  <GlassCard isDark={isDark}>
+                  <GlassCard>
                     <div className="flex items-center justify-between mb-6">
                       <div>
-                        <h3 className={`text-xl font-bold flex items-center gap-2 ${isDark ? "text-white" : "text-gray-900"}`}>
-                          <Zap className="text-yellow-400" size={24} />
+                        <h3 className={`text-xl font-bold flex items-center gap-2 text-ink`}>
+                          <Zap className="text-warning" size={24} />
                           AI Suggestions
                         </h3>
-                        <p className={`text-sm mt-1 ${isDark ? "text-slate-400" : "text-gray-600"}`}>Personalized tips</p>
+                        <p className={`text-sm mt-1 text-ink-muted`}>Personalized tips</p>
                       </div>
                     </div>
 
                     <div className="flex flex-col gap-3">
                       {[
-                        { title: "Practice: Algo Problems", desc: "Focus on arrays & graphs. Try timed mocks.", color: "from-blue-500 to-cyan-500" },
-                        { title: "Improve Communication", desc: "Record explanations and compare with samples.", color: "from-violet-500 to-purple-500" },
-                        { title: "System Design Primer", desc: "Review scalability patterns for senior roles.", color: "from-emerald-500 to-teal-500" },
+                        { title: "Practice: Algo Problems", desc: "Focus on arrays & graphs. Try timed mocks.", color: "bg-accent" },
+                        { title: "Improve Communication", desc: "Record explanations and compare with samples.", color: "bg-accent" },
+                        { title: "System Design Primer", desc: "Review scalability patterns for senior roles.", color: "bg-accent" },
                       ].map((tip, i) => (
                         <motion.div
                           key={i}
                           whileHover={{ scale: 1.02 }}
                           className={`relative overflow-hidden p-4 rounded-xl cursor-pointer group ${
-                            isDark 
-                              ? "bg-gradient-to-br from-slate-800/50 to-slate-700/50 border border-white/10" 
-                              : "bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-300"
-                          }`}
+                            "bg-surface border border-border"}`}
                         >
                           <div className={`absolute inset-0 bg-gradient-to-br ${tip.color} opacity-0 group-hover:opacity-10 transition-opacity`}></div>
                           <div className="relative z-10">
-                            <div className={`text-sm font-semibold mb-1 ${isDark ? "text-white" : "text-gray-900"}`}>{tip.title}</div>
-                            <div className={`text-xs ${isDark ? "text-slate-400" : "text-gray-600"}`}>{tip.desc}</div>
+                            <div className={`text-sm font-semibold mb-1 text-ink`}>{tip.title}</div>
+                            <div className={`text-xs text-ink-muted`}>{tip.desc}</div>
                           </div>
                         </motion.div>
                       ))}
@@ -715,14 +648,14 @@ export default function UserDashboardPage() {
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.7 }}
                 >
-                  <GlassCard isDark={isDark}>
+                  <GlassCard>
                     <div className="flex items-center justify-between mb-6">
                       <div>
-                        <h3 className={`text-xl font-bold flex items-center gap-2 ${isDark ? "text-white" : "text-gray-900"}`}>
-                          <Trophy className="text-yellow-400" size={24} />
+                        <h3 className={`text-xl font-bold flex items-center gap-2 text-ink`}>
+                          <Trophy className="text-warning" size={24} />
                           Achievements
                         </h3>
-                        <p className={`text-sm mt-1 ${isDark ? "text-slate-400" : "text-gray-600"}`}>2 of 4 unlocked</p>
+                        <p className={`text-sm mt-1 text-ink-muted`}>2 of 4 unlocked</p>
                       </div>
                     </div>
 
@@ -733,17 +666,13 @@ export default function UserDashboardPage() {
                           whileHover={{ scale: ach.unlocked ? 1.05 : 1 }}
                           className={`p-4 rounded-xl border transition ${
                             ach.unlocked
-                              ? isDark
-                                ? "bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border-yellow-500/30"
-                                : "bg-gradient-to-br from-yellow-100 to-orange-100 border-yellow-400"
-                              : isDark
-                                ? "bg-slate-800/30 border-slate-700/50 opacity-50"
-                                : "bg-gray-100/30 border-gray-300/50 opacity-50"
+                              ? "bg-warning-soft border-warning/30"
+                              : "bg-surface border-border opacity-60"
                           }`}
                         >
-                          <ach.icon className={ach.unlocked ? "text-yellow-400" : isDark ? "text-slate-600" : "text-gray-400"} size={24} />
-                          <div className={`mt-2 text-sm font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>{ach.title}</div>
-                          <div className={`text-xs mt-1 ${isDark ? "text-slate-400" : "text-gray-600"}`}>{ach.description}</div>
+                          <ach.icon className={ach.unlocked ? "text-warning" : "text-ink-subtle"} size={24} />
+                          <div className={`mt-2 text-sm font-semibold text-ink`}>{ach.title}</div>
+                          <div className={`text-xs mt-1 text-ink-muted`}>{ach.description}</div>
                         </motion.div>
                       ))}
                     </div>

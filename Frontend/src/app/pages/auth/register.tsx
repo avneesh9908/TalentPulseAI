@@ -2,10 +2,13 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useTheme } from "@/contexts/use-theme";
 import { useAuth } from "@/contexts/use-auth";
-import { Mail, Phone, Lock, User, AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, Loader2, Moon, Sun } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
-import { motion } from "framer-motion";
 import { validateName, validateEmail, validatePhone, validatePassword } from "@/lib/validation";
+import { Logo } from "@/components/brand/logo";
+import { Panel } from "@/components/ui/panel";
+import { Button } from "@/components/ui/button";
+import { Field, TextInput } from "@/components/ui/field";
 
 type RegisterField = "name" | "email" | "phone" | "password";
 
@@ -62,274 +65,133 @@ export default function Register() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md"
-      >
-        <div
-          className={`
-          ${
-            isDark
-              ? "bg-gradient-to-br from-slate-900/90 to-slate-800/90 border-white/10"
-              : "bg-white/80 border-gray-200 shadow-lg"
-          }
-          backdrop-blur-xl border rounded-2xl p-8 relative
-        `}
+    <div className="mx-auto w-full max-w-[26rem]">
+      <div className="mb-6 flex items-center justify-between">
+        <a href="/" aria-label="TalentPulseAI home">
+          <Logo />
+        </a>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          onClick={toggleTheme}
+          aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
         >
-          {/* Theme Toggle */}
-          <button
-            onClick={toggleTheme}
-            className={`absolute top-4 right-4 p-2 rounded-lg transition ${
-              isDark
-                ? "bg-slate-800/50 hover:bg-slate-700/50 text-white"
-                : "bg-gray-100 hover:bg-gray-200 text-gray-900"
-            }`}
-          >
-            {isDark ? "☀️" : "🌙"}
-          </button>
+          {isDark ? <Sun /> : <Moon />}
+        </Button>
+      </div>
 
-          {/* Logo & Title */}
-          <div className="flex flex-col items-center mb-8">
-            <div className="w-16 h-16 rounded-xl bg-gradient-primary shadow-lg flex items-center justify-center mb-4">
-              <span className="text-white text-2xl font-bold">TP</span>
-            </div>
-            <h1 className="font-display text-4xl font-bold uppercase tracking-tight bg-gradient-primary bg-clip-text text-transparent">
-              Create Account
-            </h1>
-            <p className={`text-sm mt-2 ${isDark ? "text-slate-400" : "text-gray-600"}`}>
-              Start your interview preparation journey
-            </p>
+      <Panel tone="raised" padding="lg">
+        <h1 className="text-h2 font-semibold text-ink">Create your account</h1>
+        <p className="mt-1.5 text-small text-ink-muted">
+          Free while in beta. One account covers interview practice and job search.
+        </p>
+
+        {error && (
+          <div
+            role="alert"
+            className="mt-5 flex items-start gap-2 rounded-md border border-danger/30 bg-danger-soft px-3 py-2.5 text-small text-danger"
+          >
+            <AlertCircle size={16} className="mt-0.5 shrink-0" />
+            {error}
           </div>
+        )}
 
-          {/* Error Message */}
-          {error && (
-            <motion.div
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex items-center gap-2 mb-4 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm"
-            >
-              <AlertCircle size={16} className="shrink-0" />
-              {error}
-            </motion.div>
-          )}
+        {/* noValidate: the JS validators own the messages */}
+        <form onSubmit={handleRegister} noValidate className="mt-6 space-y-4">
+          <Field label="Full name" htmlFor="reg-name" error={fieldErrors.name} required>
+            <TextInput
+              id="reg-name"
+              autoComplete="name"
+              value={name}
+              onChange={(e) => { setName(e.target.value); clearFieldError("name"); }}
+              onBlur={() => validateOne("name")}
+              invalid={Boolean(fieldErrors.name)}
+              aria-describedby={fieldErrors.name ? "reg-name-error" : undefined}
+              placeholder="Your name"
+            />
+          </Field>
 
-          {/* Form (noValidate: our JS validators own the messages, not the browser) */}
-          <form onSubmit={handleRegister} noValidate className="space-y-4">
-            {/* Name Input */}
-            <div>
-              <label
-                className={`block text-sm font-medium mb-2 ${
-                  isDark ? "text-white" : "text-gray-900"
-                }`}
-              >
-                Full Name
-              </label>
-              <div className="relative">
-                <User
-                  className={`absolute left-3 top-1/2 -translate-y-1/2 ${
-                    isDark ? "text-slate-400" : "text-gray-400"
-                  }`}
-                  size={18}
-                />
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => { setName(e.target.value); clearFieldError("name"); }}
-                  onBlur={() => validateOne("name")}
-                  aria-invalid={Boolean(fieldErrors.name)}
-                  placeholder="John Doe"
-                  className={`
-                    w-full pl-10 pr-4 py-3 rounded-xl transition
-                    ${
-                      isDark
-                        ? "bg-slate-800/50 border-white/10 text-white placeholder:text-slate-500"
-                        : "bg-white border-gray-300 text-gray-900 placeholder:text-gray-400"
-                    }
-                    border focus:outline-none focus:ring-2
-                    ${fieldErrors.name ? "border-red-500 focus:ring-red-500" : "focus:ring-violet-500"}
-                  `}
-                />
-              </div>
-              {fieldErrors.name && <p className="mt-1 text-xs text-red-400">{fieldErrors.name}</p>}
-            </div>
+          <Field label="Email address" htmlFor="reg-email" error={fieldErrors.email} required>
+            <TextInput
+              id="reg-email"
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => { setEmail(e.target.value); clearFieldError("email"); }}
+              onBlur={() => validateOne("email")}
+              invalid={Boolean(fieldErrors.email)}
+              aria-describedby={fieldErrors.email ? "reg-email-error" : undefined}
+              placeholder="you@example.com"
+            />
+          </Field>
 
-            {/* Email Input */}
-            <div>
-              <label
-                className={`block text-sm font-medium mb-2 ${
-                  isDark ? "text-white" : "text-gray-900"
-                }`}
-              >
-                Email Address
-              </label>
-              <div className="relative">
-                <Mail
-                  className={`absolute left-3 top-1/2 -translate-y-1/2 ${
-                    isDark ? "text-slate-400" : "text-gray-400"
-                  }`}
-                  size={18}
-                />
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => { setEmail(e.target.value); clearFieldError("email"); }}
-                  onBlur={() => validateOne("email")}
-                  aria-invalid={Boolean(fieldErrors.email)}
-                  placeholder="your@email.com"
-                  className={`
-                    w-full pl-10 pr-4 py-3 rounded-xl transition
-                    ${
-                      isDark
-                        ? "bg-slate-800/50 border-white/10 text-white placeholder:text-slate-500"
-                        : "bg-white border-gray-300 text-gray-900 placeholder:text-gray-400"
-                    }
-                    border focus:outline-none focus:ring-2
-                    ${fieldErrors.email ? "border-red-500 focus:ring-red-500" : "focus:ring-violet-500"}
-                  `}
-                />
-              </div>
-              {fieldErrors.email && <p className="mt-1 text-xs text-red-400">{fieldErrors.email}</p>}
-            </div>
+          <Field label="Phone number" htmlFor="reg-phone" error={fieldErrors.phone} required>
+            <TextInput
+              id="reg-phone"
+              type="tel"
+              autoComplete="tel"
+              value={phone}
+              onChange={(e) => { setPhone(e.target.value); clearFieldError("phone"); }}
+              onBlur={() => validateOne("phone")}
+              invalid={Boolean(fieldErrors.phone)}
+              aria-describedby={fieldErrors.phone ? "reg-phone-error" : undefined}
+              placeholder="+91 98765 43210"
+            />
+          </Field>
 
-            {/* Phone Input */}
-            <div>
-              <label
-                className={`block text-sm font-medium mb-2 ${
-                  isDark ? "text-white" : "text-gray-900"
-                }`}
-              >
-                Phone Number
-              </label>
-              <div className="relative">
-                <Phone
-                  className={`absolute left-3 top-1/2 -translate-y-1/2 ${
-                    isDark ? "text-slate-400" : "text-gray-400"
-                  }`}
-                  size={18}
-                />
-                <input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => { setPhone(e.target.value); clearFieldError("phone"); }}
-                  onBlur={() => validateOne("phone")}
-                  aria-invalid={Boolean(fieldErrors.phone)}
-                  placeholder="+91 98765 43210"
-                  className={`
-                    w-full pl-10 pr-4 py-3 rounded-xl transition
-                    ${
-                      isDark
-                        ? "bg-slate-800/50 border-white/10 text-white placeholder:text-slate-500"
-                        : "bg-white border-gray-300 text-gray-900 placeholder:text-gray-400"
-                    }
-                    border focus:outline-none focus:ring-2
-                    ${fieldErrors.phone ? "border-red-500 focus:ring-red-500" : "focus:ring-violet-500"}
-                  `}
-                />
-              </div>
-              {fieldErrors.phone && <p className="mt-1 text-xs text-red-400">{fieldErrors.phone}</p>}
-            </div>
-
-            {/* Password Input */}
-            <div>
-              <label
-                className={`block text-sm font-medium mb-2 ${
-                  isDark ? "text-white" : "text-gray-900"
-                }`}
-              >
-                Password
-              </label>
-              <div className="relative">
-                <Lock
-                  className={`absolute left-3 top-1/2 -translate-y-1/2 ${
-                    isDark ? "text-slate-400" : "text-gray-400"
-                  }`}
-                  size={18}
-                />
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => { setPassword(e.target.value); clearFieldError("password"); }}
-                  onBlur={() => validateOne("password")}
-                  aria-invalid={Boolean(fieldErrors.password)}
-                  placeholder="••••••••"
-                  className={`
-                    w-full pl-10 pr-4 py-3 rounded-xl transition
-                    ${
-                      isDark
-                        ? "bg-slate-800/50 border-white/10 text-white placeholder:text-slate-500"
-                        : "bg-white border-gray-300 text-gray-900 placeholder:text-gray-400"
-                    }
-                    border focus:outline-none focus:ring-2
-                    ${fieldErrors.password ? "border-red-500 focus:ring-red-500" : "focus:ring-violet-500"}
-                  `}
-                />
-              </div>
-              {fieldErrors.password
-                ? <p className="mt-1 text-xs text-red-400">{fieldErrors.password}</p>
-                : <p className={`mt-1 text-xs ${isDark ? "text-slate-500" : "text-gray-400"}`}>At least 8 characters</p>}
-            </div>
-
-            {/* Register Button */}
-            <motion.button
-              whileHover={{ scale: isLoading ? 1 : 1.02 }}
-              whileTap={{ scale: isLoading ? 1 : 0.98 }}
-              type="submit"
-              disabled={isLoading}
-              className="w-full py-3 rounded-xl bg-gradient-primary text-white font-semibold shadow-lg hover:shadow-xl transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 size={18} className="animate-spin" />
-                  Creating account...
-                </>
-              ) : (
-                "Create Account"
-              )}
-            </motion.button>
-          </form>
-
-          {/* Divider */}
-          <div className="flex items-center gap-4 my-6">
-            <div className={`flex-1 h-px ${isDark ? "bg-white/10" : "bg-gray-300"}`}></div>
-            <span className={`text-sm ${isDark ? "text-slate-400" : "text-gray-600"}`}>OR</span>
-            <div className={`flex-1 h-px ${isDark ? "bg-white/10" : "bg-gray-300"}`}></div>
-          </div>
-
-          {/* Google Button */}
-          <motion.button
-            type="button"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className={`
-              w-full py-3 rounded-xl font-medium transition flex items-center justify-center gap-3
-              ${
-                isDark
-                  ? "bg-slate-800/50 hover:bg-slate-700/50 border-white/10 text-white"
-                  : "bg-white hover:bg-gray-50 border-gray-300 text-gray-900"
-              }
-              border shadow-md
-            `}
+          <Field
+            label="Password"
+            htmlFor="reg-password"
+            error={fieldErrors.password}
+            hint="At least 8 characters."
+            required
           >
-            <FcGoogle size={24} />
-            Continue with Google
-          </motion.button>
+            <TextInput
+              id="reg-password"
+              type="password"
+              autoComplete="new-password"
+              value={password}
+              onChange={(e) => { setPassword(e.target.value); clearFieldError("password"); }}
+              onBlur={() => validateOne("password")}
+              invalid={Boolean(fieldErrors.password)}
+              aria-describedby={fieldErrors.password ? "reg-password-error" : undefined}
+              placeholder="••••••••"
+            />
+          </Field>
 
-          {/* Login Link */}
-          <p
-            className={`text-center text-sm mt-6 ${isDark ? "text-slate-400" : "text-gray-600"}`}
-          >
-            Already have an account?{" "}
-            <Link
-              to="/auth/login"
-              className="font-semibold bg-gradient-primary bg-clip-text text-transparent hover:opacity-80 transition"
-            >
-              Login
-            </Link>
-          </p>
+          <Button type="submit" size="lg" block disabled={isLoading}>
+            {isLoading ? (
+              <>
+                <Loader2 className="animate-spin" />
+                Creating account…
+              </>
+            ) : (
+              "Create account"
+            )}
+          </Button>
+        </form>
+
+        <div className="my-5 flex items-center gap-3">
+          <span className="h-px flex-1 bg-border" />
+          <span className="text-overline uppercase text-ink-subtle">or</span>
+          <span className="h-px flex-1 bg-border" />
         </div>
-      </motion.div>
+
+        <Button type="button" variant="secondary" size="lg" block>
+          <FcGoogle size={18} />
+          Continue with Google
+        </Button>
+
+        <p className="mt-6 text-center text-small text-ink-muted">
+          Already have an account?{" "}
+          <Link
+            to="/auth/login"
+            className="font-medium text-accent-text underline-offset-4 hover:underline"
+          >
+            Log in
+          </Link>
+        </p>
+      </Panel>
     </div>
   );
 }

@@ -36,11 +36,11 @@ const STATUS_LABELS: Record<MatchStatus, string> = {
 };
 
 const STATUS_BADGE: Record<MatchStatus, string> = {
-  new: "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300",
-  reviewed: "bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300",
-  pending_apply: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
-  applied: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
-  dismissed: "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400",
+  new: "bg-accent-soft text-accent-text",
+  reviewed: "bg-accent-soft text-accent-text",
+  pending_apply: "bg-warning-soft text-warning",
+  applied: "bg-success-soft text-success",
+  dismissed: "bg-surface-strong text-ink-subtle",
 };
 
 const FLOW_STEPS = [
@@ -209,7 +209,7 @@ export default function JobsPage() {
   if (mode === "loading") {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
-        <Loader2 className="animate-spin text-violet-600" size={28} />
+        <Loader2 className="animate-spin text-accent-text" size={28} />
       </div>
     );
   }
@@ -222,17 +222,17 @@ export default function JobsPage() {
         animate={{ y: 0, opacity: 1 }}
         className="space-y-3"
       >
-        <div className="flex w-fit items-center gap-2 rounded-full border border-violet-500/30 bg-gradient-to-r from-violet-500/20 to-cyan-500/20 px-3 py-1.5">
-          <Sparkles size={14} className="text-violet-400" />
-          <span className="text-xs font-semibold uppercase tracking-wide text-violet-400">
+        <div className="flex w-fit items-center gap-2 rounded-full border border-accent/40 bg-accent-soft px-3 py-1.5">
+          <Sparkles size={14} className="text-accent-text" />
+          <span className="text-xs font-semibold uppercase tracking-wide text-accent-text">
             Job Agent
           </span>
         </div>
-        <h1 className="font-display text-4xl font-bold uppercase tracking-tight text-slate-900 md:text-5xl dark:text-white">
+        <h1 className="text-h1 font-semibold text-ink">
           Find Your{" "}
-          <span className="bg-gradient-to-r from-violet-500 to-cyan-400 bg-clip-text text-transparent">Next Role</span>
+          <span className="text-accent-text">Next Role</span>
         </h1>
-        <p className="max-w-xl text-base text-slate-500 dark:text-slate-400">
+        <p className="max-w-xl text-base text-ink-subtle">
           Your resume, matched against live openings on company career pages — ranked, explained,
           and ready to apply.
         </p>
@@ -247,24 +247,24 @@ export default function JobsPage() {
               <div
                 className={`flex h-full items-center gap-3 rounded-2xl border p-4 transition ${
                   state === "active"
-                    ? "border-violet-400/60 bg-gradient-to-br from-violet-600/15 to-cyan-500/15 dark:border-violet-500/50"
-                    : "border-slate-200 bg-white dark:border-white/10 dark:bg-white/[0.03]"
+                    ? "border-accent/40 bg-accent-soft"
+                    : "border-border bg-canvas"
                 }`}
               >
                 <span
-                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl font-display font-bold ${
+                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl font-semibold ${
                     state === "todo"
-                      ? "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500"
-                      : "bg-gradient-to-br from-violet-600 to-cyan-500 text-white"
+                      ? "bg-surface-strong text-ink-subtle"
+                      : "bg-accent text-white"
                   }`}
                 >
                   {state === "done" ? <Check size={18} /> : i + 1}
                 </span>
                 <span className="min-w-0">
-                  <span className="block truncate font-semibold text-slate-900 dark:text-white">
+                  <span className="block truncate font-semibold text-ink">
                     {step.title}
                   </span>
-                  <span className="block truncate text-xs text-slate-500 dark:text-slate-400">
+                  <span className="block truncate text-xs text-ink-subtle">
                     {step.desc}
                   </span>
                 </span>
@@ -275,7 +275,7 @@ export default function JobsPage() {
       </StaggerGroup>
 
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-slate-500 dark:text-slate-400">
+        <p className="text-sm text-ink-subtle">
           {mode === "setup"
             ? "Step 1 — confirm the roles you want to target."
             : `${matches.length} match${matches.length === 1 ? "" : "es"} found so far.`}
@@ -285,7 +285,7 @@ export default function JobsPage() {
             <button
               type="button"
               onClick={() => void enterSetupMode(setup)}
-              className="flex items-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+              className="flex items-center gap-2 rounded-md border border-border-strong px-3 py-2 text-sm text-ink-muted hover:bg-surface"
             >
               <Settings2 size={16} /> Re-setup
             </button>
@@ -293,7 +293,7 @@ export default function JobsPage() {
               type="button"
               onClick={() => void onSearch()}
               disabled={searching}
-              className="flex items-center gap-2 rounded-md bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-700 disabled:opacity-60"
+              className="flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent disabled:opacity-60"
             >
               {searching ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
               {searching ? "Searching…" : "Search Now"}
@@ -303,40 +303,40 @@ export default function JobsPage() {
       </div>
 
       {error && (
-        <p className="rounded-md bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-300">
+        <p className="rounded-md bg-danger-soft p-3 text-sm text-danger">
           {error}
         </p>
       )}
       {notice && (
-        <p className="rounded-md bg-emerald-50 p-3 text-sm text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+        <p className="rounded-md bg-success-soft p-3 text-sm text-success">
           {notice}
         </p>
       )}
 
       {mode === "setup" && (
         <Reveal>
-        <section className="space-y-6 rounded-lg border border-slate-300 p-5 shadow-sm dark:border-slate-700">
+        <section className="space-y-6 rounded-lg border border-border-strong p-5 shadow-sm">
           {/* Step 1a — the job side's OWN resume, separate from the interview's */}
           <div className="space-y-3">
             <div>
-              <h2 className="text-lg font-medium text-slate-900 dark:text-white">
+              <h2 className="text-lg font-medium text-ink">
                 Resume for job search
               </h2>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
+              <p className="text-sm text-ink-subtle">
                 Choose which resume the agent matches jobs against. This is separate from the
                 resume your mock interviews use — you can point each side at a different one.
               </p>
             </div>
 
             {resumes.length === 0 ? (
-              <div className="rounded-lg border border-dashed border-slate-300 p-4 text-sm dark:border-slate-700">
-                <p className="text-slate-600 dark:text-slate-300">
+              <div className="rounded-lg border border-dashed border-border-strong p-4 text-sm">
+                <p className="text-ink-muted">
                   No resume indexed yet. Upload one in the interview flow and it becomes available
                   here too.
                 </p>
                 <a
                   href="/interview/select-role"
-                  className="mt-2 inline-flex items-center gap-1 font-medium text-violet-600 hover:underline dark:text-violet-400"
+                  className="mt-2 inline-flex items-center gap-1 font-medium text-accent-text hover:underline"
                 >
                   Upload a resume →
                 </a>
@@ -353,21 +353,21 @@ export default function JobsPage() {
                       aria-pressed={selected}
                       className={`rounded-xl border p-4 text-left transition ${
                         selected
-                          ? "border-violet-400/70 bg-violet-50 dark:border-violet-500/50 dark:bg-violet-900/20"
-                          : "border-slate-200 hover:border-violet-300 dark:border-slate-700 dark:hover:border-violet-500/40"
+                          ? "border-accent/40 bg-accent-soft"
+                          : "border-border hover:border-accent/40"
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <span className="truncate font-medium text-slate-900 dark:text-white">
+                        <span className="truncate font-medium text-ink">
                           {r.file_name}
                         </span>
-                        {selected && <Check size={16} className="shrink-0 text-violet-500" />}
+                        {selected && <Check size={16} className="shrink-0 text-accent-text" />}
                       </div>
-                      <p className="mt-1 truncate text-xs text-slate-500 dark:text-slate-400">
+                      <p className="mt-1 truncate text-xs text-ink-subtle">
                         {[r.role, r.experience].filter(Boolean).join(" · ") || "Indexed resume"}
                       </p>
                       {r.skills.length > 0 && (
-                        <p className="mt-2 truncate text-xs text-slate-400 dark:text-slate-500">
+                        <p className="mt-2 truncate text-xs text-ink-subtle">
                           {r.skills.slice(0, 4).join(", ")}
                         </p>
                       )}
@@ -378,20 +378,20 @@ export default function JobsPage() {
             )}
           </div>
 
-          <div className="h-px bg-slate-200 dark:bg-slate-700" />
+          <div className="h-px bg-border" />
 
           <div>
-            <h2 className="text-lg font-medium text-slate-900 dark:text-white">
+            <h2 className="text-lg font-medium text-ink">
               Target designations
             </h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
+            <p className="text-sm text-ink-subtle">
               Suggested from your resume — remove any, or add a different role you want to target
               (e.g. switch from Python to Frontend). One resume can target many roles.
             </p>
           </div>
 
           {suggesting ? (
-            <p className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+            <p className="flex items-center gap-2 text-sm text-ink-subtle">
               <Loader2 size={16} className="animate-spin" /> Analyzing your resume…
             </p>
           ) : (
@@ -399,21 +399,21 @@ export default function JobsPage() {
               {chips.map((chip) => (
                 <span
                   key={chip}
-                  className="flex items-center gap-1 rounded-full bg-violet-100 px-3 py-1 text-sm text-violet-700 dark:bg-violet-900/40 dark:text-violet-300"
+                  className="flex items-center gap-1 rounded-full bg-accent-soft px-3 py-1 text-sm text-accent-text"
                 >
                   {chip}
                   <button
                     type="button"
                     aria-label={`Remove ${chip}`}
                     onClick={() => setChips((prev) => prev.filter((c) => c !== chip))}
-                    className="rounded-full p-0.5 hover:bg-violet-200 dark:hover:bg-violet-800"
+                    className="rounded-full p-0.5 hover:bg-accent-soft"
                   >
                     <X size={14} />
                   </button>
                 </span>
               ))}
               {!chips.length && (
-                <span className="text-sm text-slate-400">No designations yet — add one below</span>
+                <span className="text-sm text-ink-subtle">No designations yet — add one below</span>
               )}
             </div>
           )}
@@ -429,12 +429,12 @@ export default function JobsPage() {
                 }
               }}
               placeholder="Add a designation (e.g. Frontend Developer)"
-              className="w-full max-w-md rounded-md border border-slate-300 p-2 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+              className="w-full max-w-md rounded-md border border-border-strong p-2 text-sm"
             />
             <button
               type="button"
               onClick={addChip}
-              className="flex items-center gap-1 rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+              className="flex items-center gap-1 rounded-md border border-border-strong px-3 py-2 text-sm text-ink-muted hover:bg-surface"
             >
               <Plus size={16} /> Add
             </button>
@@ -444,7 +444,7 @@ export default function JobsPage() {
             type="button"
             onClick={() => void onSaveSetup()}
             disabled={saving || suggesting}
-            className="rounded-md bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-700 disabled:opacity-60"
+            className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent disabled:opacity-60"
           >
             {saving ? "Saving…" : "Save & Continue"}
           </button>
@@ -455,9 +455,9 @@ export default function JobsPage() {
       {mode === "table" && (
         <>
           {setup && (
-            <p className="text-sm text-slate-500 dark:text-slate-400">
+            <p className="text-sm text-ink-subtle">
               Targeting:{" "}
-              <span className="font-medium text-slate-700 dark:text-slate-200">
+              <span className="font-medium text-ink-muted">
                 {setup.target_designations.join(" · ") || "—"}
               </span>
             </p>
@@ -471,8 +471,8 @@ export default function JobsPage() {
                 onClick={() => setFilter(f.value)}
                 className={`rounded-full px-3 py-1 text-sm ${
                   filter === f.value
-                    ? "bg-violet-600 text-white"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                    ? "bg-accent text-white"
+                    : "bg-surface-strong text-ink-muted hover:bg-surface-strong"
                 }`}
               >
                 {f.label}
@@ -482,15 +482,15 @@ export default function JobsPage() {
               type="button"
               onClick={() => void loadMatches()}
               aria-label="Refresh matches"
-              className="ml-auto rounded-full p-2 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+              className="ml-auto rounded-full p-2 text-ink-subtle hover:bg-surface-strong"
             >
               <RefreshCw size={16} />
             </button>
           </div>
 
-          <Reveal className="overflow-x-auto rounded-lg border border-slate-300 shadow-sm dark:border-slate-700">
+          <Reveal className="overflow-x-auto rounded-lg border border-border-strong shadow-sm">
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-slate-600 dark:bg-slate-900 dark:text-slate-300">
+              <thead className="bg-surface text-ink-muted">
                 <tr>
                   <th className="p-3 font-medium">Company</th>
                   <th className="p-3 font-medium">Role</th>
@@ -500,10 +500,10 @@ export default function JobsPage() {
                   <th className="p-3 font-medium">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+              <tbody className="divide-y divide-border">
                 {visible.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="p-6 text-center text-slate-400">
+                    <td colSpan={6} className="p-6 text-center text-ink-subtle">
                       {matches.length === 0
                         ? "No matches yet — click Search Now to scan career pages"
                         : "No matches with this status"}
@@ -512,28 +512,28 @@ export default function JobsPage() {
                 )}
                 {visible.map((m) => (
                   <tr key={m.id} className="align-top">
-                    <td className="p-3 font-medium text-slate-900 dark:text-white">{m.company}</td>
+                    <td className="p-3 font-medium text-ink">{m.company}</td>
                     <td className="p-3">
                       <a
                         href={m.url}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-violet-700 hover:underline dark:text-violet-300"
+                        className="text-accent-text hover:underline"
                       >
                         {m.title}
                       </a>
                       {m.match_reasons?.fits?.length ? (
-                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                        <p className="mt-1 text-xs text-ink-subtle">
                           {m.match_reasons.fits.join(" · ")}
                         </p>
                       ) : null}
                     </td>
-                    <td className="p-3 text-slate-600 dark:text-slate-300">
+                    <td className="p-3 text-ink-muted">
                       {m.location || "—"}
                       {m.remote ? " (Remote)" : ""}
                     </td>
                     <td className="p-3">
-                      <span className="font-semibold text-slate-900 dark:text-white">
+                      <span className="font-semibold text-ink">
                         {Math.round(m.match_score)}%
                       </span>
                     </td>
@@ -544,7 +544,7 @@ export default function JobsPage() {
                         {STATUS_LABELS[m.status]}
                       </span>
                       {m.status === "pending_apply" && m.pending_reason ? (
-                        <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
+                        <p className="mt-1 text-xs text-warning">
                           {m.pending_reason}
                         </p>
                       ) : null}
@@ -558,7 +558,7 @@ export default function JobsPage() {
                           onClick={() => {
                             if (m.status === "new") void onStatusChange(m, "reviewed");
                           }}
-                          className="rounded-md bg-violet-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-violet-700"
+                          className="rounded-md bg-accent px-2.5 py-1 text-xs font-medium text-white hover:bg-accent"
                         >
                           Apply →
                         </a>
@@ -566,7 +566,7 @@ export default function JobsPage() {
                           <button
                             type="button"
                             onClick={() => void onStatusChange(m, "applied")}
-                            className="rounded-md border border-emerald-300 px-2.5 py-1 text-xs text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-300 dark:hover:bg-emerald-900/30"
+                            className="rounded-md border border-success/30 px-2.5 py-1 text-xs text-success hover:bg-success-soft"
                           >
                             Mark Applied
                           </button>
@@ -575,7 +575,7 @@ export default function JobsPage() {
                           <button
                             type="button"
                             onClick={() => void onStatusChange(m, "dismissed")}
-                            className="rounded-md border border-slate-300 px-2.5 py-1 text-xs text-slate-500 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800"
+                            className="rounded-md border border-border-strong px-2.5 py-1 text-xs text-ink-subtle hover:bg-surface"
                           >
                             Dismiss
                           </button>

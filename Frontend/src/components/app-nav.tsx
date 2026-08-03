@@ -44,7 +44,7 @@ export default function AppNav({ className = "", stacked = false, onNavigate }: 
   return (
     <nav
       aria-label="Primary"
-      className={`flex gap-1 rounded-full border p-1 backdrop-blur-xl border-slate-200 bg-slate-100/70 dark:border-white/10 dark:bg-white/5 ${
+      className={`flex gap-1 rounded-full border border-border bg-surface p-1 ${
         stacked ? "w-full" : ""
       } ${className}`}
     >
@@ -61,20 +61,18 @@ export default function AppNav({ className = "", stacked = false, onNavigate }: 
               if (!isIn(dest, pathname)) navigate(dest.home);
               onNavigate?.();
             }}
-            className={`relative flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
-              active
-                ? "text-white"
-                : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+            className={`relative flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-full px-3.5 py-1.5 text-small font-medium transition-colors ${
+              active ? "text-ink" : "text-ink-subtle hover:text-ink"
             }`}
           >
             {active && (
               <motion.span
                 layoutId="app-nav-pill"
                 transition={SPRING}
-                className="absolute inset-0 -z-10 rounded-full bg-gradient-to-r from-violet-600 to-cyan-500 shadow-[0_0_20px_-4px_rgba(139,92,246,0.8)]"
+                className="absolute inset-0 -z-10 rounded-full bg-canvas shadow-e1"
               />
             )}
-            <Icon size={16} />
+            <Icon size={15} />
             {dest.label}
           </button>
         );

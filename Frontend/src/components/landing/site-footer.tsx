@@ -3,82 +3,65 @@
  * pages. Product column links to the two sides so either page can reach the
  * other.
  */
-import { Github, Linkedin, Sparkles, Twitter } from "lucide-react";
-import { SocialIcons } from "@/components/ui/social-icons";
-import { useTheme } from "@/contexts/use-theme";
+import { Logo } from "@/components/brand/logo";
+
+const COLUMNS = [
+  {
+    title: "Product",
+    links: [
+      { label: "Interview practice", href: "/practice" },
+      { label: "Job search agent", href: "/find-jobs" },
+      { label: "Try the demo", href: "/demo" },
+      { label: "Create an account", href: "/auth/register" },
+    ],
+  },
+  {
+    title: "Get started",
+    links: [
+      { label: "Log in", href: "/auth/login" },
+      { label: "Upload a resume", href: "/interview/select-role" },
+      { label: "Find matching jobs", href: "/jobs" },
+    ],
+  },
+] as const;
 
 export default function SiteFooter() {
-  const { isDark } = useTheme();
-  const subTextClass = isDark ? "text-slate-400" : "text-slate-500";
-  const linkClass = `transition hover:${isDark ? "text-white" : "text-violet-600"}`;
-
   return (
-    <footer className={`relative border-t px-6 py-12 ${isDark ? "border-white/10" : "border-slate-200"}`}>
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-12 grid gap-12 md:grid-cols-4">
-          {/* Brand */}
+    <footer className="border-t border-border bg-surface">
+      <div className="wrap py-12">
+        <div className="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr]">
           <div>
-            <a href="/" className="mb-4 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-cyan-500 shadow-lg">
-                <Sparkles className="text-white" size={20} />
-              </div>
-              <span className="font-display text-xl font-bold">
-                TalentPulse<span className="text-cyan-500">AI</span>
-              </span>
+            <a href="/" aria-label="TalentPulseAI home">
+              <Logo />
             </a>
-            <p className={`text-sm ${subTextClass}`}>
-              Practice AI interviews and find matching jobs — one platform, two sides.
+            <p className="mt-3 max-w-xs text-small text-ink-subtle">
+              Rehearse the interview with questions built from your own resume, then let an
+              agent surface the roles worth applying to.
             </p>
-            <SocialIcons
-              className="mt-4"
-              links={[
-                { label: "Twitter", href: "#", icon: <Twitter size={16} /> },
-                { label: "GitHub", href: "#", icon: <Github size={16} /> },
-                { label: "LinkedIn", href: "#", icon: <Linkedin size={16} /> },
-              ]}
-            />
           </div>
 
-          {/* Product — both sides reachable from either page */}
-          <div>
-            <h3 className="mb-4 font-bold">Product</h3>
-            <ul className={`space-y-2 text-sm ${subTextClass}`}>
-              <li><a href="/practice" className={linkClass}>Interview Practice</a></li>
-              <li><a href="/find-jobs" className={linkClass}>Job Search</a></li>
-              <li><a href="/demo" className={linkClass}>Try Demo</a></li>
-              <li><a href="/auth/register" className={linkClass}>Get Started Free</a></li>
-            </ul>
-          </div>
-
-          {/* Company */}
-          <div>
-            <h3 className="mb-4 font-bold">Company</h3>
-            <ul className={`space-y-2 text-sm ${subTextClass}`}>
-              <li><a href="#" className="transition hover:text-violet-600">About Us</a></li>
-              <li><a href="#" className="transition hover:text-violet-600">Blog</a></li>
-              <li><a href="#" className="transition hover:text-violet-600">Careers</a></li>
-              <li><a href="#" className="transition hover:text-violet-600">Contact</a></li>
-            </ul>
-          </div>
-
-          {/* Legal */}
-          <div>
-            <h3 className="mb-4 font-bold">Legal</h3>
-            <ul className={`space-y-2 text-sm ${subTextClass}`}>
-              <li><a href="#" className="transition hover:text-violet-600">Privacy Policy</a></li>
-              <li><a href="#" className="transition hover:text-violet-600">Terms of Service</a></li>
-              <li><a href="#" className="transition hover:text-violet-600">Cookie Policy</a></li>
-            </ul>
-          </div>
+          {COLUMNS.map((col) => (
+            <div key={col.title}>
+              <h2 className="overline mb-3">{col.title}</h2>
+              <ul className="space-y-2">
+                {col.links.map((link) => (
+                  <li key={link.label}>
+                    <a
+                      href={link.href}
+                      className="text-small text-ink-muted transition-colors hover:text-ink"
+                    >
+                      {link.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
 
-        <div
-          className={`flex flex-col items-center justify-between gap-4 border-t pt-8 text-sm md:flex-row ${subTextClass} ${
-            isDark ? "border-white/10" : "border-slate-200"
-          }`}
-        >
-          <p>© {new Date().getFullYear()} TalentPulseAI. All rights reserved.</p>
-          <p>Made with ❤️ for aspiring developers</p>
+        <div className="mt-10 flex flex-col gap-2 border-t border-border pt-6 text-small text-ink-subtle sm:flex-row sm:items-center sm:justify-between">
+          <p>© {new Date().getFullYear()} TalentPulseAI</p>
+          <p>Your resume is stripped of personal details before it is indexed.</p>
         </div>
       </div>
     </footer>

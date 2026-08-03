@@ -1,11 +1,53 @@
-@import "@fontsource-variable/space-grotesk";
+@import "@fontsource-variable/inter";
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Design tokens — the single source of truth for colour, radius and elevation.
+ *
+ * Channels are stored space-separated so Tailwind can apply <alpha-value>
+ * (`bg-surface/60` works; the old `hsl(var(--x))` tokens silently failed).
+ * Pages must never reference a raw palette colour (slate-500, violet-600 …) —
+ * every visual decision goes through a semantic token below.
+ */
 @layer base {
   :root {
+    /* text */
+    --ink: 23 24 28;             /* #17181C */
+    --ink-muted: 75 80 88;       /* #4B5058  8.1:1 on canvas */
+    --ink-subtle: 106 111 121;   /* #6A6F79  5.1:1 on canvas, 4.7:1 on surface */
+    --ink-inverse: 255 255 255;
+
+    /* surfaces */
+    --canvas: 255 255 255;
+    --surface: 245 246 247;      /* #F5F6F7 */
+    --surface-strong: 236 238 241;
+    --overlay: 9 11 15;
+
+    /* lines */
+    --border: 228 230 234;
+    --border-strong: 211 215 221;
+
+    /* brand — one accent, never a gradient */
+    --accent: 109 59 245;        /* #6D3BF5  5.8:1 with white */
+    --accent-hover: 91 45 219;
+    --accent-text: 91 45 219;    /* accent as type on canvas */
+    --accent-soft: 242 238 254;
+    --accent-fg: 255 255 255;
+
+    /* status */
+    --success: 15 122 88;
+    --success-soft: 230 246 240;
+    --warning: 161 74 8;
+    --warning-soft: 253 243 231;
+    --danger: 199 32 32;
+    --danger-soft: 253 236 236;
+
+    --radius: 0.5rem;
+
+    /* shadcn compatibility — primitives still map through these */
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
@@ -18,27 +60,46 @@
     --secondary-foreground: 222.2 47.4% 11.2%;
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent-compat: 210 40% 96.1%;
+    --accent-compat-foreground: 222.2 47.4% 11.2%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-    --chart-1: 12 76% 61%;
+    --ring: 262 91% 60%;
+    --chart-1: 262 91% 60%;
     --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
-    --radius: 0.5rem;
-      /* Custom Dashboard Colors - Light Mode */
-    --primary-gradient-start: 271 81% 56%; /* violet-600 */
-    --primary-gradient-end: 189 85% 57%;   /* cyan-500 */
-    --card-bg-start: 220 13% 91%;          /* slate-200 */
-    --card-bg-end: 220 14% 96%;            /* slate-100 */
-    --dashboard-bg: 210 20% 98%;           /* light gray */
+    --chart-3: 197 37% 44%;
+    --chart-4: 43 74% 56%;
+    --chart-5: 27 87% 57%;
   }
+
   .dark {
+    --ink: 245 246 247;
+    --ink-muted: 168 174 184;    /* 8.7:1 on canvas */
+    --ink-subtle: 126 133 143;   /* 5.2:1 on canvas */
+    --ink-inverse: 11 12 14;
+
+    --canvas: 11 12 14;          /* #0B0C0E */
+    --surface: 20 22 25;
+    --surface-strong: 28 31 36;
+    --overlay: 0 0 0;
+
+    --border: 39 42 49;
+    --border-strong: 52 56 65;
+
+    --accent: 124 77 255;        /* #7C4DFF  4.8:1 with white */
+    --accent-hover: 141 101 255;
+    --accent-text: 167 139 255;  /* 7.2:1 on canvas */
+    --accent-soft: 30 24 48;
+    --accent-fg: 255 255 255;
+
+    --success: 52 199 145;
+    --success-soft: 12 38 31;
+    --warning: 233 165 78;
+    --warning-soft: 46 32 14;
+    --danger: 248 113 113;
+    --danger-soft: 48 20 20;
+
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
     --card: 222.2 84% 4.9%;
@@ -51,24 +112,17 @@
     --secondary-foreground: 210 40% 98%;
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent-compat: 217.2 32.6% 17.5%;
+    --accent-compat-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --chart-1: 220 70% 50%;
+    --ring: 262 91% 70%;
+    --chart-1: 262 91% 70%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
-      /* Custom Dashboard Colors - Dark Mode */
-    --primary-gradient-start: 271 81% 56%; /* violet-600 */
-    --primary-gradient-end: 189 85% 57%;   /* cyan-500 */
-    --card-bg-start: 222 47% 11%;          /* slate-900 */
-    --card-bg-end: 215 28% 17%;            /* slate-800 */
-    --dashboard-bg: 222 47% 11%;           /* dark slate */
   }
 }
 
@@ -76,7 +130,36 @@
   * {
     @apply border-border;
   }
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-canvas text-ink antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+  /* One focus treatment for the whole product. */
+  :focus-visible {
+    @apply outline-none ring-2 ring-accent/70 ring-offset-2 ring-offset-canvas;
+  }
+}
+
+@layer components {
+  /* Page width. Marketing and product share these two measures only. */
+  .wrap {
+    @apply mx-auto w-full max-w-[70rem] px-5 sm:px-6 lg:px-8;
+  }
+  .wrap-narrow {
+    @apply mx-auto w-full max-w-[46rem] px-5 sm:px-6;
+  }
+  /* Vertical rhythm between page sections. */
+  .section {
+    @apply py-16 md:py-24;
+  }
+  .section-tight {
+    @apply py-12 md:py-16;
+  }
+  /* Small caps label used above section headings and on stat tiles. */
+  .overline {
+    @apply text-overline font-semibold uppercase text-ink-subtle;
   }
 }

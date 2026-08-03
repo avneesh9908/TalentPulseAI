@@ -34,27 +34,27 @@ export class ErrorBoundary extends Component<Props, State> {
     if (!this.state.hasError) return this.props.children;
 
     return (
-      <div className="min-h-screen flex items-center justify-center px-6 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white">
-        <div className="max-w-md w-full rounded-2xl border p-8 text-center bg-white dark:bg-slate-900 border-slate-200 dark:border-white/10 shadow-sm">
+      <div className="min-h-screen flex items-center justify-center px-6 bg-surface text-ink">
+        <div className="max-w-md w-full rounded-2xl border p-8 text-center bg-canvas border-border shadow-e2">
           <h1 className="text-xl font-bold mb-2">Something went wrong</h1>
-          <p className="text-sm mb-6 text-slate-600 dark:text-slate-400">
+          <p className="text-sm mb-6 text-ink-muted">
             An unexpected error occurred. You can reload the page or return home.
           </p>
           {import.meta.env.DEV && this.state.error ? (
-            <pre className="text-left text-xs mb-6 p-3 rounded-lg overflow-auto max-h-40 bg-slate-100 dark:bg-slate-950 text-rose-600 dark:text-rose-400">
+            <pre className="text-left text-xs mb-6 p-3 rounded-lg overflow-auto max-h-40 bg-surface text-danger">
               {this.state.error.message}
             </pre>
           ) : null}
           <div className="flex gap-3 justify-center">
             <button
               onClick={this.handleReload}
-              className="px-5 py-2 rounded-lg text-sm font-semibold text-white bg-violet-600 hover:bg-violet-700"
+              className="px-5 py-2 rounded-lg text-sm font-semibold text-accent-fg bg-accent hover:bg-accent-hover"
             >
               Reload
             </button>
             <button
               onClick={this.handleHome}
-              className="px-5 py-2 rounded-lg text-sm font-semibold bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white hover:opacity-90"
+              className="px-5 py-2 rounded-lg text-sm font-semibold bg-surface-strong text-ink hover:opacity-90"
             >
               Go Home
             </button>

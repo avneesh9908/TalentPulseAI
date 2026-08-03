@@ -1,9 +1,15 @@
 import { useCallback, useEffect, useMemo, useState, type ComponentType } from "react";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
-import { useTheme } from "@/contexts/use-theme";
 import { authService } from "@/services/authService";
-import { getUserOverview, type InterviewSummary, type UserOverview } from "@/api/userService";
+import {
+  deleteResume,
+  getResumeDetail,
+  getUserOverview,
+  type InterviewSummary,
+  type ResumeDetail,
+  type UserOverview,
+} from "@/api/userService";
 import { getInterviewResults } from "@/api/interviewService";
 import { Reveal } from "@/components/motion/reveal";
 import {
@@ -25,6 +31,11 @@ import {
   TrendingUp,
   Trophy,
   UserRound,
+  Plus,
+  Eye,
+  Trash2,
+  X,
+  AlertTriangle,
 } from "lucide-react";
 
 /** An interview is finished only once it has been scored. */
@@ -37,13 +48,13 @@ const statusLabel = (interview: InterviewSummary) =>
 
 const statusClasses = (interview: InterviewSummary) =>
   isComplete(interview)
-    ? "bg-emerald-500/10 text-emerald-500 ring-1 ring-emerald-500/30"
-    : "bg-amber-500/10 text-amber-500 ring-1 ring-amber-500/30";
+    ? "bg-success-soft text-success ring-1 ring-success/30"
+    : "bg-warning-soft text-warning ring-1 ring-warning/30";
 
 const scoreTone = (score: number) => {
-  if (score >= 80) return "text-emerald-500";
-  if (score >= 65) return "text-cyan-500";
-  return "text-amber-500";
+  if (score >= 80) return "text-success";
+  if (score >= 65) return "text-accent-text";
+  return "text-warning";
 };
 
 const formatDate = (value: string | null) => {
@@ -61,7 +72,6 @@ const formatShortDate = (value: string | null) => {
 };
 
 export default function Profile() {
-  const { isDark } = useTheme();
   const navigate = useNavigate();
 
   const [overview, setOverview] = useState<UserOverview | null>(null);
@@ -69,6 +79,14 @@ export default function Profile() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [openingReport, setOpeningReport] = useState<string | null>(null);
   const [reportError, setReportError] = useState<string | null>(null);
+
+  // Resume view / delete
+  const [viewingId, setViewingId] = useState<number | null>(null);
+  const [viewed, setViewed] = useState<ResumeDetail | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ id: number; name: string } | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [resumeError, setResumeError] = useState<string | null>(null);
+  const [resumeNotice, setResumeNotice] = useState<string | null>(null);
 
   const loadOverview = useCallback(async () => {
     setLoading(true);
@@ -154,22 +172,60 @@ export default function Profile() {
     [navigate]
   );
 
-  const panelClass = isDark
-    ? "bg-slate-900/60 border-white/10"
-    : "bg-white border-slate-200 shadow-sm";
-  const mutedText = isDark ? "text-slate-400" : "text-slate-600";
-  const innerBorder = isDark ? "border-white/10" : "border-slate-200";
+  /** Open the viewer — shows the extracted content, since the PDF isn't stored. */
+  const openResume = useCallback(async (resumeId: number) => {
+    setViewingId(resumeId);
+    setResumeError(null);
+    setViewed(null);
+    try {
+      setViewed(await getResumeDetail(resumeId));
+    } catch (err) {
+      setViewingId(null);
+      setResumeError(err instanceof Error ? err.message : "Could not open that resume.");
+    }
+  }, []);
+
+  const removeResume = useCallback(async () => {
+    if (!confirmDelete) return;
+    const { id, name } = confirmDelete;
+    setDeletingId(id);
+    setResumeError(null);
+    setResumeNotice(null);
+    try {
+      const result = await deleteResume(id);
+      setConfirmDelete(null);
+      setResumeNotice(
+        result.job_setup_detached
+          ? `Deleted ${name}. Your job search no longer has a resume selected — pick one in Job Search setup.`
+          : `Deleted ${name}.`
+      );
+      // Re-read rather than patching local state, so stats/latest stay consistent.
+      await loadOverview();
+    } catch (err) {
+      setResumeError(err instanceof Error ? err.message : `Could not delete ${name}.`);
+    } finally {
+      setDeletingId(null);
+    }
+  }, [confirmDelete, loadOverview]);
+
+  const panelClass = "bg-canvas border-border shadow-e1";
+  const mutedText = "text-ink-muted";
+  const innerBorder = "border-border";
 
   const panelHeading = (
     label: string,
     Icon: ComponentType<{ size?: number | string; className?: string }>,
-    accent: string
+    accent: string,
+    action?: React.ReactNode
   ) => (
     <div className={`flex items-center gap-2 border-b px-5 py-4 ${innerBorder}`}>
       <Icon size={18} className={accent} />
       <h2 className="font-semibold">{label}</h2>
+      {action && <div className="ml-auto">{action}</div>}
     </div>
   );
+
+  const iconButtonClass = `inline-flex h-8 w-8 items-center justify-center rounded-lg border transition disabled:opacity-50 border-border text-ink-subtle hover:bg-surface hover:text-ink`;
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
@@ -177,9 +233,9 @@ export default function Profile() {
         {/* Header — title and actions share one row so they don't stack */}
         <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h1 className="font-display text-3xl md:text-4xl font-bold uppercase tracking-tight">
+            <h1 className="text-h1 font-semibold">
               Your{" "}
-              <span className="bg-gradient-to-r from-violet-500 to-cyan-400 bg-clip-text text-transparent">Profile</span>
+              <span className="text-accent-text">Profile</span>
             </h1>
             <p className={`mt-1 ${mutedText}`}>
               Your account, your interview history and the resumes on file
@@ -189,25 +245,21 @@ export default function Profile() {
           <div className="flex flex-wrap gap-2">
             <Link
               to="/dashboard"
-              className={`inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-sm font-medium transition ${
-                isDark
-                  ? "border-white/10 bg-white/5 text-white hover:bg-white/10"
-                  : "border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50"
-              }`}
+              className={`inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-sm font-medium transition border-border bg-canvas text-ink-muted shadow-e1 hover:bg-surface`}
             >
               <LayoutDashboard size={16} />
               Dashboard
             </Link>
             <Link
               to="/interview/select-role"
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-500 px-3.5 py-2 text-sm font-semibold text-white shadow-lg"
+              className="inline-flex items-center gap-2 rounded-xl bg-accent px-3.5 py-2 text-sm font-semibold text-white shadow-lg"
             >
               <Mic size={16} />
               Start interview
             </Link>
             <Link
               to="/jobs"
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-400 px-3.5 py-2 text-sm font-semibold text-white shadow-lg"
+              className="inline-flex items-center gap-2 rounded-xl bg-accent px-3.5 py-2 text-sm font-semibold text-white shadow-lg"
             >
               <Briefcase size={16} />
               Find jobs
@@ -225,14 +277,14 @@ export default function Profile() {
         {loadError && (
           <div
             className={`mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border p-4 text-sm ${
-              isDark ? "border-amber-500/30 bg-amber-500/10 text-amber-300" : "border-amber-200 bg-amber-50 text-amber-700"
+              "border-warning/30 bg-warning-soft text-warning"
             }`}
           >
             <span>{loadError}</span>
             <button
               type="button"
               onClick={() => void loadOverview()}
-              className="inline-flex items-center gap-2 rounded-lg bg-amber-600 px-3 py-1.5 font-semibold text-white hover:bg-amber-700"
+              className="inline-flex items-center gap-2 rounded-lg bg-warning px-3 py-1.5 font-semibold text-white hover:brightness-95"
             >
               <RefreshCw size={14} />
               Retry
@@ -243,10 +295,10 @@ export default function Profile() {
         {/* Practice summary — one compact row instead of a paragraph */}
         <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
           {[
-            { id: "completed", label: "Completed", value: stats ? stats.completed : null, icon: CheckCircle2, accent: "text-emerald-400" },
-            { id: "unfinished", label: "Not completed", value: stats ? stats.unfinished : null, icon: Clock, accent: "text-amber-400" },
-            { id: "avg", label: "Average score", value: stats?.average_score ?? null, icon: TrendingUp, accent: "text-violet-400" },
-            { id: "best", label: "Best score", value: stats?.best_score ?? null, icon: Trophy, accent: "text-cyan-400" },
+            { id: "completed", label: "Completed", value: stats ? stats.completed : null, icon: CheckCircle2, accent: "text-success" },
+            { id: "unfinished", label: "Not completed", value: stats ? stats.unfinished : null, icon: Clock, accent: "text-warning" },
+            { id: "avg", label: "Average score", value: stats?.average_score ?? null, icon: TrendingUp, accent: "text-accent-text" },
+            { id: "best", label: "Best score", value: stats?.best_score ?? null, icon: Trophy, accent: "text-accent-text" },
           ].map((tile) => (
             <div key={tile.id} className={`rounded-xl border p-4 ${panelClass}`}>
               <div className="flex items-center gap-2">
@@ -262,11 +314,11 @@ export default function Profile() {
         <div className="grid items-start gap-6 lg:grid-cols-3">
           {/* ── Partition 1: account ─────────────────────────────────── */}
           <Reveal className={`rounded-2xl border ${panelClass}`}>
-            {panelHeading("Account", UserRound, "text-violet-400")}
+            {panelHeading("Account", UserRound, "text-accent-text")}
 
             <div className="p-5">
               <div className="flex items-center gap-4">
-                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-cyan-500 text-2xl font-bold text-white shadow-lg">
+                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-accent text-2xl font-bold text-white shadow-lg">
                   {initial}
                 </div>
                 <div className="min-w-0">
@@ -283,8 +335,8 @@ export default function Profile() {
 
               <dl className="mt-5 space-y-4">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-violet-500/20">
-                    <Mail size={17} className="text-violet-400" />
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent-soft">
+                    <Mail size={17} className="text-accent-text" />
                   </div>
                   <div className="min-w-0">
                     <dt className={`text-xs ${mutedText}`}>Email address</dt>
@@ -293,8 +345,8 @@ export default function Profile() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-cyan-500/20">
-                    <Phone size={17} className="text-cyan-400" />
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent-soft">
+                    <Phone size={17} className="text-accent-text" />
                   </div>
                   <div className="min-w-0">
                     <dt className={`text-xs ${mutedText}`}>Phone number</dt>
@@ -303,8 +355,8 @@ export default function Profile() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-500/20">
-                    <CheckCircle2 size={17} className="text-emerald-400" />
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-success-soft">
+                    <CheckCircle2 size={17} className="text-success" />
                   </div>
                   <div className="min-w-0">
                     <dt className={`text-xs ${mutedText}`}>User ID</dt>
@@ -317,15 +369,13 @@ export default function Profile() {
 
               <button
                 type="button"
-                className={`mt-5 flex w-full items-center justify-between rounded-lg border p-3 transition ${
-                  isDark ? "border-white/10 hover:bg-white/5" : "border-slate-200 hover:bg-slate-50"
-                }`}
+                className={`mt-5 flex w-full items-center justify-between rounded-lg border p-3 transition border-border hover:bg-surface`}
               >
                 <span className="flex items-center gap-2.5">
-                  <Lock size={17} className="text-blue-500" />
+                  <Lock size={17} className="text-accent-text" />
                   <span className="text-sm font-medium">Change password</span>
                 </span>
-                <ArrowRight size={16} className="text-slate-400" />
+                <ArrowRight size={16} className="text-ink-subtle" />
               </button>
 
               <p className={`mt-3 text-xs ${mutedText}`}>
@@ -336,11 +386,11 @@ export default function Profile() {
 
           {/* ── Partition 2: interviews ───────────────────────────────── */}
           <Reveal className={`rounded-2xl border ${panelClass}`}>
-            {panelHeading("Interviews", Award, "text-emerald-400")}
+            {panelHeading("Interviews", Award, "text-success")}
 
             <div className="p-5">
               {reportError && (
-                <p className={`mb-3 text-sm ${isDark ? "text-amber-300" : "text-amber-700"}`}>{reportError}</p>
+                <p className={`mb-3 text-sm ${"text-warning"}`}>{reportError}</p>
               )}
 
               {unfinishedSetup && (
@@ -364,7 +414,7 @@ export default function Profile() {
                   </p>
                   <Link
                     to="/interview/select-role"
-                    className="mt-3 inline-flex items-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700"
+                    className="mt-3 inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent"
                   >
                     <Mic size={16} />
                     Take your first interview
@@ -373,7 +423,7 @@ export default function Profile() {
               )}
 
               {latest && (
-                <div className={`rounded-xl border p-4 ${isDark ? "border-white/10 bg-slate-950/40" : "border-slate-200 bg-slate-50"}`}>
+                <div className={`rounded-xl border p-4 border-border bg-surface`}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className={`text-[11px] uppercase tracking-wider ${mutedText}`}>Latest</p>
@@ -411,7 +461,7 @@ export default function Profile() {
                         type="button"
                         onClick={() => void openReport(latest.interview_id)}
                         disabled={openingReport === latest.interview_id}
-                        className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700 disabled:opacity-60"
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent disabled:opacity-60"
                       >
                         {openingReport === latest.interview_id ? (
                           <Loader2 size={15} className="animate-spin" />
@@ -423,7 +473,7 @@ export default function Profile() {
                     ) : (
                       <Link
                         to="/interview/select-role"
-                        className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700"
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent"
                       >
                         <PlayCircle size={15} />
                         Start a new interview
@@ -470,11 +520,7 @@ export default function Profile() {
                               onClick={() => void openReport(interview.interview_id)}
                               disabled={openingReport === interview.interview_id}
                               aria-label={`Open ${interview.role} report`}
-                              className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition disabled:opacity-60 ${
-                                isDark
-                                  ? "border-white/10 text-white hover:bg-white/5"
-                                  : "border-slate-200 text-slate-700 hover:bg-slate-50"
-                              }`}
+                              className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition disabled:opacity-60 border-border text-ink-muted hover:bg-surface`}
                             >
                               {openingReport === interview.interview_id ? (
                                 <Loader2 size={13} className="animate-spin" />
@@ -495,9 +541,30 @@ export default function Profile() {
 
           {/* ── Partition 3: resumes ──────────────────────────────────── */}
           <Reveal className={`rounded-2xl border ${panelClass}`}>
-            {panelHeading("Resumes & documents", FileText, "text-orange-400")}
+            {panelHeading(
+              "Resumes & documents",
+              FileText,
+              "text-ink-subtle",
+              // Uploading happens inside the interview setup (that flow supplies the
+              // role/skills a resume row needs), so this jumps there.
+              <Link
+                to="/interview/select-role"
+                aria-label="Add a resume"
+                title="Add a resume (via interview setup)"
+                className={iconButtonClass}
+              >
+                <Plus size={16} />
+              </Link>
+            )}
 
             <div className="p-5">
+              {resumeError && (
+                <p className={`mb-3 text-sm ${"text-warning"}`}>{resumeError}</p>
+              )}
+              {resumeNotice && (
+                <p className={`mb-3 text-sm ${"text-success"}`}>{resumeNotice}</p>
+              )}
+
               {!dataLoaded ? (
                 !loading && (
                   <p className={`text-sm ${mutedText}`}>
@@ -507,7 +574,7 @@ export default function Profile() {
               ) : resumes.length === 0 ? (
                 <div className={`rounded-xl border p-4 ${innerBorder}`}>
                   <div className="flex items-center gap-2.5">
-                    <FileText size={18} className="text-orange-500" />
+                    <FileText size={18} className="text-ink-subtle" />
                     <p className="text-sm font-medium">No resume on file</p>
                   </div>
                   <p className={`mt-1 text-sm ${mutedText}`}>
@@ -515,7 +582,7 @@ export default function Profile() {
                   </p>
                   <Link
                     to="/interview/select-profile"
-                    className="mt-3 inline-flex items-center gap-2 rounded-lg bg-orange-600 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-700"
+                    className="mt-3 inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent-hover"
                   >
                     Upload resume
                     <ArrowRight size={15} />
@@ -526,8 +593,8 @@ export default function Profile() {
                   {resumes.map((resume) => (
                     <div key={resume.id} className={`rounded-xl border p-3 ${innerBorder}`}>
                       <div className="flex items-start gap-2.5">
-                        <FileText size={17} className="mt-0.5 shrink-0 text-orange-500" />
-                        <div className="min-w-0">
+                        <FileText size={17} className="mt-0.5 shrink-0 text-ink-subtle" />
+                        <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-medium">{resume.file_name}</p>
                           <p className={`text-xs ${mutedText}`}>
                             {resume.role} · {resume.experience}
@@ -537,9 +604,41 @@ export default function Profile() {
                               {resume.skills.slice(0, 4).join(", ")}
                             </p>
                           )}
-                          <p className="mt-0.5 text-xs text-slate-500">
+                          <p className="mt-0.5 text-xs text-ink-subtle">
                             Added {formatShortDate(resume.created_at)}
                           </p>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => void openResume(resume.id)}
+                            disabled={viewingId === resume.id}
+                            aria-label={`View ${resume.file_name}`}
+                            title="View extracted content"
+                            className={iconButtonClass}
+                          >
+                            {viewingId === resume.id && !viewed ? (
+                              <Loader2 size={15} className="animate-spin" />
+                            ) : (
+                              <Eye size={15} />
+                            )}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setConfirmDelete({ id: resume.id, name: resume.file_name })
+                            }
+                            disabled={deletingId === resume.id}
+                            aria-label={`Delete ${resume.file_name}`}
+                            title="Delete resume"
+                            className={`inline-flex h-8 w-8 items-center justify-center rounded-lg border transition disabled:opacity-50 border-border text-ink-subtle hover:bg-danger-soft hover:text-danger`}
+                          >
+                            {deletingId === resume.id ? (
+                              <Loader2 size={15} className="animate-spin" />
+                            ) : (
+                              <Trash2 size={15} />
+                            )}
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -548,18 +647,14 @@ export default function Profile() {
                   <div className="flex flex-wrap gap-2 pt-1">
                     <Link
                       to="/jobs"
-                      className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-cyan-500 to-emerald-400 px-3.5 py-2 text-sm font-semibold text-white shadow-lg"
+                      className="inline-flex items-center gap-2 rounded-lg bg-accent px-3.5 py-2 text-sm font-semibold text-white shadow-lg"
                     >
                       <Briefcase size={15} />
                       Match jobs
                     </Link>
                     <Link
                       to="/interview/select-profile"
-                      className={`inline-flex items-center gap-2 rounded-lg border px-3.5 py-2 text-sm font-semibold transition ${
-                        isDark
-                          ? "border-white/10 text-white hover:bg-white/5"
-                          : "border-slate-200 text-slate-700 hover:bg-slate-50"
-                      }`}
+                      className={`inline-flex items-center gap-2 rounded-lg border px-3.5 py-2 text-sm font-semibold transition border-border text-ink-muted hover:bg-surface`}
                     >
                       Upload another
                       <ArrowRight size={15} />
@@ -571,6 +666,146 @@ export default function Profile() {
           </Reveal>
         </div>
       </motion.div>
+
+      {/* ── Resume viewer ─────────────────────────────────────────────────── */}
+      <AnimatePresence>
+        {viewingId !== null && viewed && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+            onClick={() => {
+              setViewingId(null);
+              setViewed(null);
+            }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.97, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.97, y: 12 }}
+              onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+              aria-label={`${viewed.file_name} content`}
+              className={`flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-border bg-canvas`}
+            >
+              <div className={`flex items-start gap-3 border-b px-5 py-4 ${innerBorder}`}>
+                <FileText size={18} className="mt-0.5 shrink-0 text-ink-subtle" />
+                <div className="min-w-0 flex-1">
+                  <h3 className="truncate font-semibold">{viewed.file_name}</h3>
+                  <p className={`text-xs ${mutedText}`}>
+                    {viewed.role} · {viewed.experience} · added {formatShortDate(viewed.created_at)} ·{" "}
+                    {viewed.chunk_count} indexed chunk{viewed.chunk_count === 1 ? "" : "s"}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setViewingId(null);
+                    setViewed(null);
+                  }}
+                  aria-label="Close"
+                  className={iconButtonClass}
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+                {/* Be explicit: this is the parsed text, not the uploaded file. */}
+                <p className={`mb-4 rounded-lg border px-3 py-2 text-xs border-border bg-surface text-ink-muted`}>
+                  This is the text extracted from your resume — the one the AI reads. The
+                  uploaded file itself isn't stored, so there's nothing to download. Contact
+                  details are removed before indexing.
+                </p>
+
+                {viewed.sections.length === 0 ? (
+                  <p className={`text-sm ${mutedText}`}>No extracted content was stored for this resume.</p>
+                ) : (
+                  <div className="space-y-4">
+                    {viewed.sections.map((section) => (
+                      <div key={section.name}>
+                        <p className={`mb-1 text-xs font-semibold uppercase tracking-wider ${
+                          "text-accent-text"
+                        }`}>
+                          {section.name.replace(/_/g, " ")}
+                        </p>
+                        <p className={`whitespace-pre-wrap text-sm leading-relaxed ${
+                          "text-ink-muted"
+                        }`}>
+                          {section.text}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Delete confirmation ───────────────────────────────────────────── */}
+      <AnimatePresence>
+        {confirmDelete && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+            onClick={() => deletingId === null && setConfirmDelete(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.97, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.97, y: 12 }}
+              onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+              className={`w-full max-w-md rounded-2xl border p-5 border-border bg-canvas`}
+            >
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-danger-soft">
+                  <AlertTriangle size={19} className="text-danger" />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="font-semibold">Delete this resume?</h3>
+                  <p className={`mt-1 text-sm ${mutedText}`}>
+                    <span className="font-medium">{confirmDelete.name}</span> and everything indexed
+                    from it will be removed. Interviews you already completed keep their reports.
+                    This can't be undone — you'd need to upload the file again.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-5 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setConfirmDelete(null)}
+                  disabled={deletingId !== null}
+                  className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-ink-muted transition hover:bg-surface disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void removeResume()}
+                  disabled={deletingId !== null}
+                  className="inline-flex items-center gap-2 rounded-lg bg-danger px-4 py-2 text-sm font-semibold text-white hover:brightness-95 disabled:opacity-60"
+                >
+                  {deletingId !== null ? (
+                    <Loader2 size={15} className="animate-spin" />
+                  ) : (
+                    <Trash2 size={15} />
+                  )}
+                  Delete
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

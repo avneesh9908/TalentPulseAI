@@ -1,7 +1,8 @@
 ﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { useTheme } from "@/contexts/use-theme";
+import { Panel } from "@/components/ui/panel";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useInterview } from "@/contexts/use-interview";
 import { ArrowLeft, Loader2, Mic, MicOff, Timer, Video, Volume2 } from "lucide-react";
 import { generateInterviewQuestions, retrieveInterviewContext, submitInterview } from "@/api/interviewService";
@@ -70,7 +71,6 @@ const buildQuestionsFromContext = (
 };
 
 export default function InterviewNowPage() {
-  const { isDark } = useTheme();
   const navigate = useNavigate();
   const { interviewId, interviewSetup, selectedRole, profileOption, experience, difficulty, skills } = useInterview();
 
@@ -422,73 +422,92 @@ export default function InterviewNowPage() {
   // Guard: no active session (direct navigation or refresh before interviewId was persisted)
   if (!interviewId && !isGeneratingQuestions) {
     return (
-      <div className={`h-[calc(100vh-4rem)] flex items-center justify-center px-6 ${isDark ? "bg-slate-950 text-white" : "bg-slate-50 text-slate-900"}`}>
-        <div className={`max-w-md w-full rounded-2xl border p-8 text-center ${isDark ? "bg-slate-900 border-white/[0.08]" : "bg-white border-slate-200 shadow-sm"}`}>
-          <h2 className="text-xl font-bold mb-2">No Active Interview Session</h2>
-          <p className={`text-sm mb-6 ${isDark ? "text-slate-400" : "text-slate-600"}`}>
-            Your session was not found. Please go through the setup steps to start a new interview.
+      <div className="flex h-[calc(100vh-4rem)] items-center justify-center bg-surface px-6">
+        <Panel tone="raised" padding="lg" className="w-full max-w-md text-center">
+          <h2 className="text-h3 font-semibold text-ink">No active interview session</h2>
+          <p className="mt-2 text-body text-ink-muted">
+            Your session was not found. Go through the setup steps to start a new interview.
           </p>
-          <button
-            onClick={() => navigate("/interview/select-role")}
-            className="px-5 py-2 rounded-lg text-sm font-semibold text-white bg-violet-600 hover:bg-violet-700"
-          >
-            Start New Interview
-          </button>
-        </div>
+          <Button className="mt-6" onClick={() => navigate("/interview/select-role")}>
+            Start a new interview
+          </Button>
+        </Panel>
       </div>
     );
   }
 
   return (
-    <div className={`h-[calc(100vh-4rem)] overflow-hidden transition-colors duration-300 ${isDark ? "bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950" : "bg-gradient-to-br from-gray-50 via-white to-gray-100"}`}>
-      <div className="relative z-10 w-full h-full px-4 lg:px-8 py-3 flex flex-col min-h-0">
-        <motion.button initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} whileHover={{ x: -3 }} onClick={() => navigate("/interview/quick-setup")} className={`flex items-center gap-2 text-xs mb-2 transition ${isDark ? "text-slate-400 hover:text-white" : "text-slate-500 hover:text-slate-900"}`}>
-          <ArrowLeft size={16} />Back to Setup
-        </motion.button>
+    <div className="h-[calc(100vh-4rem)] overflow-hidden bg-surface">
+      <div className="relative z-10 flex h-full min-h-0 w-full flex-col px-4 py-3 lg:px-8">
+        <div className="mb-2 flex items-center justify-between gap-4">
+          <Button variant="ghost" size="sm" className="-ml-3" onClick={() => navigate("/interview/quick-setup")}>
+            <ArrowLeft /> Back to setup
+          </Button>
+          <div className="flex items-center gap-3">
+            <span className="text-small text-ink-subtle">
+              Question {Math.min(currentQuestionIdx + 1, Math.max(questions.length, 1))} of {Math.max(questions.length, 1)}
+            </span>
+            <Badge tone={questionTimeLeft <= 20 ? "danger" : "neutral"} size="md">
+              <Timer size={12} />
+              {formatTimer(questionTimeLeft)}
+            </Badge>
+          </div>
+        </div>
 
-        <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="mb-3">
-          <h1 className={`font-display text-2xl lg:text-3xl font-bold uppercase tracking-tight ${isDark ? "text-white" : "text-slate-900"}`}>Interview Now</h1>
-        </motion.div>
-
-        <div className="grid gap-4 lg:grid-cols-2 flex-1 min-h-0">
-          <div className={`rounded-2xl p-4 lg:p-5 border h-full flex flex-col min-h-0 ${isDark ? "bg-slate-900/60 border-white/[0.08]" : "bg-white border-slate-200 shadow-sm"}`}>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className={`text-base font-semibold ${isDark ? "text-white" : "text-slate-900"}`}>Camera Recording</h3>
-              <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                <Video size={14} className="inline mr-1" />
-                {cameraReady ? "Ready" : "Initializing"}
+        <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-2">
+          <Panel padding="sm" className="flex h-full min-h-0 flex-col">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-h4 font-semibold text-ink">Camera</h2>
+              <span className="inline-flex items-center gap-1.5 text-small text-ink-subtle">
+                <Video size={14} />
+                {cameraReady ? "Ready" : "Initialising"}
               </span>
             </div>
-            <video ref={videoRef} autoPlay muted playsInline className={`w-full flex-1 min-h-[260px] object-cover rounded-xl ${isDark ? "bg-slate-950" : "bg-slate-100"}`} />
-            {mediaError ? <p className={`text-xs mt-2 ${isDark ? "text-amber-300" : "text-amber-700"}`}>{mediaError}</p> : null}
-            <div className="flex flex-wrap gap-3 mt-4">
-              <button onClick={isListening ? stopListening : () => void startListening()} disabled={interviewSubmitted} className={`px-4 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-50 flex items-center gap-2 ${isListening ? "bg-rose-600 hover:bg-rose-700" : "bg-emerald-600 hover:bg-emerald-700"}`}>{isListening ? <MicOff size={16} /> : <Mic size={16} />}{isListening ? "Stop Recording" : "Start Recording"}</button>
-              <button onClick={() => speakText(currentQuestion)} disabled={!currentQuestion} className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-2"><Volume2 size={16} />Speak Question</button>
+            <video
+              ref={videoRef}
+              autoPlay
+              muted
+              playsInline
+              className="min-h-[260px] w-full flex-1 rounded-md bg-surface-strong object-cover"
+            />
+            {mediaError ? <p className="mt-2 text-small text-warning">{mediaError}</p> : null}
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button
+                onClick={isListening ? stopListening : () => void startListening()}
+                disabled={interviewSubmitted}
+                variant={isListening ? "danger" : "primary"}
+              >
+                {isListening ? <MicOff /> : <Mic />}
+                {isListening ? "Stop recording" : "Start recording"}
+              </Button>
+              <Button variant="secondary" onClick={() => speakText(currentQuestion)} disabled={!currentQuestion}>
+                <Volume2 /> Read question
+              </Button>
             </div>
-            <p className={`text-xs mt-3 ${isDark ? "text-slate-400" : "text-slate-500"}`}>Interview ID: {interviewId || "Not available"} · Status: {interviewSetup?.status || "initialized"}</p>
-          </div>
+            <p className="mt-3 text-small text-ink-subtle">
+              Interview {interviewId || "not available"} · {interviewSetup?.status || "initialized"}
+            </p>
+          </Panel>
 
-          <div className={`rounded-2xl p-4 lg:p-5 border h-full flex flex-col min-h-0 ${isDark ? "bg-slate-900/60 border-white/[0.08]" : "bg-white border-slate-200 shadow-sm"}`}>
-            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-              <h3 className={`text-lg font-semibold ${isDark ? "text-white" : "text-slate-900"}`}>Question Panel</h3>
-              <div className="flex items-center gap-4">
-                <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>Question {Math.min(currentQuestionIdx + 1, Math.max(questions.length, 1))} / {Math.max(questions.length, 1)}</p>
-                <p className={`text-sm font-semibold ${questionTimeLeft <= 20 ? "text-rose-500" : isDark ? "text-cyan-300" : "text-cyan-700"}`}><Timer size={14} className="inline mr-1" />{formatTimer(questionTimeLeft)}</p>
-              </div>
-            </div>
-
+          <Panel padding="sm" className="flex h-full min-h-0 flex-col">
             {isGeneratingQuestions ? (
-              <div className={`rounded-xl p-4 flex items-center gap-2 ${isDark ? "bg-slate-950 text-slate-300" : "bg-slate-50 text-slate-700"}`}><Loader2 size={16} className="animate-spin" />Generating interview questions from context...</div>
+              <div className="flex items-center gap-2 rounded-md bg-surface p-4 text-body text-ink-muted">
+                <Loader2 size={16} className="animate-spin" />
+                Generating questions from your resume…
+              </div>
             ) : (
-              <div className="flex-1 flex flex-col min-h-0">
-                <div className={`rounded-xl p-4 mb-4 ${isDark ? "bg-slate-950 text-slate-200" : "bg-slate-50 text-slate-800"}`}>
-                  <p className="text-xs uppercase tracking-wider opacity-70 mb-2">Current Question</p>
-                  <p className="text-sm leading-relaxed">{currentQuestion || "No question available yet."}</p>
+              <div className="flex min-h-0 flex-1 flex-col">
+                <div className="mb-4 rounded-md bg-surface p-4">
+                  <p className="overline mb-2">Current question</p>
+                  <p className="text-body text-ink">{currentQuestion || "No question available yet."}</p>
                 </div>
 
-                <div className={`rounded-xl p-4 mb-3 flex-1 flex flex-col min-h-0 ${isDark ? "bg-slate-950 text-slate-200" : "bg-slate-50 text-slate-800"}`}>
-                  <p className="text-xs uppercase tracking-wider opacity-70 mb-2">Write Your Answer</p>
-                  <p className="text-sm min-h-10 whitespace-pre-wrap mb-2">{[answerDraft, interimTranscript].filter(Boolean).join(" ").trim() || "Start recording to see realtime transcript..."}</p>
+                <div className="mb-3 flex min-h-0 flex-1 flex-col rounded-md bg-surface p-4">
+                  <p className="overline mb-2">Your answer</p>
+                  <p className="mb-2 min-h-10 whitespace-pre-wrap text-small text-ink-muted">
+                    {[answerDraft, interimTranscript].filter(Boolean).join(" ").trim() ||
+                      "Start recording to see the live transcript…"}
+                  </p>
                   <textarea
                     value={editableTranscript}
                     onChange={(e) => {
@@ -496,26 +515,46 @@ export default function InterviewNowPage() {
                       setIsTranscriptEdited(true);
                     }}
                     rows={8}
-                    className={`w-full rounded-lg p-3 text-sm outline-none flex-1 min-h-0 ${isDark ? "bg-slate-900 text-slate-200 border border-slate-700" : "bg-white text-slate-800 border border-slate-200"}`}
-                    placeholder="Write or edit your answer here..."
+                    aria-label="Your answer"
+                    className="min-h-0 w-full flex-1 rounded-md border border-border-strong bg-canvas p-3 text-body text-ink outline-none focus:border-accent"
+                    placeholder="Write or edit your answer here…"
                   />
-                  <p className={`text-xs mt-2 ${isDark ? "text-slate-400" : "text-slate-500"}`}>Auto-advance on silence after {SILENCE_AUTO_ADVANCE_MS / 1000}s.</p>
+                  <p className="mt-2 text-small text-ink-subtle">
+                    Auto-advances after {SILENCE_AUTO_ADVANCE_MS / 1000}s of silence.
+                  </p>
                 </div>
 
-                <div className="flex flex-wrap items-center justify-end gap-3 mt-3">
-                  <button onClick={() => handleAdvanceQuestion()} disabled={isGeneratingQuestions || interviewSubmitted || questions.length === 0} className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50">Next Question</button>
-                  <button onClick={() => void handleSubmitInterview()} disabled={isSubmittingInterview || interviewSubmitted} className="px-6 py-2 rounded-lg text-sm font-semibold text-white bg-violet-600 hover:bg-violet-700 disabled:opacity-50 flex items-center gap-2">{isSubmittingInterview ? <Loader2 size={16} className="animate-spin" /> : null}{interviewSubmitted ? "Interview Submitted" : "Submit Interview"}</button>
-                  <button onClick={() => navigate("/dashboard")} className="px-6 py-2 rounded-lg text-sm font-semibold text-white bg-slate-700 hover:bg-slate-800">Go to Dashboard</button>
+                <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
+                  <Button
+                    variant="ghost"
+                    onClick={() => navigate("/dashboard")}
+                  >
+                    Leave
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    onClick={() => handleAdvanceQuestion()}
+                    disabled={isGeneratingQuestions || interviewSubmitted || questions.length === 0}
+                  >
+                    Next question
+                  </Button>
+                  <Button
+                    onClick={() => void handleSubmitInterview()}
+                    disabled={isSubmittingInterview || interviewSubmitted}
+                  >
+                    {isSubmittingInterview ? <Loader2 className="animate-spin" /> : null}
+                    {interviewSubmitted ? "Submitted" : "Submit interview"}
+                  </Button>
                 </div>
               </div>
             )}
 
             {(questionError || submitMessage || !recognitionSupported) ? (
-              <div className={`mt-4 text-sm ${isDark ? "text-amber-300" : "text-amber-700"}`}>
+              <p className="mt-4 text-small text-warning">
                 {questionError || submitMessage || "Speech recognition is not supported in this browser."}
-              </div>
+              </p>
             ) : null}
-          </div>
+          </Panel>
         </div>
       </div>
     </div>

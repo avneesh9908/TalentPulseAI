@@ -1,5 +1,5 @@
 import axiosInstance from "./axiosInstance";
-import { config } from "@/lib/config";
+import { buildUrl, config } from "@/lib/config";
 
 export interface User {
   id: string | number;
@@ -57,6 +57,52 @@ export interface UserOverview {
   recent_completed: InterviewSummary[];
   resumes: ResumeSummary[];
 }
+
+export interface ResumeSection {
+  name: string;
+  text: string;
+}
+
+export interface ResumeDetail {
+  id: number;
+  file_name: string;
+  mime_type: string | null;
+  role: string;
+  experience: string;
+  difficulty: string;
+  skills: string[];
+  source: string;
+  created_at: string | null;
+  chunk_count: number;
+  sections: ResumeSection[];
+  /** The original upload isn't retained, so there is nothing to download. */
+  original_file_available: boolean;
+}
+
+export interface ResumeDeleteResult {
+  deleted_id: number;
+  file_name: string;
+  was_vector_source: boolean;
+  /** False when the vector store couldn't be reached; embeddings may linger. */
+  vector_cleanup_ok: boolean;
+  vectors_removed: number;
+  job_setup_detached: boolean;
+  message: string;
+}
+
+export const getResumeDetail = async (resumeId: number): Promise<ResumeDetail> => {
+  const { data } = await axiosInstance.get<ResumeDetail>(
+    buildUrl(config.ENDPOINTS.PROFILE.RESUME, { id: String(resumeId) })
+  );
+  return data;
+};
+
+export const deleteResume = async (resumeId: number): Promise<ResumeDeleteResult> => {
+  const { data } = await axiosInstance.delete<ResumeDeleteResult>(
+    buildUrl(config.ENDPOINTS.PROFILE.RESUME, { id: String(resumeId) })
+  );
+  return data;
+};
 
 export const getUserOverview = async (): Promise<UserOverview> => {
   const { data } = await axiosInstance.get<UserOverview>(

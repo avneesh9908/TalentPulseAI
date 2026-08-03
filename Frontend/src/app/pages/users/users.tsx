@@ -40,11 +40,11 @@ export default function UsersPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6 p-6">
-      <h1 className="font-display text-2xl font-bold uppercase tracking-tight">Users</h1>
+      <h1 className="text-h2 font-semibold">Users</h1>
 
       <form
         onSubmit={onSubmit}
-        className="space-y-3 rounded-lg border border-slate-300 p-4 shadow-sm"
+        className="space-y-3 rounded-lg border border-border-strong p-4 shadow-sm"
       >
         <h2 className="text-lg font-medium">Create User</h2>
         <input
@@ -54,7 +54,7 @@ export default function UsersPage() {
           }
           placeholder="Name"
           required
-          className="w-full rounded-md border border-slate-300 p-2"
+          className="w-full rounded-md border border-border-strong p-2"
         />
         <input
           type="email"
@@ -64,28 +64,28 @@ export default function UsersPage() {
           }
           placeholder="Email"
           required
-          className="w-full rounded-md border border-slate-300 p-2"
+          className="w-full rounded-md border border-border-strong p-2"
         />
         <button
           type="submit"
           disabled={createApi.loading}
-          className="rounded-md bg-slate-900 px-4 py-2 text-white disabled:opacity-60"
+          className="rounded-md bg-surface-strong px-4 py-2 text-white disabled:opacity-60"
         >
           {createApi.loading ? "Saving..." : "Create User"}
         </button>
-        {createApi.error ? <p className="text-sm text-red-600">{createApi.error}</p> : null}
+        {createApi.error ? <p className="text-sm text-danger">{createApi.error}</p> : null}
       </form>
 
-      <section className="space-y-3 rounded-lg border border-slate-300 p-4 shadow-sm">
+      <section className="space-y-3 rounded-lg border border-border-strong p-4 shadow-sm">
         <h2 className="text-lg font-medium">User List</h2>
         {listApi.loading ? <p>Loading users...</p> : null}
-        {listApi.error ? <p className="text-sm text-red-600">{listApi.error}</p> : null}
+        {listApi.error ? <p className="text-sm text-danger">{listApi.error}</p> : null}
         {!listApi.loading && users.length === 0 ? <p>No users found.</p> : null}
         <ul className="space-y-2">
           {users.map((user) => (
-            <li key={user.id} className="rounded-md border border-slate-200 p-3">
+            <li key={user.id} className="rounded-md border border-border p-3">
               <p className="font-medium">{user.name}</p>
-              <p className="text-sm text-slate-600">{user.email}</p>
+              <p className="text-sm text-ink-muted">{user.email}</p>
             </li>
           ))}
         </ul>
