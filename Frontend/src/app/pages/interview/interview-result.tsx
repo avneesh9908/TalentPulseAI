@@ -47,7 +47,7 @@ export default function InterviewResultPage() {
   const totalQuestions = typedState.totalQuestions ?? result?.feedback.question_feedback.length ?? 0;
   const answeredQuestions = typedState.answeredQuestions ?? result?.feedback.question_feedback.length ?? 0;
 
-  const completedAt = formatCompletedAt(result?.completed_at);
+  const completedAt = formatCompletedAt(result?.completed_at ?? undefined);
 
   if (!result) {
     return (
