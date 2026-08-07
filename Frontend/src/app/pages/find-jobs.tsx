@@ -12,6 +12,8 @@ import {
 import SiteHeader from "@/components/landing/site-header";
 import SiteFooter from "@/components/landing/site-footer";
 import { ProductFrame } from "@/components/landing/product-frame";
+import { ProductStack } from "@/components/landing/product-stack";
+import { JOBS_PLANES } from "@/components/landing/product-planes";
 import { Section, SectionHeading } from "@/components/ui/section";
 import { Panel } from "@/components/ui/panel";
 import { Button } from "@/components/ui/button";
@@ -19,7 +21,6 @@ import { Badge } from "@/components/ui/badge";
 import { TableWrap, Table, Th, Td, Tr } from "@/components/ui/data-table";
 import { Reveal } from "@/components/motion/reveal";
 import tourDashboard from "@/assets/landing/tour-dashboard.svg";
-import tourResults from "@/assets/landing/tour-results.svg";
 
 const NAV_ITEMS = [
   { id: "how", label: "How it works", href: "#how" },
@@ -32,6 +33,27 @@ const STEPS = [
   { icon: Sparkles, title: "Set your targets", desc: "We read your resume and suggest the roles you qualify for — edit them, or add a role you're switching into." },
   { icon: Radar, title: "The agent scans", desc: "It reads company career pages directly through their hiring APIs — the source, not a stale aggregator." },
   { icon: ListChecks, title: "You review and apply", desc: "Every match is ranked against your resume with the reasons why. Open the real application, and track the rest." },
+];
+
+/**
+ * What one run actually hands back, per design doc 4b. The doc's third card
+ * promised per-company progress and that you could leave the page; a run is a
+ * single synchronous request, so both are corrected here. Its "closed" status is
+ * also renamed to `dismissed`, which is the status the API really writes.
+ */
+const OUTCOMES = [
+  {
+    title: "A score you can argue with",
+    desc: "Each match names the skills it matched and the ones it could not find.",
+  },
+  {
+    title: "Status you control",
+    desc: "Mark anything reviewed, applied or dismissed. Nothing changes on its own.",
+  },
+  {
+    title: "Runs take up to two minutes",
+    desc: "A run reports how many company boards it checked. Keep the page open while it works.",
+  },
 ];
 
 const FEATURES = [
@@ -55,51 +77,85 @@ export default function FindJobsPage() {
     <div className="min-h-screen bg-canvas text-ink">
       <SiteHeader navItems={NAV_ITEMS} activeId="jobs" />
 
-      {/* ── Hero ── */}
+      {/* ── Hero (design doc 4b) ── */}
       <section className="border-b border-border">
-        <div className="wrap grid items-center gap-12 py-16 md:py-24 lg:grid-cols-[1fr_1.05fr]">
+        <div className="wrap grid items-center gap-10 py-16 md:py-20 lg:grid-cols-2 lg:gap-12">
           <Reveal y={16}>
-            <Badge tone="accent" size="sm">Job search agent</Badge>
-            <h1 className="mt-4 text-display font-semibold text-ink">
-              Stop refreshing job boards. <span className="text-accent-text">Let the agent hunt.</span>
+            <p className="overline">Job agent</p>
+            <h1 className="mt-4 max-w-lg text-h1 font-semibold text-ink">
+              It finds the openings. You decide what to send.
             </h1>
-            <p className="mt-5 max-w-lg text-lead text-ink-muted">
-              Your resume becomes the search. The agent reads company career pages, ranks every
-              opening against your real experience, and hands you a shortlist worth your time.
+            <p className="mt-5 max-w-md text-lead text-ink-muted">
+              Give it your resume and the roles you want. It scans company boards and ranks what it
+              finds against your actual experience, with the reason for every score.
             </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Button asChild size="lg" pill>
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+              <Button asChild size="lg">
                 <a href="/jobs">
-                  <Briefcase /> Find my matches
+                  <Briefcase /> Run a search
                 </a>
               </Button>
-              <Button asChild size="lg" variant="secondary" pill>
-                <a href="/practice">
-                  Practice interviews instead <ArrowRight />
-                </a>
+              <Button asChild size="lg" variant="secondary">
+                <a href="/practice">Want to practise first?</a>
               </Button>
             </div>
-            <p className="mt-4 text-small text-ink-subtle">
+            <p className="mt-5 text-small text-ink-subtle">
               Free while in beta · Nothing is ever submitted without you
             </p>
           </Reveal>
 
           <Reveal delay={0.1}>
-            <ProductFrame
-              src={tourResults}
-              alt="Ranked job matches with fit reasons"
-              caption="talentpulse.ai / jobs"
+            <ProductStack
+              planes={JOBS_PLANES}
+              label="A matches panel that has scanned six companies and found three new roles: a frontend engineer at Northwind scoring 86, and a platform engineer at Ravel scoring 61 with a note that it needs Kubernetes, which isn't on the resume."
             />
           </Reveal>
         </div>
       </section>
 
+      {/* ── What a run gives you ── */}
+      <Section tone="muted">
+        <Reveal>
+          <SectionHeading eyebrow="What a run gives you" title="Ranked matches with a stated reason." />
+        </Reveal>
+        <div className="mt-10 grid gap-6 sm:grid-cols-3">
+          {OUTCOMES.map((item, i) => (
+            <Reveal key={item.title} delay={i * 0.06}>
+              <div className="border-t-2 border-ink pt-4">
+                <h3 className="text-h4 font-semibold text-ink">{item.title}</h3>
+                <p className="mt-1.5 text-small text-ink-muted">{item.desc}</p>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+
+        {/* The two limits, on the page rather than discovered later. */}
+        <Reveal>
+          <Panel tone="muted" padding="lg" className="mt-10 grid gap-8 lg:grid-cols-2">
+            <div>
+              <p className="overline">What it does not do</p>
+              <p className="mt-3 text-body text-ink">
+                The agent never submits an application, never contacts a company, and never sends
+                your resume to an employer. It reads public listings and ranks them.
+              </p>
+            </div>
+            <div>
+              <p className="overline">Coverage is partial</p>
+              <p className="mt-3 text-body text-ink">
+                It scans the company boards on your target list, not the whole market, and it
+                reports how many it checked on every run.
+              </p>
+            </div>
+          </Panel>
+        </Reveal>
+      </Section>
+
       {/* ── How it works ── */}
-      <Section id="how" tone="muted">
+      <Section id="how">
         <Reveal>
           <SectionHeading
             eyebrow="How the agent works"
-            title="Three steps, then it runs on its own"
+            title="Three steps to your first shortlist"
             align="center"
           />
         </Reveal>
@@ -236,7 +292,7 @@ export default function FindJobsPage() {
               title="One table for the whole hunt"
               subtitle="Filter by status, open the real application page, and mark what you have done. The agent keeps the list current."
             />
-            <Button asChild className="mt-6" pill>
+            <Button asChild className="mt-6">
               <a href="/jobs">
                 Open the job agent <ArrowRight />
               </a>
@@ -263,12 +319,12 @@ export default function FindJobsPage() {
               Point the agent at it — then rehearse that exact interview on the other side.
             </p>
             <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
-              <Button asChild size="lg" pill>
+              <Button asChild size="lg">
                 <a href="/jobs">
                   Start job search <ArrowRight />
                 </a>
               </Button>
-              <Button asChild size="lg" variant="secondary" pill>
+              <Button asChild size="lg" variant="secondary">
                 <a href="/practice">Practice an interview</a>
               </Button>
             </div>

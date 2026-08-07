@@ -25,9 +25,11 @@ export function Logo({
       >
         <Activity size={size === "sm" ? 15 : 17} strokeWidth={2.5} />
       </span>
+      {/* The wordmark is violet throughout, as in the Stitch export — the old
+          ink + accent split read as two words. */}
       {showText && (
-        <span className="text-h4 font-semibold tracking-tight text-ink">
-          TalentPulse<span className="text-accent-text">AI</span>
+        <span className="text-h4 font-semibold tracking-tight text-accent-text">
+          TalentPulseAI
         </span>
       )}
     </span>

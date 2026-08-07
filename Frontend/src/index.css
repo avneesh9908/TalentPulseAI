@@ -14,36 +14,51 @@
  */
 @layer base {
   :root {
-    /* text */
-    --ink: 23 24 28;             /* #17181C */
-    --ink-muted: 75 80 88;       /* #4B5058  8.1:1 on canvas */
-    --ink-subtle: 106 111 121;   /* #6A6F79  5.1:1 on canvas, 4.7:1 on surface */
+    /*
+     * Light mode is the Stitch 3D-hero export's Material palette, mapped onto our
+     * three-step surface ladder (2026-08-05). The export's own cards are the SAME
+     * tone as its page, lifted only by a 1px `outline-variant` border — which is
+     * how `Panel` already works, so the ladder direction is unchanged and only
+     * the values moved.
+     */
+
+    /* text — export `on-surface` / `on-surface-variant`, warmer than the old greys */
+    --ink: 26 27 34;             /* #1A1B22  16.4:1 on canvas */
+    --ink-muted: 73 68 86;       /* #494456   8.9:1 on canvas */
+    --ink-subtle: 98 92 110;     /* #625C6E   6.2:1 on canvas, 5.0:1 on surface-strong.
+                                    The export's `outline` #7A7487 is the tone this
+                                    wants, but it measures 4.27:1 on the tinted canvas —
+                                    under AA — so type stops here and #7A7487 is used
+                                    for lines only. */
     --ink-inverse: 255 255 255;
 
-    /* surfaces */
-    --canvas: 255 255 255;
-    --surface: 245 246 247;      /* #F5F6F7 */
-    --surface-strong: 236 238 241;
-    --overlay: 9 11 15;
+    /* surfaces — the page itself is lavender (export `background`), not white */
+    --canvas: 251 248 255;       /* #FBF8FF  page AND card fill */
+    --surface: 244 242 253;      /* #F4F2FD  recessed bands, inner slots */
+    --surface-strong: 227 225 236;  /* #E3E1EC  footer band, progress + score-ring track */
+    --overlay: 26 27 34;         /* shadows are ink, not black */
 
-    /* lines */
-    --border: 228 230 234;
-    --border-strong: 211 215 221;
+    /* lines — visible lavender, the export's depth cue instead of shadow */
+    --border: 202 195 217;       /* #CAC3D9  export `outline-variant` */
+    --border-strong: 173 164 191; /* #ADA4BF */
 
     /* brand — one accent, never a gradient */
-    --accent: 109 59 245;        /* #6D3BF5  5.8:1 with white */
-    --accent-hover: 91 45 219;
-    --accent-text: 91 45 219;    /* accent as type on canvas */
-    --accent-soft: 242 238 254;
+    --accent: 84 13 221;         /* #540DDD  export `primary`. 8.5:1 with white */
+    --accent-hover: 78 0 210;    /* #4E00D2  export `on-primary-fixed-variant` */
+    --accent-text: 84 13 221;    /* #540DDD  deep enough to double as type, 8.0:1 */
+    --accent-soft: 231 222 255;  /* #E7DEFF  export `primary-fixed`. Holds ink-subtle
+                                    at 5.1:1 — the old #EDE9FE trap was with the
+                                    lighter accent, this pairing clears AA. */
     --accent-fg: 255 255 255;
 
     /* status */
-    --success: 15 122 88;
-    --success-soft: 230 246 240;
-    --warning: 161 74 8;
-    --warning-soft: 253 243 231;
-    --danger: 199 32 32;
-    --danger-soft: 253 236 236;
+    --success: 6 118 71;         /* #067647 */
+    --success-soft: 236 253 243; /* #ECFDF3 */
+    --warning: 181 71 8;         /* #B54708 */
+    --warning-soft: 255 250 235; /* #FFFAEB */
+    --danger: 180 35 24;         /* #B42318 */
+    --danger-soft: 254 243 242;  /* #FEF3F2 */
+    --danger-fg: 255 255 255;    /* label on a filled danger control */
 
     --radius: 0.5rem;
 
@@ -65,8 +80,8 @@
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 262 91% 60%;
-    --chart-1: 262 91% 60%;
+    --ring: 260 89% 46%;
+    --chart-1: 260 89% 46%;
     --chart-2: 173 58% 39%;
     --chart-3: 197 37% 44%;
     --chart-4: 43 74% 56%;
@@ -74,23 +89,34 @@
   }
 
   .dark {
-    --ink: 245 246 247;
-    --ink-muted: 168 174 184;    /* 8.7:1 on canvas */
-    --ink-subtle: 126 133 143;   /* 5.2:1 on canvas */
-    --ink-inverse: 11 12 14;
+    --ink: 244 246 248;          /* 18.1:1 on canvas */
+    --ink-muted: 166 176 190;    /* 8.9:1 on canvas */
+    --ink-subtle: 126 136 153;   /* 5.5:1 on canvas, 4.9:1 on surface-strong */
+    --ink-inverse: 12 11 16;
 
-    --canvas: 11 12 14;          /* #0B0C0E */
-    --surface: 20 22 25;
-    --surface-strong: 28 31 36;
+    --canvas: 12 11 16;          /* #0C0B10  violet-tinted near-black */
+    --surface: 20 19 32;         /* #141320 */
+    --surface-strong: 26 24 38;  /* #1A1826  see the accent note below — this is the
+                                    track the accent has to clear 3:1 against, so it
+                                    is deliberately darker than a neutral equivalent. */
     --overlay: 0 0 0;
 
-    --border: 39 42 49;
-    --border-strong: 52 56 65;
+    --border: 42 39 64;          /* #2A2740 */
+    --border-strong: 58 54 84;   /* #3A3654 */
 
-    --accent: 124 77 255;        /* #7C4DFF  4.8:1 with white */
-    --accent-hover: 141 101 255;
-    --accent-text: 167 139 255;  /* 7.2:1 on canvas */
-    --accent-soft: 30 24 48;
+    /* Squeezed between three limits: a white label on it needs 4.5:1, and it
+       needs 3:1 against BOTH the canvas and `surface-strong` — the latter is the
+       track a progress bar and the score ring are drawn on, so the fill has to
+       stay legible against it. Violet leaves almost no room: the usable window is
+       a relative luminance of 0.137–0.183, and #7C3AED sits at 0.134 — just under.
+       Rather than lighten the accent (violet-500 #8B5CF6 drops white text to
+       4.24:1) the TRACK was darkened to #1A1826, which buys 3.06:1. Hover
+       brightens and still clears white at 5.0:1. Re-measure all three before
+       touching either value. */
+    --accent: 124 58 237;        /* #7C3AED  5.7:1 white, 3.4:1 canvas, 3.1:1 track */
+    --accent-hover: 132 73 240;  /* #8449F0  5.0:1 white */
+    --accent-text: 196 181 253;  /* #C4B5FD  10.6:1 on canvas */
+    --accent-soft: 30 22 51;     /* #1E1633  9.3:1 with accent-text */
     --accent-fg: 255 255 255;
 
     --success: 52 199 145;
@@ -99,6 +125,9 @@
     --warning-soft: 46 32 14;
     --danger: 248 113 113;
     --danger-soft: 48 20 20;
+    /* The dark danger is a light red, so a filled danger control takes a dark
+       label (7.1:1) — white on it would only reach 2.8:1. */
+    --danger-fg: 12 11 16;
 
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
@@ -117,8 +146,8 @@
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 262 91% 70%;
-    --chart-1: 262 91% 70%;
+    --ring: 258 90% 58%;
+    --chart-1: 258 90% 58%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
@@ -132,6 +161,14 @@
   }
   html {
     -webkit-text-size-adjust: 100%;
+    /* In-page anchors (#how, #faq) land under the 64px sticky header without
+       this — the heading you jumped to is the one thing it covers. */
+    scroll-padding-top: 5rem;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
   }
   body {
     @apply bg-canvas text-ink antialiased;
@@ -141,12 +178,17 @@
   :focus-visible {
     @apply outline-none ring-2 ring-accent/70 ring-offset-2 ring-offset-canvas;
   }
+  ::selection {
+    @apply bg-accent-soft text-ink;
+  }
 }
 
 @layer components {
-  /* Page width. Marketing and product share these two measures only. */
+  /* Page width. Marketing and product share these two measures only.
+     90rem = the export's stated 1440px desktop container; at the old 70rem a
+     1920px screen carried ~400px of dead margin on each side. */
   .wrap {
-    @apply mx-auto w-full max-w-[70rem] px-5 sm:px-6 lg:px-8;
+    @apply mx-auto w-full max-w-[90rem] px-5 sm:px-6 lg:px-8;
   }
   .wrap-narrow {
     @apply mx-auto w-full max-w-[46rem] px-5 sm:px-6;

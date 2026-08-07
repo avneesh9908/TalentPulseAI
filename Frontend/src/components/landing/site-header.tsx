@@ -24,25 +24,29 @@ export default function SiteHeader({ navItems, activeId }: SiteHeaderProps) {
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-canvas/85 backdrop-blur-xl">
       <nav className="wrap flex h-16 items-center justify-between gap-6">
-        <a href="/" className="shrink-0" aria-label="TalentPulseAI home">
-          <Logo />
-        </a>
+        {/* Brand and nav travel together on the left, as in the Stitch reference —
+            the right side is reserved for the two auth actions. */}
+        <div className="flex min-w-0 items-center gap-6 lg:gap-10">
+          <a href="/" className="shrink-0" aria-label="TalentPulseAI home">
+            <Logo />
+          </a>
 
-        <ul className="hidden items-center gap-1 md:flex">
-          {navItems.map((item) => (
-            <li key={item.id}>
-              <a
-                href={item.href}
-                aria-current={activeId === item.id ? "page" : undefined}
-                className={`rounded-md px-3 py-2 text-small transition-colors hover:bg-surface hover:text-ink ${
-                  activeId === item.id ? "text-ink" : "text-ink-muted"
-                }`}
-              >
-                {item.label}
-              </a>
-            </li>
-          ))}
-        </ul>
+          <ul className="hidden items-center gap-1 md:flex">
+            {navItems.map((item) => (
+              <li key={item.id}>
+                <a
+                  href={item.href}
+                  aria-current={activeId === item.id ? "page" : undefined}
+                  className={`rounded-md px-3 py-2 text-small transition-colors hover:text-accent-text ${
+                    activeId === item.id ? "font-medium text-ink" : "text-ink-muted"
+                  }`}
+                >
+                  {item.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
 
         <div className="hidden items-center gap-2 md:flex">
           <Button
@@ -56,7 +60,7 @@ export default function SiteHeader({ navItems, activeId }: SiteHeaderProps) {
           <Button asChild variant="ghost" size="sm">
             <a href="/auth/login">Log in</a>
           </Button>
-          <Button asChild size="sm" pill>
+          <Button asChild size="sm">
             <a href="/auth/register">Get started</a>
           </Button>
         </div>

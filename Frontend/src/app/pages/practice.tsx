@@ -6,15 +6,16 @@
  * and "cheating detection" the product does not have — all removed.
  */
 import {
-  ArrowRight, Sparkles, Mic, BarChart3, Target, Play, ListChecks, RefreshCw,
+  ArrowRight, Sparkles, Mic, BarChart3, Target, ListChecks, RefreshCw,
 } from "lucide-react";
 import SiteHeader from "@/components/landing/site-header";
 import SiteFooter from "@/components/landing/site-footer";
 import { ProductFrame } from "@/components/landing/product-frame";
+import { ProductStack } from "@/components/landing/product-stack";
+import { PRACTICE_PLANES } from "@/components/landing/product-planes";
 import { Section, SectionHeading } from "@/components/ui/section";
 import { Panel } from "@/components/ui/panel";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Reveal } from "@/components/motion/reveal";
 import tourDashboard from "@/assets/landing/tour-dashboard.svg";
 import tourInterview from "@/assets/landing/tour-interview.svg";
@@ -27,10 +28,16 @@ const NAV_ITEMS = [
   { id: "find-jobs", label: "Job search", href: "/find-jobs" },
 ];
 
+/**
+ * The four steps of a run, per design doc 4a. Two of the doc's captions are
+ * corrected against the code: parsing is allowed 120s by the client, not 30s,
+ * and the report is written on submit rather than instantly.
+ */
 const STEPS = [
-  { icon: Target, title: "Set up the interview", desc: "Pick the role, your experience level, the difficulty and the skills to be tested." },
-  { icon: Mic, title: "Answer out loud", desc: "Questions arrive one at a time on a timer. Speak your answer — it is transcribed live while the camera records." },
-  { icon: BarChart3, title: "Read the report", desc: "An overall score, per-question feedback, your strengths and the specific things to fix." },
+  { title: "Pick a role", desc: "Choose from eight roles, plus your experience level and difficulty." },
+  { title: "Add your resume", desc: "Parsing usually takes under a minute." },
+  { title: "Choose skills", desc: "Up to twelve, drawn from your resume." },
+  { title: "Answer and submit", desc: "Speak or type. The report is ready when you submit." },
 ];
 
 const FEATURES = [
@@ -62,76 +69,87 @@ export default function PracticePage() {
     <div className="min-h-screen bg-canvas text-ink">
       <SiteHeader navItems={NAV_ITEMS} activeId="practice" />
 
-      {/* ── Hero ── */}
+      {/* ── Hero (design doc 4a) ── */}
       <section className="border-b border-border">
-        <div className="wrap grid items-center gap-12 py-16 md:py-24 lg:grid-cols-[1fr_1.05fr]">
+        <div className="wrap grid items-center gap-10 py-16 md:py-20 lg:grid-cols-2 lg:gap-12">
           <Reveal y={16}>
-            <Badge tone="accent" size="sm">Interview practice</Badge>
-            <h1 className="mt-4 text-display font-semibold text-ink">
-              Practice the interview you're{" "}
-              <span className="text-accent-text">about to have</span>
+            <p className="overline">Mock interviews</p>
+            <h1 className="mt-4 max-w-lg text-h1 font-semibold text-ink">
+              Practise the questions you'll actually be asked.
             </h1>
-            <p className="mt-5 max-w-lg text-lead text-ink-muted">
-              Upload your resume and an AI interviews you on your own experience — out loud, on
-              a timer, and scored the moment you finish.
+            <p className="mt-5 max-w-md text-lead text-ink-muted">
+              Pick a role, upload your resume, and answer out loud or by typing. Every answer comes
+              back scored, with the signals an interviewer would have been listening for.
             </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Button asChild size="lg" pill>
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+              <Button asChild size="lg">
                 <a href="/interview/select-role">
-                  Start an interview <ArrowRight />
+                  Start a mock interview <ArrowRight />
                 </a>
               </Button>
-              <Button asChild size="lg" variant="secondary" pill>
-                <a href="/demo">
-                  <Play /> Try the demo
-                </a>
+              <Button asChild size="lg" variant="secondary">
+                <a href="/find-jobs">Looking for openings?</a>
               </Button>
             </div>
-            <p className="mt-4 text-small text-ink-subtle">
+            <p className="mt-5 text-small text-ink-subtle">
               Free while in beta · Personal details are stripped before indexing
             </p>
           </Reveal>
 
           <Reveal delay={0.1}>
-            <ProductFrame
-              src={tourInterview}
-              alt="A live AI interview in progress"
-              caption="talentpulse.ai / interview"
+            <ProductStack
+              planes={PRACTICE_PLANES}
+              label="A feedback panel scoring an answer 61 out of 100, listing the signals it expected — profiling, a named trade-off, and measuring afterwards — with the interview set-up screen behind it."
             />
           </Reveal>
         </div>
       </section>
 
-      {/* ── How it works ── */}
+      {/* ── How a run works ── */}
       <Section id="how-it-works" tone="muted">
         <Reveal>
-          <SectionHeading
-            eyebrow="How it works"
-            title="Three steps, about two minutes to start"
-            align="center"
-          />
+          <SectionHeading eyebrow="How a run works" title="Four steps, about ten minutes." />
         </Reveal>
-        <div className="mt-12 grid gap-4 md:grid-cols-3">
-          {STEPS.map((step, i) => {
-            const Icon = step.icon;
-            return (
-              <Reveal key={step.title} delay={i * 0.07}>
-                <Panel className="h-full">
-                  <div className="flex items-center justify-between">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-md bg-accent-soft text-accent-text">
-                      <Icon size={17} />
-                    </span>
-                    <span className="text-overline font-semibold text-ink-subtle">
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
-                  </div>
-                  <h3 className="mt-4 text-h4 font-semibold text-ink">{step.title}</h3>
-                  <p className="mt-1.5 text-small text-ink-muted">{step.desc}</p>
-                </Panel>
-              </Reveal>
-            );
-          })}
-        </div>
+        <ol className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          {STEPS.map((step, i) => (
+            <Reveal key={step.title} delay={i * 0.06}>
+              <li className="border-t-2 border-ink pt-4">
+                <span className="flex size-6 items-center justify-center rounded-full bg-accent-soft text-overline font-semibold text-accent-text">
+                  {i + 1}
+                </span>
+                <h3 className="mt-3 text-h4 font-semibold text-ink">{step.title}</h3>
+                <p className="mt-1.5 text-small text-ink-muted">{step.desc}</p>
+              </li>
+            </Reveal>
+          ))}
+        </ol>
+
+        {/* The limits, stated on the page rather than discovered in use. */}
+        <Reveal>
+          <Panel tone="muted" padding="lg" className="mt-10 grid gap-8 lg:grid-cols-2">
+            <div>
+              <p className="overline">What it does not do</p>
+              <div className="mt-3 space-y-3 text-body text-ink">
+                <p>
+                  Scores are guidance for your own preparation. They are not a hiring decision and
+                  are never shared with an employer.
+                </p>
+                <p>
+                  Recordings never leave your browser. Each answer is captured locally so you can
+                  play it back, and only the answer text is submitted — the audio and video are
+                  discarded when you leave the page.
+                </p>
+              </div>
+            </div>
+            <div>
+              <p className="overline">If speech is unavailable</p>
+              <p className="mt-3 text-body text-ink">
+                Browser support for the speech API this uses is uneven — Firefox has none. Every
+                question can be answered by typing instead, and the scoring is identical.
+              </p>
+            </div>
+          </Panel>
+        </Reveal>
       </Section>
 
       {/* ── Features ── */}
@@ -221,12 +239,12 @@ export default function PracticePage() {
               Or let the job agent find the interview worth rehearsing for.
             </p>
             <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
-              <Button asChild size="lg" pill>
+              <Button asChild size="lg">
                 <a href="/interview/select-role">
                   Start an interview <ArrowRight />
                 </a>
               </Button>
-              <Button asChild size="lg" variant="secondary" pill>
+              <Button asChild size="lg" variant="secondary">
                 <a href="/find-jobs">See the job agent</a>
               </Button>
             </div>

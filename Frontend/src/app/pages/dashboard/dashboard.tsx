@@ -1,7 +1,7 @@
-﻿import { useState, type ComponentType, type ReactNode } from "react";
+﻿import { useMemo, type ComponentType, type ReactNode } from "react";
 import { useTheme } from "@/contexts/use-theme";
 import {authService} from "@/services/authService";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { CountUp } from "@/components/motion/count-up";
 import {
   Line,
@@ -18,7 +18,7 @@ import {
   Area,
   AreaChart,
 } from "recharts";
-import { Menu, X, Users, Calendar, BarChart2, Bell, Trophy, Target, TrendingUp, Zap, Award, Clock, Star, ChevronRight, Activity, Mic, Briefcase } from "lucide-react";
+import { Users, Calendar, Bell, Trophy, Target, TrendingUp, Zap, Award, Clock, Star, ChevronRight, Activity, Mic, Briefcase } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 // ---------- Mock Data ----------
@@ -93,10 +93,9 @@ interface StatCardProps {
   value: string | number;
   change: string;
   icon: ComponentType<{ className?: string; size?: number | string }>;
-  color: string;
 }
 
-function StatCard({ title, value, change, icon: Icon, color }: StatCardProps) {
+function StatCard({ title, value, change, icon: Icon }: StatCardProps) {
   const isPositive = change.startsWith("+");
   return (
     <motion.div
@@ -105,8 +104,8 @@ function StatCard({ title, value, change, icon: Icon, color }: StatCardProps) {
     >
       <div className="relative z-10">
         <div className="flex items-start justify-between mb-4">
-          <div className={`p-3 rounded-xl ${color} shadow-e1`}>
-            <Icon className="text-accent-fg" size={24} />
+          <div className="rounded-xl bg-accent-soft p-3">
+            <Icon className="text-accent" size={24} />
           </div>
           <div className={`text-sm font-semibold px-2 py-1 rounded-full ${isPositive ? "bg-success-soft text-success" : "bg-danger-soft text-danger"}`}>
             {change}
@@ -119,6 +118,30 @@ function StatCard({ title, value, change, icon: Icon, color }: StatCardProps) {
       </div>
     </motion.div>
   );
+}
+
+/**
+ * Recharts needs real colour strings, not `rgb(var(--x))` — a CSS variable in an
+ * SVG presentation attribute is not reliably resolved. Reading the tokens off the
+ * root element keeps the charts on the design system instead of duplicating hexes,
+ * and re-runs on theme change.
+ */
+function useChartColors(isDark: boolean) {
+  return useMemo(() => {
+    const read = (name: string) =>
+      `rgb(${getComputedStyle(document.documentElement).getPropertyValue(name).trim()})`;
+    return {
+      accent: read("--accent"),
+      grid: read("--border"),
+      axis: read("--ink-subtle"),
+      surface: read("--canvas"),
+      ink: read("--ink"),
+      border: read("--border"),
+    };
+    // isDark IS the dependency even though it is not referenced: the values are
+    // read off <html>, which is exactly what the theme class changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDark]);
 }
 
 interface GlassCardProps {
@@ -136,12 +159,11 @@ function GlassCard({ children, className = "" }: GlassCardProps) {
 
 // ---------- Main Page ----------
 export default function UserDashboardPage() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const { isDark, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const currentUser = authService.getCurrentUserFromStorage();
   const displayName = currentUser?.full_name ?? currentUser?.email ?? "there";
+  const chart = useChartColors(isDark);
  
 
   return (
@@ -149,125 +171,7 @@ export default function UserDashboardPage() {
       {/* Top-level container */}
       <div className="relative z-10 max-w-[1400px] mx-auto px-4 py-6">
         <div className="flex gap-6">
-          {/* Sidebar - Desktop & Tablet */}
-          <motion.aside
-            initial={{ x: -20, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            className={`hidden md:flex flex-col shrink-0 transition-all duration-300 ${
-              sidebarCollapsed ? "w-20" : "w-64"
-            }`}
-          >
-            <div className={`${
-              "bg-canvas border border-border shadow-e1"} rounded-2xl p-4 mb-4`}>
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 rounded-xl bg-accent shadow-lg flex items-center justify-center">
-                  <Activity className="text-white" size={24} />
-                </div>
-                {!sidebarCollapsed && (
-                  <div>
-                    <div className={`font-bold text-lg text-ink`}>TalentPulse</div>
-                    <div className={`text-xs ${"text-ink-subtle"}`}>AI Interview Coach</div>
-                  </div>
-                )}
-              </div>
-
-              <nav className="flex-1">
-                <ul className="flex flex-col gap-2">
-                  {[
-                    { icon: BarChart2, label: "Dashboard", active: true },
-                    { icon: Users, label: "My Interviews" },
-                    { icon: Calendar, label: "Schedule" },
-                    { icon: Trophy, label: "Achievements" },
-                    { icon: Bell, label: "Notifications" },
-                  ].map((item, i) => (
-                    <motion.li
-                      key={i}
-                      whileHover={{ x: 4 }}
-                      className={`py-3 px-3 rounded-xl transition cursor-pointer flex items-center gap-3 ${
-                        item.active
-                          ? "bg-accent-soft border border-accent/30 text-ink"
-                          : "hover:bg-surface text-ink-muted"}`}
-                    >
-                      <item.icon size={18} />
-                      {!sidebarCollapsed && <span>{item.label}</span>}
-                    </motion.li>
-                  ))}
-                </ul>
-              </nav>
-            </div>
-
-            <div className="mt-auto space-y-2">
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => toggleTheme()}
-                className={`w-full py-3 rounded-xl transition font-semibold shadow-lg ${
-                  "bg-surface hover:bg-surface-strong text-ink border border-border"}`}
-              >
-                {isDark ? "â˜€ï¸ Light" : "ðŸŒ™ Dark"}
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setSidebarCollapsed((s) => !s)}
-                className="w-full py-3 rounded-xl bg-accent hover:bg-accent-hover transition text-white font-semibold shadow-lg"
-              >
-                {sidebarCollapsed ? "â†’" : "Collapse"}
-              </motion.button>
-            </div>
-          </motion.aside>
-
-          {/* Mobile Topbar & Hamburger */}
           <div className="flex-1">
-            <header className={`flex items-center justify-between md:hidden mb-4 ${
-              "bg-canvas border border-border shadow-e1"} rounded-2xl p-4`}>
-              <div className="flex items-center gap-3">
-                <IconButton onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-                  {mobileMenuOpen ? <X size={20} className={"text-ink"} /> : <Menu size={20} className={"text-ink"} />}
-                </IconButton>
-                <div className={`font-bold text-ink`}>TalentPulse</div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <IconButton onClick={() => toggleTheme()}>
-                  {isDark ? <span className="text-xl">â˜€ï¸</span> : <span className="text-xl">ðŸŒ™</span>}
-                </IconButton>
-                <IconButton>
-                  <Bell size={18} className={"text-ink"} />
-                </IconButton>
-                <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center text-white font-bold shadow-lg">U</div>
-              </div>
-            </header>
-
-            {/* Mobile Menu Drawer */}
-            <AnimatePresence>
-              {mobileMenuOpen && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="md:hidden mb-4 overflow-hidden"
-                >
-                  <div className={`${
-                    "bg-canvas border border-border shadow-e1"} rounded-2xl p-4`}>
-                    <div className="flex flex-col gap-2">
-                      {["Dashboard", "My Interviews", "Schedule", "Achievements", "Notifications"].map((item, i) => (
-                        <button
-                          key={i}
-                          className={`text-left py-3 px-4 rounded-xl transition ${
-                            "hover:bg-surface text-ink"
-                          }`}
-                          onClick={() => setMobileMenuOpen(false)}
-                        >
-                          {item}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
             {/* Main Content */}
             <main>
               {/* Header Row */}
@@ -277,7 +181,7 @@ export default function UserDashboardPage() {
                 className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4"
               >
                 <div>
-                  <h1 className={`font-display text-3xl md:text-4xl font-bold uppercase tracking-tight mb-2 text-ink`}>
+                  <h1 className="mb-2 text-h1 font-semibold tracking-tight text-ink">
                     Welcome back,{" "}
                     <span className="text-accent-text">{displayName}</span>
                   </h1>
@@ -337,15 +241,13 @@ export default function UserDashboardPage() {
                     transition={{ delay: 0.05 + i * 0.08 }}
                     whileHover={{ y: -4 }}
                     whileTap={{ scale: 0.99 }}
-                    className={`group relative overflow-hidden rounded-2xl border p-6 text-left transition ${
-                      "border-border bg-canvas shadow-e1"}`}
+                    className="group relative overflow-hidden rounded-2xl border border-dashed border-border-strong bg-canvas p-6 text-left transition hover:border-accent"
                   >
-                    <div className={`pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-gradient-to-br ${side.accent} opacity-20 blur-2xl transition-opacity group-hover:opacity-40`} />
                     <div className="relative z-10">
-                      <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${side.accent} shadow-lg`}>
-                        <side.icon className="text-white" size={24} />
+                      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-accent-soft">
+                        <side.icon className="text-accent" size={24} />
                       </div>
-                      <h3 className={`font-display text-xl font-bold text-ink`}>
+                      <h3 className={`text-h4 font-semibold text-ink`}>
                         {side.label}
                       </h3>
                       <p className={`mt-1 text-sm text-ink-muted`}>
@@ -371,7 +273,7 @@ export default function UserDashboardPage() {
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ delay: i * 0.1 }}
                   >
-                    <StatCard title={s.title} value={s.value} change={s.change} icon={s.icon} color={s.color} />
+                    <StatCard title={s.title} value={s.value} change={s.change} icon={s.icon} />
                   </motion.div>
                 ))}
               </div>
@@ -407,23 +309,23 @@ export default function UserDashboardPage() {
                           <AreaChart data={scoreHistory}>
                             <defs>
                               <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.3}/>
-                                <stop offset="95%" stopColor="#06b6d4" stopOpacity={0}/>
+                                <stop offset="5%" stopColor={chart.accent} stopOpacity={0.28}/>
+                                <stop offset="95%" stopColor={chart.accent} stopOpacity={0}/>
                               </linearGradient>
                             </defs>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
-                            <XAxis dataKey="name" stroke="#94a3b8" />
-                            <YAxis stroke="#94a3b8" />
+                            <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} />
+                            <XAxis dataKey="name" stroke={chart.axis} fontSize={12} />
+                            <YAxis stroke={chart.axis} fontSize={12} />
                             <Tooltip
                               contentStyle={{
-                                backgroundColor: "#1e293b",
+                                backgroundColor: chart.surface,
                                 border: "1px solid rgba(255,255,255,0.1)",
                                 borderRadius: "12px",
-                                color: "#fff"
+                                color: chart.ink
                               }}
                             />
-                            <Area type="monotone" dataKey="score" stroke="#06b6d4" strokeWidth={3} fill="url(#colorScore)" />
-                            <Line type="monotone" dataKey="target" stroke="#8b5cf6" strokeWidth={2} strokeDasharray="5 5" dot={false} />
+                            <Area type="monotone" dataKey="score" stroke={chart.accent} strokeWidth={3} fill="url(#colorScore)" />
+                            <Line type="monotone" dataKey="target" stroke={chart.axis} strokeWidth={2} strokeDasharray="5 5" dot={false} />
                           </AreaChart>
                         </ResponsiveContainer>
                       </div>
@@ -468,11 +370,11 @@ export default function UserDashboardPage() {
                       <div style={{ width: "100%", height: 320 }}>
                         <ResponsiveContainer>
                           <RadarChart outerRadius={110} data={skillRadar}>
-                            <PolarGrid stroke="#334155" />
-                            <PolarAngleAxis dataKey="skill" stroke="#94a3b8" />
-                            <PolarRadiusAxis angle={30} domain={[0, 100]} stroke="#94a3b8" />
-                            <Radar name="Current" dataKey="current" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.6} />
-                            <Radar name="Previous" dataKey="previous" stroke="#06b6d4" fill="#06b6d4" fillOpacity={0.3} />
+                            <PolarGrid stroke={chart.grid} />
+                            <PolarAngleAxis dataKey="skill" stroke={chart.axis} fontSize={12} />
+                            <PolarRadiusAxis angle={30} domain={[0, 100]} stroke={chart.axis} fontSize={11} />
+                            <Radar name="Current" dataKey="current" stroke={chart.accent} fill={chart.accent} fillOpacity={0.55} />
+                            <Radar name="Previous" dataKey="previous" stroke={chart.axis} fill={chart.axis} fillOpacity={0.18} />
                           </RadarChart>
                         </ResponsiveContainer>
                       </div>

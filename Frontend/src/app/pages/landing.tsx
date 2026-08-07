@@ -10,11 +10,13 @@
  */
 import {
   ArrowRight, Mic, Briefcase, FileText, Target, BarChart3, Building2,
-  ShieldCheck, Video, ListChecks, Sparkles, Gauge,
+  ShieldCheck, Video, ListChecks, Sparkles, Gauge, PlayCircle, ChevronDown,
 } from "lucide-react";
 import SiteHeader from "@/components/landing/site-header";
 import SiteFooter from "@/components/landing/site-footer";
 import { ProductFrame } from "@/components/landing/product-frame";
+import { ProductStack } from "@/components/landing/product-stack";
+import { HERO_PLANES } from "@/components/landing/product-planes";
 import { Section, SectionHeading } from "@/components/ui/section";
 import { Panel } from "@/components/ui/panel";
 import { Button } from "@/components/ui/button";
@@ -22,13 +24,31 @@ import { Badge } from "@/components/ui/badge";
 import { Reveal } from "@/components/motion/reveal";
 import tourInterview from "@/assets/landing/tour-interview.svg";
 import tourResults from "@/assets/landing/tour-results.svg";
-import tourDashboard from "@/assets/landing/tour-dashboard.svg";
 
 const NAV_ITEMS = [
-  { id: "practice", label: "Interview practice", href: "/practice" },
-  { id: "jobs", label: "Job search", href: "/find-jobs" },
+  { id: "practice", label: "Practice", href: "/practice" },
+  { id: "jobs", label: "Find jobs", href: "/find-jobs" },
   { id: "how", label: "How it works", href: "#how" },
   { id: "faq", label: "FAQ", href: "#faq" },
+];
+
+/**
+ * The row under the hero. Each line is a claim the rest of the page has to keep,
+ * which is why the third one is a limit rather than a feature.
+ */
+const HERO_POINTS = [
+  {
+    title: "Scored against the role",
+    desc: "Questions come from your resume and the role you pick, not a generic bank.",
+  },
+  {
+    title: "A report you can act on",
+    desc: "Every answer gets the signals expected and what was missing.",
+  },
+  {
+    title: "The agent never applies for you",
+    desc: "It finds and ranks openings. You decide what to send.",
+  },
 ];
 
 /** The two sides of the product — the whole page funnels into these. */
@@ -120,44 +140,52 @@ export default function LandingPage() {
 
       <SiteHeader navItems={NAV_ITEMS} />
 
-      {/* ── Hero ── */}
+      {/* ── Hero (design doc 3a) ── */}
       <section className="border-b border-border">
-        <div className="wrap py-16 text-center md:py-24">
+        <div className="wrap grid items-center gap-12 py-20 md:py-28 lg:grid-cols-2 lg:gap-16">
           <Reveal y={16}>
-            <h1 className="mx-auto max-w-3xl text-display font-semibold text-ink">
-              Practice the interview.
-              <br className="hidden sm:block" />{" "}
-              <span className="text-accent-text">Then find the job.</span>
+            <h1 className="max-w-xl text-balance text-display font-semibold text-ink">
+              Transform your career profile into high-fidelity signal.
             </h1>
-            <p className="mx-auto mt-5 max-w-xl text-lead text-ink-muted">
-              One resume powers both: an AI that interviews you on your own experience, and an
-              agent that ranks real openings against it.
+            <p className="mt-6 max-w-md text-pretty text-lead text-ink-muted">
+              Mock interviews built from your own resume and scored against the role you're
+              targeting, plus a job agent that ranks real openings. Personal details are stripped
+              before anything is indexed.
             </p>
-            <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-              <Button asChild size="lg" pill>
-                <a href="/practice">
-                  <Mic /> Practice an interview
-                </a>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <Button asChild size="lg">
+                <a href="/auth/register">Get started for free</a>
               </Button>
-              <Button asChild size="lg" variant="secondary" pill>
-                <a href="/find-jobs">
-                  <Briefcase /> Find matching jobs
+              <Button asChild size="lg" variant="secondary">
+                <a href="/demo">
+                  <PlayCircle /> Try the demo
                 </a>
               </Button>
             </div>
-            <p className="mt-4 text-small text-ink-subtle">
-              Free while in beta · Takes about two minutes to start
-            </p>
           </Reveal>
 
-          <Reveal className="mt-14" delay={0.1}>
-            <ProductFrame
-              src={tourDashboard}
-              alt="The TalentPulseAI workspace, showing interview practice and job matches side by side"
-              caption="talentpulse.ai / dashboard"
-              className="mx-auto max-w-4xl"
+          <Reveal delay={0.1}>
+            <ProductStack
+              variant="layered"
+              planes={HERO_PLANES}
+              label="Three layered panels of the product: a report scoring an answer 88 out of 100 in front, a dark live-interview session with a question and a running transcript behind it, and the parsed sections of a resume behind that."
             />
           </Reveal>
+        </div>
+
+        {/* The three claims the hero makes, stated plainly. */}
+        <div className="wrap pb-16 md:pb-20">
+          <dl className="grid gap-8 border-t border-border pt-8 sm:grid-cols-3">
+            {HERO_POINTS.map((point) => (
+              <div key={point.title}>
+                {/* A 2px accent rule per claim — the row was three paragraphs with
+                    nothing marking where one ended and the next began. */}
+                <span aria-hidden="true" className="mb-4 block h-0.5 w-6 rounded-full bg-accent" />
+                <dt className="text-h4 font-semibold text-ink">{point.title}</dt>
+                <dd className="mt-1.5 text-pretty text-small text-ink-muted">{point.desc}</dd>
+              </div>
+            ))}
+          </dl>
         </div>
       </section>
 
@@ -202,7 +230,7 @@ export default function LandingPage() {
                   />
 
                   <div className="mt-6 pt-1">
-                    <Button asChild variant="secondary" pill>
+                    <Button asChild variant="secondary">
                       <a href={side.href}>
                         {side.cta} <ArrowRight />
                       </a>
@@ -266,8 +294,10 @@ export default function LandingPage() {
             return (
               <Reveal key={item.title} delay={(i % 3) * 0.06}>
                 <div className="flex gap-3.5">
-                  <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border bg-surface text-ink-muted">
-                    <Icon size={16} />
+                  {/* 36px, matching the FLOW tiles — the neutral fill is the
+                      deliberate part of the ramp, the odd size was not. */}
+                  <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border bg-surface text-ink-muted">
+                    <Icon size={17} />
                   </span>
                   <div>
                     <h3 className="text-h4 font-semibold text-ink">{item.title}</h3>
@@ -293,17 +323,19 @@ export default function LandingPage() {
           <Reveal delay={0.08}>
             <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-canvas">
               {FAQ.map((item) => (
-                <details key={item.q} className="group px-5 py-4">
-                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-body font-medium text-ink">
+                <details key={item.q} className="group">
+                  {/* The affordance is a chevron rather than a rotating "+", and the
+                      whole row is the hit area — a 4-line summary previously had a
+                      target only as tall as its text. */}
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 text-body font-medium text-ink transition-colors hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent/70">
                     {item.q}
-                    <span
+                    <ChevronDown
                       aria-hidden="true"
-                      className="text-ink-subtle transition-transform group-open:rotate-45"
-                    >
-                      +
-                    </span>
+                      size={16}
+                      className="shrink-0 text-ink-subtle transition-transform duration-200 group-open:-rotate-180"
+                    />
                   </summary>
-                  <p className="mt-2.5 text-small text-ink-muted">{item.a}</p>
+                  <p className="px-5 pb-4 text-pretty text-small text-ink-muted">{item.a}</p>
                 </details>
               ))}
             </div>
@@ -322,12 +354,12 @@ export default function LandingPage() {
               One free account unlocks both. Practice tonight, apply tomorrow.
             </p>
             <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
-              <Button asChild size="lg" pill>
+              <Button asChild size="lg">
                 <a href="/auth/register">
                   Create a free account <ArrowRight />
                 </a>
               </Button>
-              <Button asChild size="lg" variant="secondary" pill>
+              <Button asChild size="lg" variant="secondary">
                 <a href="/demo">Try the demo</a>
               </Button>
             </div>

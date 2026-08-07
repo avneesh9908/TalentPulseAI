@@ -3,6 +3,7 @@ import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
 
 import { cn } from "@/lib/utils"
+import { Spinner } from "@/components/ui/spinner"
 
 /**
  * The one button in the product. Anything that looks clickable and solid
@@ -24,14 +25,16 @@ const buttonVariants = cva(
         ghost:
           "text-ink-muted hover:bg-surface hover:text-ink",
         danger:
-          "bg-danger text-white shadow-e1 hover:shadow-e2 hover:brightness-95",
+          "bg-danger text-danger-fg shadow-e1 hover:shadow-e2 hover:brightness-95",
         link:
           "h-auto p-0 text-accent-text underline-offset-4 hover:underline",
       },
       size: {
         sm: "h-8 rounded-md px-3 text-small [&_svg]:size-4",
         md: "h-10 rounded-md px-4 text-body [&_svg]:size-4",
-        lg: "h-12 rounded-lg px-6 text-body [&_svg]:size-[18px]",
+        // The one size used for page-level calls to action, so its label carries
+        // the extra weight the export gives them.
+        lg: "h-12 rounded-lg px-6 text-body font-semibold [&_svg]:size-[18px]",
         icon: "h-10 w-10 rounded-md [&_svg]:size-[18px]",
         "icon-sm": "h-8 w-8 rounded-md [&_svg]:size-4",
       },
@@ -53,17 +56,53 @@ export interface ButtonProps
   extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "color">,
     VariantProps<typeof buttonVariants> {
   asChild?: boolean
+  /**
+   * Pending state: swaps in a spinner and blocks input, without collapsing the
+   * label — the button keeps its width so the layout doesn't jump mid-request.
+   * Pass `loadingLabel` when the verb should change ("Start" → "Starting").
+   */
+  loading?: boolean
+  loadingLabel?: React.ReactNode
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, pill, block, asChild = false, ...props }, ref) => {
+  (
+    {
+      className,
+      variant,
+      size,
+      pill,
+      block,
+      asChild = false,
+      loading = false,
+      loadingLabel,
+      children,
+      disabled,
+      ...props
+    },
+    ref
+  ) => {
     const Comp = asChild ? Slot : "button"
+    // `asChild` hands rendering to the caller's element, so a spinner can't be
+    // injected — the loading affordance is skipped rather than silently broken.
+    const showSpinner = loading && !asChild
     return (
       <Comp
         className={cn(buttonVariants({ variant, size, pill, block, className }))}
         ref={ref}
+        disabled={disabled || (loading && !asChild)}
+        aria-busy={showSpinner || undefined}
         {...props}
-      />
+      >
+        {showSpinner ? (
+          <>
+            <Spinner size={size === "lg" ? "md" : "sm"} />
+            {loadingLabel ?? children}
+          </>
+        ) : (
+          children
+        )}
+      </Comp>
     )
   }
 )

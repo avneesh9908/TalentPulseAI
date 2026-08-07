@@ -1,7 +1,7 @@
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { Loader2 } from "lucide-react";
 import ErrorBoundary from "@/components/error-boundary";
+import { Spinner } from "@/components/ui/spinner";
 import { AuthProvider } from "@/contexts/auth-context";
 import { InterviewProvider } from "@/contexts/interview-provider";
 import { ThemeProvider } from "@/contexts/theme-provider";
@@ -28,8 +28,8 @@ const Profile = lazy(() => import("@/app/pages/profile/profile"));
 const JobsPage = lazy(() => import("@/app/pages/jobs/jobs"));
 
 const PageFallback = () => (
-  <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
-    <Loader2 className="animate-spin text-violet-600" size={28} />
+  <div className="flex min-h-screen items-center justify-center bg-surface">
+    <Spinner size="md" className="size-7 text-accent" />
   </div>
 );
 
@@ -65,7 +65,7 @@ function App() {
               path="/interview"
               element={
                 <ProtectedRoute>
-                  <ProtectedLayout>
+                  <ProtectedLayout chrome="focus">
                     <SelectRole />
                   </ProtectedLayout>
                 </ProtectedRoute>
@@ -76,7 +76,7 @@ function App() {
               path="/interview/quick-setup"
               element={
                 <ProtectedRoute>
-                  <ProtectedLayout>
+                  <ProtectedLayout chrome="focus">
                     <QuickSetup />
                   </ProtectedLayout>
                 </ProtectedRoute>
@@ -87,7 +87,7 @@ function App() {
               path="/interview/start"
               element={
                 <ProtectedRoute>
-                  <ProtectedLayout>
+                  <ProtectedLayout chrome="focus">
                     <InterviewNow />
                   </ProtectedLayout>
                 </ProtectedRoute>
@@ -110,7 +110,7 @@ function App() {
               path="/interview/select-role"
               element={
                 <ProtectedRoute>
-                  <ProtectedLayout>
+                  <ProtectedLayout chrome="focus">
                     <SelectRole />
                   </ProtectedLayout>
                 </ProtectedRoute>
@@ -122,7 +122,7 @@ function App() {
               path="/interview/select-profile"
               element={
                 <ProtectedRoute>
-                  <ProtectedLayout>
+                  <ProtectedLayout chrome="focus">
                     <SelectProfile />
                   </ProtectedLayout>
                 </ProtectedRoute>

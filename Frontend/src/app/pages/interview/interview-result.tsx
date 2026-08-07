@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Panel, PanelTitle } from "@/components/ui/panel";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { ScoreRing } from "@/components/ui/score-ring";
 
 type ResultState = {
   result?: InterviewSubmitResponse;
@@ -19,6 +20,13 @@ const scoreTone = (score: number) => {
   if (score >= 80) return "text-success";
   if (score >= 65) return "text-accent-text";
   return "text-warning";
+};
+
+/** Same three bands as `scoreTone`, expressed as the ring's arc colour. */
+const scoreRingTone = (score: number) => {
+  if (score >= 80) return "success" as const;
+  if (score >= 65) return "accent" as const;
+  return "warning" as const;
 };
 
 function formatCompletedAt(value: string | undefined) {
@@ -94,10 +102,21 @@ export default function InterviewResultPage() {
         <div className="mt-6 grid gap-4 lg:grid-cols-3">
           <Panel tone="raised" className="lg:col-span-1">
             <p className="overline">Final score</p>
-            <p className={`mt-1 text-[3.5rem] font-semibold leading-none tabular-nums ${scoreTone(result.score)}`}>
-              {result.score}
-            </p>
-            <p className="mt-1 text-small text-ink-subtle">out of 100</p>
+            <div className="mt-3 flex items-center gap-4">
+              <ScoreRing
+                value={result.score}
+                size="xl"
+                tone={scoreRingTone(result.score)}
+                label={`Final score ${result.score} out of 100`}
+              />
+              <div>
+                <p className={`text-h2 font-semibold tabular-nums ${scoreTone(result.score)}`}>
+                  {result.score}
+                  <span className="text-h4 text-ink-subtle">/100</span>
+                </p>
+                <p className="mt-0.5 text-small text-ink-subtle">out of 100</p>
+              </div>
+            </div>
             <dl className="mt-5 space-y-2 text-small">
               <div className="flex items-center gap-2 text-ink-muted">
                 <Award size={14} className="text-ink-subtle" />

@@ -55,10 +55,10 @@ function SectionHeading({
       )}
     >
       {eyebrow && <p className="overline mb-3">{eyebrow}</p>}
-      <Tag className={cn(Tag === "h1" ? "text-h1" : "text-h2", "font-semibold text-ink")}>
+      <Tag className={cn(Tag === "h1" ? "text-h1" : "text-h2", "text-balance font-semibold text-ink")}>
         {title}
       </Tag>
-      {subtitle && <p className="mt-3 text-lead text-ink-muted">{subtitle}</p>}
+      {subtitle && <p className="mt-3 text-pretty text-lead text-ink-muted">{subtitle}</p>}
     </div>
   )
 }

@@ -16,17 +16,23 @@ export default {
 				// Kept so existing `font-display` usages keep compiling; now the same face.
 				display: ['"Inter Variable"', 'Inter', 'system-ui', 'sans-serif'],
 			},
-			// The complete type scale. Pages use these, not ad-hoc clamp() values.
+			/*
+			 * The complete type scale. Pages use these, not ad-hoc clamp() values.
+			 * Each step's desktop cap is the measured value from the design doc's
+			 * token sheet — display 46 (landing hero), h1 40 (product-page hero),
+			 * h2 30, h3 22, h4 17, body 15, small 13, overline 11. The clamps only
+			 * scale *down* from those caps, so nothing renders larger than specified.
+			 */
 			fontSize: {
-				display: ['clamp(2.5rem, 5.5vw, 4rem)', { lineHeight: '1.04', letterSpacing: '-0.032em' }],
-				h1: ['clamp(2rem, 3.6vw, 2.75rem)', { lineHeight: '1.1', letterSpacing: '-0.026em' }],
-				h2: ['clamp(1.5rem, 2.4vw, 2rem)', { lineHeight: '1.18', letterSpacing: '-0.021em' }],
-				h3: ['1.25rem', { lineHeight: '1.35', letterSpacing: '-0.014em' }],
-				h4: ['1.0625rem', { lineHeight: '1.4', letterSpacing: '-0.01em' }],
-				lead: ['1.0625rem', { lineHeight: '1.65' }],
-				body: ['0.9375rem', { lineHeight: '1.6' }],
+				display: ['clamp(2rem, 4vw, 2.875rem)', { lineHeight: '1.08', letterSpacing: '-0.03em' }],
+				h1: ['clamp(1.75rem, 3.2vw, 2.5rem)', { lineHeight: '1.1', letterSpacing: '-0.03em' }],
+				h2: ['clamp(1.375rem, 2.2vw, 1.875rem)', { lineHeight: '1.15', letterSpacing: '-0.02em' }],
+				h3: ['1.375rem', { lineHeight: '1.25', letterSpacing: '-0.01em' }],
+				h4: ['1.0625rem', { lineHeight: '1.3', letterSpacing: '-0.005em' }],
+				lead: ['1.0625rem', { lineHeight: '1.6' }],
+				body: ['0.9375rem', { lineHeight: '1.55' }],
 				small: ['0.8125rem', { lineHeight: '1.5' }],
-				overline: ['0.6875rem', { lineHeight: '1.2', letterSpacing: '0.11em' }],
+				overline: ['0.6875rem', { lineHeight: '1.1', letterSpacing: '0.08em' }],
 			},
 			colors: {
 				ink: {
@@ -36,6 +42,9 @@ export default {
 					inverse: token('ink-inverse'),
 				},
 				canvas: token('canvas'),
+				// Scrim behind modals. Ink in light, black in dark — always a
+				// darkener, which `ink` would not be once the theme inverts.
+				overlay: token('overlay'),
 				surface: {
 					DEFAULT: token('surface'),
 					strong: token('surface-strong'),
@@ -53,7 +62,13 @@ export default {
 				},
 				success: { DEFAULT: token('success'), soft: token('success-soft') },
 				warning: { DEFAULT: token('warning'), soft: token('warning-soft') },
-				danger: { DEFAULT: token('danger'), soft: token('danger-soft') },
+				danger: {
+					DEFAULT: token('danger'),
+					soft: token('danger-soft'),
+					// Label colour for a *filled* danger control. Not always white:
+					// dark mode's danger is a light red and needs a dark label.
+					fg: token('danger-fg'),
+				},
 
 				// shadcn primitives still resolve through these.
 				background: 'hsl(var(--background))',
@@ -101,15 +116,26 @@ export default {
 				'2xl': '1rem',
 				'3xl': '1.25rem',
 			},
-			// Layered micro-shadows — physical, not glowy.
+			/*
+			 * Elevation, straight from the doc's e1–e4 ramp. Shadows are cast in
+			 * --overlay (ink, not pure black) so they read as depth rather than dirt.
+			 * e5 is ours: the one step big enough for the tilted 3D product planes
+			 * in the landing hero, which the doc draws at 0 32px 64px / 16%.
+			 */
 			boxShadow: {
-				e1: '0 0.5px 0.5px -0.25px rgb(var(--overlay) / 0.05), 0 1.5px 1.5px -0.75px rgb(var(--overlay) / 0.05), 0 3px 3px -1.5px rgb(var(--overlay) / 0.04)',
-				e2: '0 0.5px 0.5px -0.3px rgb(var(--overlay) / 0.05), 0 2px 2px -0.9px rgb(var(--overlay) / 0.05), 0 5px 5px -1.8px rgb(var(--overlay) / 0.05), 0 10px 10px -3px rgb(var(--overlay) / 0.04)',
-				e3: '0 1px 1px -0.4px rgb(var(--overlay) / 0.05), 0 3px 3px -1px rgb(var(--overlay) / 0.05), 0 8px 8px -2px rgb(var(--overlay) / 0.05), 0 18px 18px -4px rgb(var(--overlay) / 0.06)',
-				e4: '0 2px 2px -0.6px rgb(var(--overlay) / 0.06), 0 6px 6px -1.4px rgb(var(--overlay) / 0.06), 0 16px 16px -3px rgb(var(--overlay) / 0.07), 0 34px 34px -6px rgb(var(--overlay) / 0.09)',
+				e1: '0 1px 2px rgb(var(--overlay) / 0.06)',
+				e2: '0 1px 2px rgb(var(--overlay) / 0.06), 0 2px 6px rgb(var(--overlay) / 0.06)',
+				e3: '0 1px 2px rgb(var(--overlay) / 0.06), 0 4px 12px rgb(var(--overlay) / 0.08)',
+				e4: '0 2px 4px rgb(var(--overlay) / 0.06), 0 12px 28px rgb(var(--overlay) / 0.12)',
+				e5: '0 4px 8px rgb(var(--overlay) / 0.06), 0 32px 64px rgb(var(--overlay) / 0.16)',
 				none: 'none',
 			},
 			keyframes: {
+				// Skeleton sweep. Pairs with a 200%-wide background gradient.
+				shimmer: {
+					'0%': { backgroundPosition: '200% 0' },
+					'100%': { backgroundPosition: '-200% 0' },
+				},
 				marquee: {
 					'0%': { transform: 'translateX(0)' },
 					'100%': { transform: 'translateX(-50%)' },
@@ -128,6 +154,7 @@ export default {
 				},
 			},
 			animation: {
+				shimmer: 'shimmer 1.4s linear infinite',
 				marquee: 'marquee 28s linear infinite',
 				'marquee-reverse': 'marquee-reverse 28s linear infinite',
 				'spin-slow': 'spin-slow 45s linear infinite',
