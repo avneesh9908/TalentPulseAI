@@ -1,0 +1,326 @@
+/*
+ * UI: Stitch design system (2026-09-24) — restyle only; copy, steps and logic are
+ * unchanged from docs/backup/select-profile-before-stitch.tsx.txt.
+ */
+import { useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
+import { useInterview } from "@/contexts/use-interview";
+import {
+  UserCircle2, Upload, FileText, ArrowLeft, ChevronRight,
+  X, Loader, Check, ShieldCheck,
+} from "lucide-react";
+import { Badge, Button, ErrorAlert, PageHeader, StPage, Stepper } from "@/components/stitch";
+import { INTERVIEW_STEPS } from "./steps";
+
+type ProfileOption = "existing" | "upload" | null;
+
+const fileToBase64 = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const value = reader.result;
+      if (typeof value !== "string") {
+        reject(new Error("Failed to read selected file"));
+        return;
+      }
+      const commaIndex = value.indexOf(",");
+      resolve(commaIndex >= 0 ? value.slice(commaIndex + 1) : value);
+    };
+    reader.onerror = () => reject(new Error("Failed to read selected file"));
+    reader.readAsDataURL(file);
+  });
+
+function ProfileOptionCard({
+  icon: Icon,
+  title,
+  description,
+  badge,
+  badgeTone,
+  disabled,
+  selected,
+  onClick,
+}: {
+  icon: React.ElementType;
+  title: string;
+  description: string;
+  badge?: string;
+  badgeTone?: "neutral" | "success";
+  disabled?: boolean;
+  selected: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={disabled ? undefined : onClick}
+      disabled={disabled}
+      aria-pressed={selected}
+      className={`relative h-full rounded-[2rem] p-6 text-left transition-[box-shadow,transform,background-color] duration-200 ${
+        disabled
+          ? "cursor-not-allowed bg-st-lowest opacity-60 shadow-[inset_0_2px_4px_rgba(0,0,0,0.65)]"
+          : selected
+            ? "bg-st-container shadow-[0_0_0_1px_#7c3aed,0_16px_32px_-6px_rgba(0,0,0,0.7),0_0_20px_-2px_rgba(124,58,237,0.35),inset_0_1px_0_rgba(255,255,255,0.12)]"
+            : "bg-st-low shadow-[0_4px_16px_-2px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.08)] hover:-translate-y-0.5 hover:bg-st-container"
+      }`}
+    >
+      {badge && (
+        <span className="absolute right-4 top-4">
+          <Badge tone={badgeTone === "success" ? "success" : "neutral"} size="sm">
+            {badge}
+          </Badge>
+        </span>
+      )}
+
+      <span
+        className={`flex h-12 w-12 items-center justify-center rounded-[2rem] ${
+          selected
+            ? "bg-st-primary-container text-st-on-primary-container shadow-[0_0_16px_rgba(124,58,237,0.5)]"
+            : "bg-st-lowest text-st-primary shadow-[inset_0_2px_4px_rgba(0,0,0,0.65)]"
+        }`}
+      >
+        <Icon size={20} />
+      </span>
+
+      <h3 className="mt-4 flex items-center gap-2 font-st-display text-[18px] font-semibold leading-[26px] text-st-ink">
+        {title}
+        {selected && <Check size={15} className="text-st-tertiary" strokeWidth={3} />}
+      </h3>
+      <p className="mt-1.5 text-[12px] leading-[18px] text-st-muted">{description}</p>
+    </button>
+  );
+}
+
+function UploadZone({
+  file,
+  onFile,
+  onClear,
+}: {
+  file: File | null;
+  onFile: (f: File) => void;
+  onClear: () => void;
+}) {
+  const ref = useRef<HTMLInputElement>(null);
+  const [dragging, setDragging] = useState(false);
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragging(false);
+    const dropped = e.dataTransfer.files[0];
+    if (dropped && dropped.type === "application/pdf") onFile(dropped);
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (f) onFile(f);
+  };
+
+  if (file) {
+    return (
+      <div className="flex items-center gap-3 rounded-[2rem] bg-st-low px-4 py-3.5 shadow-[0_0_0_1px_rgba(78,222,163,0.35),0_4px_16px_-2px_rgba(0,0,0,0.5)]">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-st-tertiary/10 text-st-tertiary">
+          <FileText size={17} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[14px] font-medium text-st-ink">{file.name}</p>
+          <p className="text-[12px] text-st-tertiary">
+            {(file.size / 1024).toFixed(1)} KB · ready to analyse
+          </p>
+        </div>
+        <Button variant="ghost" size="icon-sm" onClick={onClear} aria-label="Remove file">
+          <X />
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => ref.current?.click()}
+      onDragOver={(e) => {
+        e.preventDefault();
+        setDragging(true);
+      }}
+      onDragLeave={() => setDragging(false)}
+      onDrop={handleDrop}
+      className={`w-full rounded-[2rem] border-2 border-dashed px-5 py-10 text-center transition-colors ${
+        dragging
+          ? "border-st-primary bg-st-primary-container/15"
+          : "border-st-outline-variant bg-st-lowest shadow-[inset_0_2px_4px_rgba(0,0,0,0.65)] hover:border-st-primary/60"
+      }`}
+    >
+      <input ref={ref} type="file" accept=".pdf" className="hidden" onChange={handleChange} />
+      <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-st-container text-st-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+        <Upload size={20} />
+      </span>
+      <p className="font-st-display text-[16px] font-semibold text-st-ink">Drop your resume here</p>
+      <p className="mt-1 text-[12px] text-st-muted">
+        or <span className="text-st-primary">click to browse</span>
+      </p>
+      <p className="mt-3 inline-block rounded-full bg-st-container px-3 py-1 text-[11px] font-semibold text-st-muted">PDF only · max 5 MB</p>
+    </button>
+  );
+}
+
+export default function SelectProfilePage() {
+  const navigate = useNavigate();
+  const {
+    selectedRole,
+    saveProfile,
+    saveResumeUpload,
+    clearResumeUpload,
+    isLoading,
+    error,
+    clearError,
+  } = useInterview();
+
+  // Hooks run before the step guard — an early return above them would change
+  // hook order between renders.
+  const [selected, setSelected] = useState<ProfileOption>(null);
+  const [file, setFile] = useState<File | null>(null);
+
+  // Guard: must have completed step 1 before arriving here
+  if (!selectedRole) {
+    navigate("/interview/select-role", { replace: true });
+    return null;
+  }
+
+  const canContinue = selected === "existing" || (selected === "upload" && file !== null);
+
+  const handleFileSelected = async (selectedFile: File) => {
+    if (selectedFile.type !== "application/pdf") {
+      return;
+    }
+    const base64Pdf = await fileToBase64(selectedFile);
+    setFile(selectedFile);
+    saveResumeUpload({
+      fileName: selectedFile.name,
+      mimeType: selectedFile.type || "application/pdf",
+      base64Pdf,
+    });
+  };
+
+  const handleFileCleared = () => {
+    setFile(null);
+    clearResumeUpload();
+  };
+
+  // Handle continue - save to local state only
+  const handleContinue = async () => {
+    if (!selected) return;
+    try {
+      clearError();
+
+      // 1. Save profile option to local state
+      saveProfile(selected);
+
+      // 2. Navigate to quick setup (final step)
+      navigate("/interview/quick-setup");
+    } catch (err) {
+      console.error("Error saving profile:", err);
+      // Error is already set in context
+    }
+  };
+
+  const options = [
+    {
+      id: "existing" as ProfileOption,
+      icon: UserCircle2,
+      title: "Use existing profile",
+      description: "Load the resume and skills already on your account.",
+      badge: "Coming soon",
+      badgeTone: "neutral" as const,
+      disabled: true,
+    },
+    {
+      id: "upload" as ProfileOption,
+      icon: Upload,
+      title: "Upload a new resume",
+      description: "Upload a PDF; we extract your skills and experience and build the questions from them.",
+      badge: "Available",
+      badgeTone: "success" as const,
+      disabled: false,
+    },
+  ];
+
+  return (
+    <StPage narrow>
+      <div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="-ml-3 mb-4"
+          onClick={() => navigate("/interview/select-role")}
+        >
+          <ArrowLeft /> Back to role selection
+        </Button>
+
+        <PageHeader
+          eyebrow="Step 2 of 4"
+          title="Add your resume"
+          description="Questions are written from your own experience, so the interview needs a resume to read."
+        />
+
+        <div className="mt-4">
+          <Stepper steps={INTERVIEW_STEPS} current={1} />
+        </div>
+
+        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {options.map((opt) => (
+            <ProfileOptionCard
+              key={opt.id}
+              {...opt}
+              selected={selected === opt.id}
+              onClick={() => {
+                setSelected(opt.id);
+                if (opt.id !== "upload") handleFileCleared();
+              }}
+            />
+          ))}
+        </div>
+
+        <AnimatePresence>
+          {selected === "upload" && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="overflow-hidden"
+            >
+              <div className="pt-6">
+                <UploadZone file={file} onFile={handleFileSelected} onClear={handleFileCleared} />
+
+                <div className="mt-4 flex items-start gap-2.5 rounded-[2rem] bg-st-lowest p-4 shadow-[inset_0_2px_4px_rgba(0,0,0,0.65)]">
+                  <ShieldCheck size={16} className="mt-0.5 shrink-0 text-st-tertiary" />
+                  <p className="text-[12px] leading-[18px] text-st-muted">
+                    Your name, contact details and location are stripped out before anything is
+                    indexed. You can review and adjust the extracted skills on the next step.
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <div className="mt-5 flex justify-end">
+          <Button size="lg" disabled={!canContinue || isLoading} onClick={handleContinue}>
+            {isLoading ? (
+              <>
+                <Loader className="animate-spin" /> Loading…
+              </>
+            ) : (
+              <>
+                Continue to setup <ChevronRight />
+              </>
+            )}
+          </Button>
+        </div>
+
+        {error && (
+          <ErrorAlert className="mt-4" title="Something went wrong" message={error} onDismiss={clearError} />
+        )}
+      </div>
+    </StPage>
+  );
+}

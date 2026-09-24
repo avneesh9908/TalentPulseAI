@@ -1,17 +1,16 @@
+/*
+ * UI: Stitch design system (2026-09-24) — restyle only; copy, steps and logic are
+ * unchanged from docs/backup/quick-setup-before-stitch.tsx.txt.
+ */
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { useInterview } from "@/contexts/use-interview";
 import {
   ArrowLeft, ChevronRight, Briefcase, Zap, Target,
-  Plus, X, Check, AlertCircle, Loader,
+  Plus, X, Check, Loader,
 } from "lucide-react";
-import { PageHeader } from "@/components/ui/page-header";
-import { Stepper } from "@/components/ui/stepper";
-import { Panel, PanelTitle } from "@/components/ui/panel";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { TextInput } from "@/components/ui/field";
+import { Badge, Button, ErrorAlert, PageHeader, Panel, PanelTitle, StPage, Stepper, TextInput } from "@/components/phos/controls";
 import { INTERVIEW_STEPS } from "./steps";
 
 const EXPERIENCE_OPTIONS = [
@@ -37,7 +36,7 @@ const SUGGESTED_SKILLS = [
 function SectionLabel({ icon: Icon, label }: { icon: React.ElementType; label: string }) {
   return (
     <div className="flex items-center gap-2">
-      <span className="flex h-7 w-7 items-center justify-center rounded-md bg-accent-soft text-accent-text">
+      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-black text-ph-green border border-ph-line">
         <Icon size={14} />
       </span>
       <PanelTitle>{label}</PanelTitle>
@@ -102,19 +101,19 @@ export default function QuickSetupPage() {
   };
 
   const optionCard = (selected: boolean) =>
-    `relative rounded-lg border p-4 text-center transition-[border-color,box-shadow] duration-200 ${
+    `relative rounded-[2rem] p-3 text-center transition-[box-shadow,background-color] duration-200 ${
       selected
-        ? "border-accent bg-accent-soft/50 shadow-e1"
-        : "border-border bg-canvas hover:border-border-strong"
+        ? "bg-ph-surface-2 border border-ph-green/60 shadow-[0_0_20px_-6px_rgba(0,255,65,0.35)]"
+        : "bg-black border border-ph-line hover:bg-ph-surface-2"
     }`;
 
   return (
-    <div className="min-h-screen bg-surface">
-      <div className="mx-auto w-full max-w-4xl px-5 py-8 sm:px-6">
+    <StPage narrow>
+      <div>
         <Button
           variant="ghost"
           size="sm"
-          className="-ml-3 mb-6"
+          className="-ml-3 mb-4"
           onClick={() => navigate("/interview/select-profile")}
         >
           <ArrowLeft /> Back to resume
@@ -126,14 +125,14 @@ export default function QuickSetupPage() {
           description="Experience level, difficulty and the skills you want tested."
         />
 
-        <div className="mt-6">
+        <div className="mt-4">
           <Stepper steps={INTERVIEW_STEPS} current={2} />
         </div>
 
         {/* ── Experience ── */}
-        <Panel className="mt-8">
+        <Panel padding="sm" className="mt-5">
           <SectionLabel icon={Briefcase} label="Years of experience" />
-          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
+          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
             {EXPERIENCE_OPTIONS.map((opt) => {
               const sel = experience === opt.id;
               return (
@@ -145,12 +144,12 @@ export default function QuickSetupPage() {
                   className={optionCard(sel)}
                 >
                   {sel && (
-                    <Check size={13} strokeWidth={3} className="absolute right-2 top-2 text-accent-text" />
+                    <Check size={13} strokeWidth={3} className="absolute right-2 top-2 text-ph-green" />
                   )}
-                  <span className={`block text-body font-medium ${sel ? "text-accent-text" : "text-ink"}`}>
+                  <span className={`block text-[14px] font-semibold ${sel ? "text-ph-green" : "text-ph-ink"}`}>
                     {opt.label}
                   </span>
-                  <span className="mt-0.5 block text-small text-ink-subtle">{opt.sublabel}</span>
+                  <span className="mt-0.5 block text-[11px] text-ph-ink-soft">{opt.sublabel}</span>
                 </button>
               );
             })}
@@ -158,7 +157,7 @@ export default function QuickSetupPage() {
         </Panel>
 
         {/* ── Difficulty ── */}
-        <Panel className="mt-4">
+        <Panel padding="sm" className="mt-3">
           <SectionLabel icon={Target} label="Difficulty" />
           <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
             {DIFFICULTY_OPTIONS.map((opt) => {
@@ -172,24 +171,24 @@ export default function QuickSetupPage() {
                   className={`${optionCard(sel)} py-5`}
                 >
                   {sel && (
-                    <Check size={13} strokeWidth={3} className="absolute right-2.5 top-2.5 text-accent-text" />
+                    <Check size={13} strokeWidth={3} className="absolute right-2.5 top-2.5 text-ph-green" />
                   )}
-                  <span className={`block text-h4 font-semibold ${sel ? "text-accent-text" : "text-ink"}`}>
+                  <span className={`block font-st-display text-[18px] font-semibold ${sel ? "text-ph-green" : "text-ph-ink"}`}>
                     {opt.label}
                   </span>
-                  <span className="mt-0.5 block text-small text-ink-subtle">{opt.description}</span>
+                  <span className="mt-0.5 block text-[12px] text-ph-ink-soft">{opt.description}</span>
                 </button>
               );
             })}
           </div>
-          <p className="mt-3 text-small text-ink-subtle">
+          <p className="mt-3 text-[12px] leading-[18px] text-ph-ink-muted">
             Whatever you pick, every interview still opens with a couple of fundamentals before it
             ramps up.
           </p>
         </Panel>
 
         {/* ── Skills ── */}
-        <Panel className="mt-4">
+        <Panel padding="sm" className="mt-3">
           <div className="flex items-center justify-between gap-4">
             <SectionLabel icon={Zap} label="Key skills" />
             <Badge tone="neutral" size="sm">{skills.length}/12</Badge>
@@ -205,7 +204,7 @@ export default function QuickSetupPage() {
                 {skills.map((skill) => (
                   <span
                     key={skill}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-accent/25 bg-accent-soft px-2.5 py-1 text-small text-accent-text"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-ph-green/10 px-3 py-1 text-[12px] font-medium text-ph-green"
                   >
                     {skill}
                     <button
@@ -225,7 +224,7 @@ export default function QuickSetupPage() {
             <Plus
               size={15}
               aria-hidden="true"
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-subtle"
+              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ph-ink-soft"
             />
             <TextInput
               value={customSkill}
@@ -233,11 +232,11 @@ export default function QuickSetupPage() {
               onKeyDown={handleKeyDown}
               placeholder="Add a skill (press Enter or comma)"
               aria-label="Add a skill"
-              className="pl-9"
+              className="pl-10"
             />
           </div>
 
-          <p className="mt-5 text-small text-ink-subtle">Suggested — click to add</p>
+          <p className="mt-5 text-[11px] font-semibold uppercase tracking-wider text-ph-ink-soft">Suggested — click to add</p>
           <div className="mt-2 flex flex-wrap gap-2">
             {SUGGESTED_SKILLS.filter((s) => !skills.includes(s)).map((skill) => (
               <button
@@ -245,7 +244,7 @@ export default function QuickSetupPage() {
                 type="button"
                 onClick={() => addSkill(skill)}
                 disabled={skills.length >= 12}
-                className="rounded-full border border-border px-2.5 py-1 text-small text-ink-muted transition-colors hover:border-accent/40 hover:bg-accent-soft hover:text-accent-text disabled:opacity-40"
+                className="rounded-full bg-black px-3 py-1 text-[12px] text-ph-ink-muted border border-ph-line transition-colors hover:bg-ph-surface-2 hover:text-ph-green disabled:opacity-40"
               >
                 + {skill}
               </button>
@@ -257,29 +256,29 @@ export default function QuickSetupPage() {
         <AnimatePresence>
           {canContinue && (
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-              <Panel tone="muted" className="mt-4">
+              <Panel tone="muted" padding="sm" className="mt-3">
                 <div className="flex items-center gap-2">
-                  <Check size={15} strokeWidth={3} className="text-accent-text" />
+                  <Check size={15} strokeWidth={3} className="text-ph-green" />
                   <PanelTitle>Interview preview</PanelTitle>
                 </div>
-                <dl className="mt-3 space-y-1.5 text-small">
+                <dl className="mt-3 space-y-1.5 text-[13px]">
                   <div className="flex gap-2">
-                    <dt className="w-24 shrink-0 text-ink-subtle">Experience</dt>
-                    <dd className="text-ink-muted">
+                    <dt className="w-24 shrink-0 text-ph-ink-soft">Experience</dt>
+                    <dd className="text-ph-ink">
                       {EXPERIENCE_OPTIONS.find((e) => e.id === experience)?.sublabel} (
                       {EXPERIENCE_OPTIONS.find((e) => e.id === experience)?.label})
                     </dd>
                   </div>
                   <div className="flex gap-2">
-                    <dt className="w-24 shrink-0 text-ink-subtle">Difficulty</dt>
-                    <dd className="text-ink-muted">
+                    <dt className="w-24 shrink-0 text-ph-ink-soft">Difficulty</dt>
+                    <dd className="text-ph-ink">
                       {DIFFICULTY_OPTIONS.find((d) => d.id === difficulty)?.label} —{" "}
                       {DIFFICULTY_OPTIONS.find((d) => d.id === difficulty)?.description}
                     </dd>
                   </div>
                   <div className="flex gap-2">
-                    <dt className="w-24 shrink-0 text-ink-subtle">Skills</dt>
-                    <dd className="text-ink-muted">{skills.join(", ")}</dd>
+                    <dt className="w-24 shrink-0 text-ph-ink-soft">Skills</dt>
+                    <dd className="text-ph-ink">{skills.join(", ")}</dd>
                   </div>
                 </dl>
               </Panel>
@@ -287,7 +286,7 @@ export default function QuickSetupPage() {
           )}
         </AnimatePresence>
 
-        <div className="mt-8 flex justify-end">
+        <div className="mt-5 flex justify-end">
           <Button size="lg" disabled={!canContinue || isLoading} onClick={handleContinue}>
             {isLoading ? (
               <>
@@ -302,25 +301,9 @@ export default function QuickSetupPage() {
         </div>
 
         {error && (
-          <div
-            role="alert"
-            className="mt-4 flex items-start gap-3 rounded-lg border border-danger/30 bg-danger-soft p-4"
-          >
-            <AlertCircle size={16} className="mt-0.5 shrink-0 text-danger" />
-            <div className="flex-1">
-              <p className="text-small font-medium text-danger">Something went wrong</p>
-              <p className="mt-0.5 text-small text-ink-muted">{error}</p>
-            </div>
-            <button
-              onClick={clearError}
-              aria-label="Dismiss"
-              className="text-ink-subtle transition-colors hover:text-ink"
-            >
-              ×
-            </button>
-          </div>
+          <ErrorAlert className="mt-4" title="Something went wrong" message={error} onDismiss={clearError} />
         )}
       </div>
-    </div>
+    </StPage>
   );
 }

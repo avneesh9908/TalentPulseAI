@@ -7,23 +7,31 @@
  * Claims on this page must be things the product actually does. The previous
  * version advertised invented traction numbers and testimonials; those are
  * gone until there is real data to cite.
+ *
+ * UI: the phosphor-terminal design (2026-09-24) — black page, one phosphor
+ * accent, mono micro-type, numbered sections. Patterns P1–P15 of
+ * `docs/REFERENCE-TEARDOWN-phosphor.md`; restyle only. Every word below is the
+ * page's own copy (see docs/backup/landing-before-phosphor.tsx.txt). Dark-only
+ * by design.
  */
+import type { ComponentType } from "react";
 import {
   ArrowRight, Mic, Briefcase, FileText, Target, BarChart3, Building2,
-  ShieldCheck, Video, ListChecks, Sparkles, Gauge, PlayCircle, ChevronDown,
+  ShieldCheck, Video, ListChecks, Sparkles, Gauge, PlayCircle,
+  FileSearch, UserCheck,
 } from "lucide-react";
-import SiteHeader from "@/components/landing/site-header";
-import SiteFooter from "@/components/landing/site-footer";
-import { ProductFrame } from "@/components/landing/product-frame";
-import { ProductStack } from "@/components/landing/product-stack";
-import { HERO_PLANES } from "@/components/landing/product-planes";
-import { Section, SectionHeading } from "@/components/ui/section";
-import { Panel } from "@/components/ui/panel";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import PhosSiteHeader from "@/components/landing/phos-site-header";
+import PhosSiteFooter from "@/components/landing/phos-site-footer";
+import { AccordionRow, BracketCard, CtaBand, GlyphBand, SectionHead, WindowFrame } from "@/components/phos";
+import {
+  PH_BODY, PH_BODY_SM, PH_BTN_GHOST, PH_BTN_PRIMARY, PH_BTN_TERM, PH_CARD,
+  PH_DISPLAY, PH_H3, PH_LINK_MONO, PH_MONO, PH_MONO_RAW,
+} from "@/components/phos/tokens";
 import { Reveal } from "@/components/motion/reveal";
 import tourInterview from "@/assets/landing/tour-interview.svg";
 import tourResults from "@/assets/landing/tour-results.svg";
+
+type Icon = ComponentType<{ size?: number; className?: string }>;
 
 const NAV_ITEMS = [
   { id: "practice", label: "Practice", href: "/practice" },
@@ -33,21 +41,39 @@ const NAV_ITEMS = [
 ];
 
 /**
+ * The top strip. Every line is a fragment of a claim made further down the
+ * page — nothing here is a new promise, and no traction numbers appear.
+ */
+const TICKER = [
+  "Free while in beta",
+  "No card, no sales call",
+  "Resume-aware questions",
+  "Voice and video answers",
+  "Personal details stripped",
+  "Career pages, not job boards",
+  "Per-question feedback",
+  "The agent never applies for you",
+];
+
+/**
  * The row under the hero. Each line is a claim the rest of the page has to keep,
  * which is why the third one is a limit rather than a feature.
  */
-const HERO_POINTS = [
+const HERO_POINTS: { title: string; desc: string; icon: Icon }[] = [
   {
     title: "Scored against the role",
     desc: "Questions come from your resume and the role you pick, not a generic bank.",
+    icon: FileSearch,
   },
   {
     title: "A report you can act on",
     desc: "Every answer gets the signals expected and what was missing.",
+    icon: ListChecks,
   },
   {
     title: "The agent never applies for you",
     desc: "It finds and ranks openings. You decide what to send.",
+    icon: UserCheck,
   },
 ];
 
@@ -129,251 +155,264 @@ const FAQ = [
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-canvas text-ink">
-      {/* Announcement bar — the one place a claim about price lives. */}
-      <div className="border-b border-border bg-surface">
-        <div className="wrap flex items-center justify-center gap-2 py-2 text-small text-ink-muted">
-          <Badge tone="accent" size="sm">Beta</Badge>
-          <span className="truncate">Free while in beta — no card, no sales call.</span>
-        </div>
-      </div>
+    <div className="relative min-h-screen bg-ph-bg font-st-body text-ph-ink antialiased selection:bg-ph-green selection:text-black">
+      <PhosSiteHeader navItems={NAV_ITEMS} tickerItems={TICKER} />
 
-      <SiteHeader navItems={NAV_ITEMS} />
-
-      {/* ── Hero (design doc 3a) ── */}
-      <section className="border-b border-border">
-        <div className="wrap grid items-center gap-12 py-20 md:py-28 lg:grid-cols-2 lg:gap-16">
-          <Reveal y={16}>
-            <h1 className="max-w-xl text-balance text-display font-semibold text-ink">
-              Transform your career profile into high-fidelity signal.
-            </h1>
-            <p className="mt-6 max-w-md text-pretty text-lead text-ink-muted">
-              Mock interviews built from your own resume and scored against the role you're
-              targeting, plus a job agent that ranks real openings. Personal details are stripped
-              before anything is indexed.
-            </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Button asChild size="lg">
-                <a href="/auth/register">Get started for free</a>
-              </Button>
-              <Button asChild size="lg" variant="secondary">
-                <a href="/demo">
-                  <PlayCircle /> Try the demo
-                </a>
-              </Button>
-            </div>
-          </Reveal>
-
-          <Reveal delay={0.1}>
-            <ProductStack
-              variant="layered"
-              planes={HERO_PLANES}
-              label="Three layered panels of the product: a report scoring an answer 88 out of 100 in front, a dark live-interview session with a question and a running transcript behind it, and the parsed sections of a resume behind that."
-            />
-          </Reveal>
-        </div>
-
-        {/* The three claims the hero makes, stated plainly. */}
-        <div className="wrap pb-16 md:pb-20">
-          <dl className="grid gap-8 border-t border-border pt-8 sm:grid-cols-3">
-            {HERO_POINTS.map((point) => (
-              <div key={point.title}>
-                {/* A 2px accent rule per claim — the row was three paragraphs with
-                    nothing marking where one ended and the next began. */}
-                <span aria-hidden="true" className="mb-4 block h-0.5 w-6 rounded-full bg-accent" />
-                <dt className="text-h4 font-semibold text-ink">{point.title}</dt>
-                <dd className="mt-1.5 text-pretty text-small text-ink-muted">{point.desc}</dd>
+      <main className="relative w-full overflow-hidden pt-[104px]">
+        {/* ── Hero ── */}
+        <section className="ph-grid relative w-full overflow-hidden border-b border-ph-line">
+          <div aria-hidden="true" className="ph-scan pointer-events-none absolute inset-0" />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -left-40 top-0 h-[520px] w-[520px] rounded-full bg-ph-green/[0.07] blur-[140px]"
+          />
+          <div className="ph-wrap relative z-10 grid gap-14 py-20 md:py-28 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
+            <Reveal>
+              {/* Announcement — the one place a claim about price lives. */}
+              <div className="mb-8 inline-flex items-center gap-2.5 rounded-full border border-ph-green/40 bg-ph-green/[0.06] px-3.5 py-1.5">
+                <span className={`${PH_MONO} text-ph-green`}>Beta</span>
+                <span aria-hidden="true" className="h-3 w-px bg-ph-green/30" />
+                <span className={`${PH_MONO} text-ph-ink-muted`}>
+                  Free while in beta — no card, no sales call.
+                </span>
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-ph-green shadow-[0_0_8px_#00ff41]" />
               </div>
-            ))}
-          </dl>
-        </div>
-      </section>
 
-      {/* ── The divide — pick your side ── */}
-      <Section id="sides">
-        <Reveal>
-          <SectionHeading
-            eyebrow="Two products, one account"
-            title="Pick your side"
-            subtitle="Start on either one. The same resume drives both, and you can switch whenever you want."
-            align="center"
-          />
-        </Reveal>
+              <h1 className={`${PH_DISPLAY} mb-6 max-w-[16ch] text-balance text-ph-ink`}>
+                Transform your career profile into{" "}
+                <span className="ph-glow text-ph-green">high-fidelity signal.</span>
+              </h1>
 
-        <div className="mt-12 grid gap-5 lg:grid-cols-2">
-          {SIDES.map((side, i) => {
-            const Icon = side.icon;
-            return (
-              <Reveal key={side.id} delay={i * 0.08}>
-                <Panel tone="raised" padding="lg" className="flex h-full flex-col">
-                  <p className="overline">{side.eyebrow}</p>
-                  <span className="mt-4 flex h-10 w-10 items-center justify-center rounded-md bg-accent-soft text-accent-text">
-                    <Icon size={19} />
-                  </span>
-                  <h3 className="mt-4 text-h2 font-semibold text-ink">{side.title}</h3>
-                  <p className="mt-2 text-body text-ink-muted">{side.tagline}</p>
+              <p className={`${PH_BODY} mb-10 max-w-[62ch] text-pretty`}>
+                Mock interviews built from your own resume and scored against the role you're
+                targeting, plus a job agent that ranks real openings. Personal details are stripped
+                before anything is indexed.
+              </p>
 
-                  <ul className="mt-5 space-y-2.5">
-                    {side.points.map((point) => (
-                      <li key={point} className="flex gap-2.5 text-body text-ink-muted">
-                        <span aria-hidden="true" className="mt-2 h-1 w-1 shrink-0 rounded-full bg-accent" />
-                        {point}
-                      </li>
-                    ))}
-                  </ul>
-
-                  <ProductFrame
-                    src={side.art}
-                    alt={`${side.title} screen`}
-                    caption={side.caption}
-                    className="mt-6 shadow-e1"
-                  />
-
-                  <div className="mt-6 pt-1">
-                    <Button asChild variant="secondary">
-                      <a href={side.href}>
-                        {side.cta} <ArrowRight />
-                      </a>
-                    </Button>
-                  </div>
-                </Panel>
-              </Reveal>
-            );
-          })}
-        </div>
-      </Section>
-
-      {/* ── Shared flow ── */}
-      <Section id="how" tone="muted">
-        <Reveal>
-          <SectionHeading
-            eyebrow="How it works"
-            title="One resume, both engines"
-            subtitle="Upload once. Practice and job matching run off the same indexed profile."
-            align="center"
-          />
-        </Reveal>
-
-        <ol className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {FLOW.map((step, i) => {
-            const Icon = step.icon;
-            return (
-              <Reveal key={step.title} delay={i * 0.06}>
-                <Panel className="h-full">
-                  <div className="flex items-center justify-between">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-md bg-accent-soft text-accent-text">
-                      <Icon size={17} />
-                    </span>
-                    <span className="text-overline font-semibold text-ink-subtle">
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
-                  </div>
-                  <h3 className="mt-4 text-h4 font-semibold text-ink">{step.title}</h3>
-                  <p className="mt-1.5 text-small text-ink-muted">{step.desc}</p>
-                </Panel>
-              </Reveal>
-            );
-          })}
-        </ol>
-      </Section>
-
-      {/* ── What you actually get (replaces the invented stat row) ── */}
-      <Section id="capabilities">
-        <Reveal>
-          <SectionHeading
-            eyebrow="What you actually get"
-            title="Specific things the product does"
-            subtitle="No traction numbers we can't show you — just what happens after you upload a resume."
-            align="center"
-          />
-        </Reveal>
-
-        <div className="mt-12 grid gap-x-8 gap-y-9 sm:grid-cols-2 lg:grid-cols-3">
-          {CAPABILITIES.map((item, i) => {
-            const Icon = item.icon;
-            return (
-              <Reveal key={item.title} delay={(i % 3) * 0.06}>
-                <div className="flex gap-3.5">
-                  {/* 36px, matching the FLOW tiles — the neutral fill is the
-                      deliberate part of the ramp, the odd size was not. */}
-                  <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border bg-surface text-ink-muted">
-                    <Icon size={17} />
-                  </span>
-                  <div>
-                    <h3 className="text-h4 font-semibold text-ink">{item.title}</h3>
-                    <p className="mt-1 text-small text-ink-muted">{item.desc}</p>
-                  </div>
-                </div>
-              </Reveal>
-            );
-          })}
-        </div>
-      </Section>
-
-      {/* ── FAQ ── */}
-      <Section id="faq" tone="muted">
-        <div className="grid gap-10 lg:grid-cols-[1fr_1.3fr]">
-          <Reveal>
-            <SectionHeading
-              eyebrow="FAQ"
-              title="Straight answers"
-              subtitle="The four things people ask before signing up."
-            />
-          </Reveal>
-          <Reveal delay={0.08}>
-            <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-canvas">
-              {FAQ.map((item) => (
-                <details key={item.q} className="group">
-                  {/* The affordance is a chevron rather than a rotating "+", and the
-                      whole row is the hit area — a 4-line summary previously had a
-                      target only as tall as its text. */}
-                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 text-body font-medium text-ink transition-colors hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent/70">
-                    {item.q}
-                    <ChevronDown
-                      aria-hidden="true"
-                      size={16}
-                      className="shrink-0 text-ink-subtle transition-transform duration-200 group-open:-rotate-180"
-                    />
-                  </summary>
-                  <p className="px-5 pb-4 text-pretty text-small text-ink-muted">{item.a}</p>
-                </details>
-              ))}
-            </div>
-          </Reveal>
-        </div>
-      </Section>
-
-      {/* ── CTA ── */}
-      <Section>
-        <Reveal>
-          <Panel tone="muted" padding="lg" className="text-center">
-            <h2 className="mx-auto max-w-xl text-h1 font-semibold text-ink">
-              Start on either side
-            </h2>
-            <p className="mx-auto mt-3 max-w-lg text-lead text-ink-muted">
-              One free account unlocks both. Practice tonight, apply tomorrow.
-            </p>
-            <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
-              <Button asChild size="lg">
-                <a href="/auth/register">
-                  Create a free account <ArrowRight />
+              <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+                <a href="/auth/register" className={`${PH_BTN_PRIMARY} w-full sm:w-auto`}>
+                  Get started for free <ArrowRight size={18} />
                 </a>
-              </Button>
-              <Button asChild size="lg" variant="secondary">
-                <a href="/demo">Try the demo</a>
-              </Button>
-            </div>
-            <p className="mt-4 text-small text-ink-subtle">
-              Already have an account?{" "}
-              <a href="/auth/login" className="text-accent-text underline-offset-4 hover:underline">
-                Log in
-              </a>
-            </p>
-          </Panel>
-        </Reveal>
-      </Section>
+                <a href="/demo" className={`${PH_BTN_GHOST} w-full sm:w-auto`}>
+                  <PlayCircle size={18} className="text-ph-green" /> Try the demo
+                </a>
+                <span className={PH_BTN_TERM}>
+                  <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-ph-green" />
+                  Personal details stripped
+                </span>
+              </div>
+            </Reveal>
 
-      <SiteFooter />
+            <Reveal delay={0.1}>
+              <WindowFrame caption="Live interview">
+                <img
+                  src={tourInterview}
+                  alt="Live interview screen with the question, camera and timer"
+                  className="ph-tint block w-full object-cover"
+                />
+              </WindowFrame>
+            </Reveal>
+          </div>
+
+          {/* The three claims the hero makes, stated plainly. */}
+          <div className="ph-wrap relative z-10 pb-20">
+            <dl className="grid grid-cols-1 gap-px bg-ph-line md:grid-cols-3">
+              {HERO_POINTS.map((point) => (
+                <div key={point.title} className="bg-black p-6">
+                  <dt className="mb-2 flex items-center gap-2.5">
+                    <point.icon size={16} className="text-ph-green" />
+                    <span className="font-st-display text-[15px] font-medium text-ph-ink">
+                      {point.title}
+                    </span>
+                  </dt>
+                  <dd className={`${PH_BODY_SM} text-pretty`}>{point.desc}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        </section>
+
+        {/* ── The divide — pick your side ── */}
+        <section id="sides" className="ph-section scroll-mt-28">
+          <div className="ph-wrap">
+            <SectionHead
+              index="01"
+              eyebrow="Two products, one account"
+              title="Pick your side"
+              subtitle="Start on either one. The same resume drives both, and you can switch whenever you want."
+            />
+            <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-2">
+              {SIDES.map((side, i) => {
+                const SideIcon = side.icon;
+                return (
+                  <Reveal key={side.id} delay={i * 0.08} className={`${PH_CARD} flex flex-col p-6 sm:p-8`}>
+                    <div className="mb-6 flex items-center gap-3 border-b border-ph-line pb-6">
+                      <span className="flex h-10 w-10 items-center justify-center rounded-[12px] border border-ph-green/30 bg-ph-green/[0.06] text-ph-green">
+                        <SideIcon size={18} />
+                      </span>
+                      <div>
+                        <p className={`${PH_MONO} text-ph-green`}>{side.eyebrow}</p>
+                        <h3 className="mt-1 font-st-display text-[22px] font-semibold leading-7 text-ph-ink">
+                          {side.title}
+                        </h3>
+                      </div>
+                    </div>
+
+                    <p className={PH_BODY}>{side.tagline}</p>
+
+                    <ul className="mt-5 space-y-2.5">
+                      {side.points.map((point) => (
+                        <li key={point} className="flex items-start gap-2.5">
+                          <span aria-hidden="true" className="mt-[7px] h-1.5 w-1.5 shrink-0 rotate-45 bg-ph-green" />
+                          <span className={`${PH_MONO_RAW} leading-[1.7] text-ph-ink-muted`}>{point}</span>
+                        </li>
+                      ))}
+                    </ul>
+
+                    <div className="mt-7">
+                      <WindowFrame caption={side.caption}>
+                        <img
+                          src={side.art}
+                          alt={`${side.title} screen`}
+                          loading="lazy"
+                          className="ph-tint block w-full object-cover"
+                        />
+                      </WindowFrame>
+                    </div>
+
+                    <div className="mt-7">
+                      <a href={side.href} className={PH_LINK_MONO}>
+                        {side.cta} <ArrowRight size={14} />
+                      </a>
+                    </div>
+                  </Reveal>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        <GlyphBand />
+
+        {/* ── Shared flow ── */}
+        <section id="how" className="ph-section scroll-mt-28">
+          <div className="ph-wrap">
+            <SectionHead
+              index="02"
+              eyebrow="How it works"
+              title="One resume, both engines"
+              subtitle="Upload once. Practice and job matching run off the same indexed profile."
+            />
+            <div className="relative">
+              {/* The track the four steps sit on. */}
+              <div
+                aria-hidden="true"
+                className="absolute left-0 right-0 top-[22px] hidden h-px bg-gradient-to-r from-transparent via-ph-green/45 to-transparent lg:block"
+              />
+              <ol className="relative grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+                {FLOW.map((step, i) => {
+                  const StepIcon = step.icon;
+                  return (
+                    <Reveal key={step.title} delay={i * 0.06} className="relative">
+                      <div className="mb-6 flex items-center justify-between">
+                        <span className="flex h-11 w-11 items-center justify-center rounded-full border border-ph-green/40 bg-black font-ph-mono text-[13px] text-ph-green shadow-[0_0_18px_rgba(0,255,65,0.18)]">
+                          {String(i + 1).padStart(2, "0")}
+                        </span>
+                        <StepIcon size={16} className="text-ph-ink-soft" />
+                      </div>
+                      <h3 className={`${PH_H3} mb-2 text-ph-ink`}>{step.title}</h3>
+                      <p className={PH_BODY_SM}>{step.desc}</p>
+                    </Reveal>
+                  );
+                })}
+              </ol>
+            </div>
+          </div>
+        </section>
+
+        {/* ── What you actually get ── */}
+        <section id="capabilities" className="ph-section-tight">
+          <div className="ph-wrap">
+            <SectionHead
+              index="03"
+              eyebrow="What you actually get"
+              title="Specific things the product does"
+              subtitle="No traction numbers we can't show you — just what happens after you upload a resume."
+            />
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {CAPABILITIES.map((item, i) => {
+                const ItemIcon = item.icon;
+                return (
+                  <Reveal key={item.title} delay={(i % 3) * 0.06}>
+                    <BracketCard className="h-full">
+                      <ItemIcon size={18} className="mb-5 text-ph-green" />
+                      <h3 className="mb-2 font-st-display text-[17px] font-medium leading-6 text-ph-ink">
+                        {item.title}
+                      </h3>
+                      <p className={PH_BODY_SM}>{item.desc}</p>
+                    </BracketCard>
+                  </Reveal>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        <GlyphBand rows={2} />
+
+        {/* ── FAQ ── */}
+        <section id="faq" className="ph-section-tight scroll-mt-28">
+          <div className="ph-wrap grid gap-10 lg:grid-cols-[1fr_1.35fr]">
+            <Reveal>
+              <p className={`${PH_MONO} mb-6 text-ph-green`}>
+                <span className="text-ph-ink-soft">04</span>
+                <span className="px-2 text-ph-ink-soft">/</span>
+                FAQ
+              </p>
+              <h2 className="font-st-display text-[clamp(1.75rem,3.4vw,2.75rem)] font-semibold leading-[1.08] tracking-[-0.028em] text-ph-ink">
+                Straight answers
+              </h2>
+              <p className={`${PH_BODY} mt-4 max-w-md`}>The four things people ask before signing up.</p>
+            </Reveal>
+            <Reveal delay={0.08} className="border-t border-ph-line">
+              {FAQ.map((item) => (
+                <AccordionRow key={item.q} q={item.q} a={item.a} />
+              ))}
+            </Reveal>
+          </div>
+        </section>
+
+        {/* ── CTA ── */}
+        <section className="ph-section-tight">
+          <div className="ph-wrap">
+            <Reveal>
+              <CtaBand
+                index="05"
+                eyebrow="Get started"
+                title="Start on either side"
+                desc="One free account unlocks both. Practice tonight, apply tomorrow."
+                footnote={
+                  <p className={PH_BODY_SM}>
+                    Already have an account?{" "}
+                    <a href="/auth/login" className="text-ph-green underline-offset-4 hover:underline">
+                      Log in
+                    </a>
+                  </p>
+                }
+              >
+                <a href="/auth/register" className={`${PH_BTN_PRIMARY} w-full sm:w-auto`}>
+                  Create a free account <ArrowRight size={18} />
+                </a>
+                <a href="/demo" className={`${PH_BTN_GHOST} w-full sm:w-auto`}>
+                  Try the demo
+                </a>
+              </CtaBand>
+            </Reveal>
+          </div>
+        </section>
+      </main>
+
+      <PhosSiteFooter />
     </div>
   );
 }

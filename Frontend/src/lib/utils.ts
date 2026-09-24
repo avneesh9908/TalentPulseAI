@@ -2,20 +2,12 @@ import { clsx, type ClassValue } from "clsx"
 import { extendTailwindMerge } from "tailwind-merge"
 
 /**
- * tailwind-merge has to be told about our custom scales, or it guesses.
- * Without this it read `text-small` as a colour and silently dropped
- * `text-accent-fg` from every button — dark text on a violet fill.
+ * Plain tailwind-merge. It used to be extended with our custom `text-*` scale
+ * and `shadow-e*` ramp so it would not mistake `text-small` for a colour; both
+ * scales were removed with the legacy token system (2026-09-24), and the
+ * phosphor screens use arbitrary values (`text-[13px]`) instead.
  */
-const twMerge = extendTailwindMerge({
-  extend: {
-    classGroups: {
-      "font-size": [
-        { text: ["display", "h1", "h2", "h3", "h4", "lead", "body", "small", "overline"] },
-      ],
-      shadow: [{ shadow: ["e1", "e2", "e3", "e4", "e5"] }],
-    },
-  },
-})
+const twMerge = extendTailwindMerge({})
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))

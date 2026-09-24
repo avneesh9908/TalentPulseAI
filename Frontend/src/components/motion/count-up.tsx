@@ -6,20 +6,29 @@ interface CountUpProps {
   value: string;
   className?: string;
   duration?: number;
+  /**
+   * Animate as soon as the component mounts instead of waiting to be scrolled
+   * into view. Required for anything reporting a REAL metric: the display state
+   * starts at "0", so a scroll-gated counter below the fold sits there showing
+   * `0` — which reads as "you have none" rather than "not scrolled to yet".
+   * Marketing counters, which exist for the reveal, should leave this off.
+   */
+  startOnMount?: boolean;
 }
 
 /**
  * Counts the leading number of `value` up from 0 when scrolled into view.
  * Renders the static value under reduced motion or for non-numeric values.
  */
-export function CountUp({ value, className, duration = 1.4 }: CountUpProps) {
+export function CountUp({ value, className, duration = 1.4, startOnMount = false }: CountUpProps) {
   const match = /^(\d+(?:\.\d+)?)(.*)$/.exec(value);
   const target = match ? parseFloat(match[1]) : null;
   const decimals = match && match[1].includes(".") ? match[1].split(".")[1].length : 0;
   const suffix = match ? match[2] : "";
 
   const ref = useRef<HTMLSpanElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-40px" });
+  const scrolledIntoView = useInView(ref, { once: true, margin: "-40px" });
+  const inView = startOnMount || scrolledIntoView;
   const reduced = useReducedMotion();
   const animatable = target !== null && !reduced;
   const [display, setDisplay] = useState(() => "0" + suffix);

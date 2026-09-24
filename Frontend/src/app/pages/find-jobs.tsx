@@ -4,21 +4,21 @@
  *
  * The status table below is clearly labelled as an example: it is the only
  * fabricated data left on the marketing site, and it is marked as such.
+ *
+ * UI: the phosphor-terminal design (2026-09-24) — restyle only; every word is
+ * the page's own copy (docs/backup/find-jobs-before-phosphor.tsx.txt).
  */
 import {
   ArrowRight, Sparkles, Briefcase, Building2, Radar, ListChecks,
-  ShieldCheck, Clock, Layers,
+  ShieldCheck, Clock, Layers, Mic, Target,
 } from "lucide-react";
-import SiteHeader from "@/components/landing/site-header";
-import SiteFooter from "@/components/landing/site-footer";
-import { ProductFrame } from "@/components/landing/product-frame";
-import { ProductStack } from "@/components/landing/product-stack";
-import { JOBS_PLANES } from "@/components/landing/product-planes";
-import { Section, SectionHeading } from "@/components/ui/section";
-import { Panel } from "@/components/ui/panel";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { TableWrap, Table, Th, Td, Tr } from "@/components/ui/data-table";
+import PhosSiteHeader from "@/components/landing/phos-site-header";
+import PhosSiteFooter from "@/components/landing/phos-site-footer";
+import {
+  CtaBanner, CtaLink, Eyebrow, FeatureCard, LimitPanel, PhosHero, PhosPage, PhosSection, SectionIntro, StepTrack, WindowFrame,
+} from "@/components/landing/phos-marketing";
+import { GlyphBand } from "@/components/phos";
+import { PH_BODY, PH_BODY_SM, PH_LINK_MONO, PH_MONO, PH_MONO_RAW } from "@/components/phos/tokens";
 import { Reveal } from "@/components/motion/reveal";
 import tourDashboard from "@/assets/landing/tour-dashboard.svg";
 
@@ -27,6 +27,18 @@ const NAV_ITEMS = [
   { id: "features", label: "Features", href: "#features" },
   { id: "status", label: "Tracking", href: "#status" },
   { id: "practice", label: "Interview practice", href: "/practice" },
+];
+
+/** Top strip — every line is a fragment of a claim made further down the page. */
+const TICKER = [
+  "Straight from career pages",
+  "Ranked against your resume",
+  "Why it fits — and doesn't",
+  "Nothing is submitted for you",
+  "One status table",
+  "Many roles, one resume",
+  "Runs take up to two minutes",
+  "Free while in beta",
 ];
 
 const STEPS = [
@@ -72,267 +84,183 @@ const EXAMPLE_ROWS = [
   { company: "Globex", role: "Full-stack Developer", location: "Hybrid · Pune", match: 81, status: "New", tone: "accent" as const },
 ];
 
+/* Two colours only, so status is carried by weight and fill rather than hue. */
+const STATUS_TONE = {
+  success: "border-ph-green/50 bg-ph-green/10 text-ph-green",
+  warning: "border-ph-ink/30 bg-ph-ink/[0.06] text-ph-ink",
+  accent: "border-ph-line-bright bg-ph-surface text-ph-ink-muted",
+} as const;
+
 export default function FindJobsPage() {
   return (
-    <div className="min-h-screen bg-canvas text-ink">
-      <SiteHeader navItems={NAV_ITEMS} activeId="jobs" />
+    <PhosPage>
+      <PhosSiteHeader navItems={NAV_ITEMS} activeId="jobs" tickerItems={TICKER} />
 
-      {/* ── Hero (design doc 4b) ── */}
-      <section className="border-b border-border">
-        <div className="wrap grid items-center gap-10 py-16 md:py-20 lg:grid-cols-2 lg:gap-12">
-          <Reveal y={16}>
-            <p className="overline">Job agent</p>
-            <h1 className="mt-4 max-w-lg text-h1 font-semibold text-ink">
-              It finds the openings. You decide what to send.
-            </h1>
-            <p className="mt-5 max-w-md text-lead text-ink-muted">
-              Give it your resume and the roles you want. It scans company boards and ranks what it
-              finds against your actual experience, with the reason for every score.
-            </p>
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-              <Button asChild size="lg">
-                <a href="/jobs">
-                  <Briefcase /> Run a search
-                </a>
-              </Button>
-              <Button asChild size="lg" variant="secondary">
-                <a href="/practice">Want to practise first?</a>
-              </Button>
-            </div>
-            <p className="mt-5 text-small text-ink-subtle">
-              Free while in beta · Nothing is ever submitted without you
-            </p>
-          </Reveal>
+      <main className="relative w-full overflow-hidden">
+        {/* ── Hero ── */}
+        <PhosHero
+          eyebrow="Job agent"
+          title={
+            <>
+              It finds the openings.{" "}
+              <span className="ph-glow text-ph-green">You decide what to send.</span>
+            </>
+          }
+          lead="Give it your resume and the roles you want. It scans company boards and ranks what it finds against your actual experience, with the reason for every score."
+          actions={
+            <>
+              <CtaLink href="/jobs" icon={Briefcase}>
+                Run a search
+              </CtaLink>
+              <CtaLink href="/practice" variant="glass" icon={Mic}>
+                Want to practise first?
+              </CtaLink>
+            </>
+          }
+          note="Free while in beta · Nothing is ever submitted without you"
+        />
 
-          <Reveal delay={0.1}>
-            <ProductStack
-              planes={JOBS_PLANES}
-              label="A matches panel that has scanned six companies and found three new roles: a frontend engineer at Northwind scoring 86, and a platform engineer at Ravel scoring 61 with a note that it needs Kubernetes, which isn't on the resume."
-            />
-          </Reveal>
-        </div>
-      </section>
+        {/* ── What a run gives you ── */}
+        <PhosSection grid>
+          <SectionIntro index="01" eyebrow="What a run gives you" title="Ranked matches with a stated reason." />
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            {OUTCOMES.map((item, i) => (
+              <FeatureCard key={item.title} icon={[Target, ListChecks, Clock][i]} title={item.title} desc={item.desc} index={i} />
+            ))}
+          </div>
 
-      {/* ── What a run gives you ── */}
-      <Section tone="muted">
-        <Reveal>
-          <SectionHeading eyebrow="What a run gives you" title="Ranked matches with a stated reason." />
-        </Reveal>
-        <div className="mt-10 grid gap-6 sm:grid-cols-3">
-          {OUTCOMES.map((item, i) => (
-            <Reveal key={item.title} delay={i * 0.06}>
-              <div className="border-t-2 border-ink pt-4">
-                <h3 className="text-h4 font-semibold text-ink">{item.title}</h3>
-                <p className="mt-1.5 text-small text-ink-muted">{item.desc}</p>
-              </div>
-            </Reveal>
-          ))}
-        </div>
-
-        {/* The two limits, on the page rather than discovered later. */}
-        <Reveal>
-          <Panel tone="muted" padding="lg" className="mt-10 grid gap-8 lg:grid-cols-2">
-            <div>
-              <p className="overline">What it does not do</p>
-              <p className="mt-3 text-body text-ink">
+          {/* The two limits, on the page rather than discovered later. */}
+          <Reveal className="mt-14 grid gap-6 lg:grid-cols-2">
+            <LimitPanel icon={ShieldCheck} label="What it does not do">
+              <p>
                 The agent never submits an application, never contacts a company, and never sends
                 your resume to an employer. It reads public listings and ranks them.
               </p>
-            </div>
-            <div>
-              <p className="overline">Coverage is partial</p>
-              <p className="mt-3 text-body text-ink">
+            </LimitPanel>
+            <LimitPanel icon={Radar} label="Coverage is partial">
+              <p>
                 It scans the company boards on your target list, not the whole market, and it
                 reports how many it checked on every run.
               </p>
-            </div>
-          </Panel>
-        </Reveal>
-      </Section>
+            </LimitPanel>
+          </Reveal>
+        </PhosSection>
 
-      {/* ── How it works ── */}
-      <Section id="how">
-        <Reveal>
-          <SectionHeading
-            eyebrow="How the agent works"
-            title="Three steps to your first shortlist"
-            align="center"
-          />
-        </Reveal>
-        <div className="mt-12 grid gap-4 md:grid-cols-3">
-          {STEPS.map((step, i) => {
-            const Icon = step.icon;
-            return (
-              <Reveal key={step.title} delay={i * 0.07}>
-                <Panel className="h-full">
-                  <div className="flex items-center justify-between">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-md bg-accent-soft text-accent-text">
-                      <Icon size={17} />
-                    </span>
-                    <span className="text-overline font-semibold text-ink-subtle">
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
-                  </div>
-                  <h3 className="mt-4 text-h4 font-semibold text-ink">{step.title}</h3>
-                  <p className="mt-1.5 text-small text-ink-muted">{step.desc}</p>
-                </Panel>
-              </Reveal>
-            );
-          })}
-        </div>
-      </Section>
+        {/* ── How it works ── */}
+        <PhosSection id="how">
+          <SectionIntro index="02" eyebrow="How the agent works" title="Three steps to your first shortlist" />
+          <StepTrack steps={STEPS} columns={3} />
+        </PhosSection>
 
-      {/* ── Features ── */}
-      <Section id="features">
-        <Reveal>
-          <SectionHeading
-            eyebrow="Features"
-            title="Built for real hunting"
-            subtitle="Signal over noise on every run."
-            align="center"
-          />
-        </Reveal>
-        <div className="mt-12 grid gap-x-8 gap-y-9 sm:grid-cols-2 lg:grid-cols-3">
-          {FEATURES.map((item, i) => {
-            const Icon = item.icon;
-            return (
-              <Reveal key={item.title} delay={(i % 3) * 0.06}>
-                <div className="flex gap-3.5">
-                  <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border bg-surface text-ink-muted">
-                    <Icon size={16} />
-                  </span>
-                  <div>
-                    <h3 className="text-h4 font-semibold text-ink">{item.title}</h3>
-                    <p className="mt-1 text-small text-ink-muted">{item.desc}</p>
-                  </div>
-                </div>
-              </Reveal>
-            );
-          })}
-        </div>
-      </Section>
+        <GlyphBand rows={2} />
 
-      {/* ── Status tracking ── */}
-      <Section id="status" tone="muted">
-        <Reveal>
-          <SectionHeading
+        {/* ── Features ── */}
+        <PhosSection id="features" grid>
+          <SectionIntro index="03" eyebrow="Features" title="Built for real hunting" subtitle="Signal over noise on every run." />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {FEATURES.map((item, i) => (
+              <FeatureCard key={item.title} icon={item.icon} title={item.title} desc={item.desc} index={i} />
+            ))}
+          </div>
+        </PhosSection>
+
+        {/* ── Status tracking ── */}
+        <PhosSection id="status">
+          <SectionIntro
+            index="04"
             eyebrow="Tracking"
             title="Every application, tracked"
             subtitle="When the agent can't finish an application safely, it says why and hands you the link."
-            align="center"
           />
-        </Reveal>
 
-        <Reveal className="mt-10">
-          <div className="mb-3 flex items-center justify-center gap-2">
-            <Badge tone="outline" size="sm">Example</Badge>
-            <span className="text-small text-ink-subtle">
-              Illustrative rows — your table is filled by your own resume.
-            </span>
-          </div>
-          <TableWrap>
-            <Table>
-              <thead>
-                <tr>
-                  <Th>Company</Th>
-                  <Th>Role</Th>
-                  <Th className="hidden sm:table-cell">Location</Th>
-                  <Th>Match</Th>
-                  <Th>Status</Th>
-                </tr>
-              </thead>
-              <tbody>
-                {EXAMPLE_ROWS.map((row) => (
-                  <Tr key={row.company}>
-                    <Td className="font-medium">{row.company}</Td>
-                    <Td>{row.role}</Td>
-                    <Td className="hidden text-ink-muted sm:table-cell">{row.location}</Td>
-                    <Td className="tabular-nums font-medium">{row.match}%</Td>
-                    <Td>
-                      <Badge tone={row.tone} size="sm">{row.status}</Badge>
-                      {row.reason && (
-                        <p className="mt-1 text-small text-ink-subtle">{row.reason}</p>
-                      )}
-                    </Td>
-                  </Tr>
-                ))}
-              </tbody>
-            </Table>
-          </TableWrap>
-        </Reveal>
-
-        <div className="mt-6 grid gap-4 md:grid-cols-3">
-          {[
-            { icon: ShieldCheck, title: "No account bans", desc: "Nothing is submitted behind your back." },
-            { icon: Clock, title: "Runs between visits", desc: "New matches are waiting the next time you open it." },
-            { icon: Building2, title: "Straight from the source", desc: "Company hiring APIs, not scrapers." },
-          ].map((item, i) => {
-            const Icon = item.icon;
-            return (
-              <Reveal key={item.title} delay={i * 0.06}>
-                <Panel className="h-full">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-md bg-accent-soft text-accent-text">
-                    <Icon size={17} />
-                  </span>
-                  <h3 className="mt-4 text-h4 font-semibold text-ink">{item.title}</h3>
-                  <p className="mt-1.5 text-small text-ink-muted">{item.desc}</p>
-                </Panel>
-              </Reveal>
-            );
-          })}
-        </div>
-      </Section>
-
-      {/* ── Product view ── */}
-      <Section>
-        <div className="grid items-center gap-10 lg:grid-cols-2">
           <Reveal>
-            <SectionHeading
-              eyebrow="Inside the product"
-              title="One table for the whole hunt"
-              subtitle="Filter by status, open the real application page, and mark what you have done. The agent keeps the list current."
-            />
-            <Button asChild className="mt-6">
-              <a href="/jobs">
-                Open the job agent <ArrowRight />
-              </a>
-            </Button>
-          </Reveal>
-          <Reveal delay={0.08}>
-            <ProductFrame
-              src={tourDashboard}
-              alt="The job matches table inside the product"
-              caption="talentpulse.ai / jobs"
-            />
-          </Reveal>
-        </div>
-      </Section>
-
-      {/* ── CTA ── */}
-      <Section tone="muted">
-        <Reveal>
-          <Panel tone="raised" padding="lg" className="text-center">
-            <h2 className="mx-auto max-w-xl text-h1 font-semibold text-ink">
-              Your next role is already posted
-            </h2>
-            <p className="mx-auto mt-3 max-w-lg text-lead text-ink-muted">
-              Point the agent at it — then rehearse that exact interview on the other side.
-            </p>
-            <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
-              <Button asChild size="lg">
-                <a href="/jobs">
-                  Start job search <ArrowRight />
-                </a>
-              </Button>
-              <Button asChild size="lg" variant="secondary">
-                <a href="/practice">Practice an interview</a>
-              </Button>
+            <div className="mb-4 flex flex-wrap items-center gap-3">
+              <span className={`${PH_MONO} rounded-full border border-ph-green/45 px-2.5 py-1 text-ph-green`}>
+                Example
+              </span>
+              <span className={PH_BODY_SM}>Illustrative rows — your table is filled by your own resume.</span>
             </div>
-          </Panel>
-        </Reveal>
-      </Section>
+            <div className="overflow-x-auto rounded-[16px] border border-ph-line-strong bg-ph-surface">
+              <table className="w-full text-left text-[13px]">
+                <thead className={`${PH_MONO} border-b border-ph-line text-ph-ink-soft`}>
+                  <tr>
+                    <th className="px-5 py-3.5 font-medium">Company</th>
+                    <th className="px-5 py-3.5 font-medium">Role</th>
+                    <th className="hidden px-5 py-3.5 font-medium sm:table-cell">Location</th>
+                    <th className="px-5 py-3.5 font-medium">Match</th>
+                    <th className="px-5 py-3.5 font-medium">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-ph-line">
+                  {EXAMPLE_ROWS.map((row) => (
+                    <tr key={row.company} className="align-top">
+                      <td className="px-5 py-4 font-medium text-ph-ink">{row.company}</td>
+                      <td className="px-5 py-4 text-ph-ink-muted">{row.role}</td>
+                      <td className={`${PH_MONO_RAW} hidden px-5 py-4 text-ph-ink-soft sm:table-cell`}>{row.location}</td>
+                      <td className="tnum px-5 py-4 font-st-display text-[16px] font-semibold text-ph-green">{row.match}%</td>
+                      <td className="px-5 py-4">
+                        <span
+                          className={`inline-block rounded-full border px-2.5 py-0.5 font-ph-mono text-[10px] uppercase tracking-[0.12em] ${STATUS_TONE[row.tone]}`}
+                        >
+                          {row.status}
+                        </span>
+                        {row.reason && <p className={`${PH_MONO_RAW} mt-1.5 text-ph-ink-soft`}>{row.reason}</p>}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Reveal>
 
-      <SiteFooter />
-    </div>
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
+            {[
+              { icon: ShieldCheck, title: "No account bans", desc: "Nothing is submitted behind your back." },
+              { icon: Clock, title: "Runs between visits", desc: "New matches are waiting the next time you open it." },
+              { icon: Building2, title: "Straight from the source", desc: "Company hiring APIs, not scrapers." },
+            ].map((item, i) => (
+              <FeatureCard key={item.title} icon={item.icon} title={item.title} desc={item.desc} index={i} />
+            ))}
+          </div>
+        </PhosSection>
+
+        {/* ── Product view ── */}
+        <PhosSection grid>
+          <div className="grid items-center gap-10 lg:grid-cols-2">
+            <Reveal>
+              <Eyebrow>Inside the product</Eyebrow>
+              <h2 className="mt-2 font-st-display text-[clamp(1.75rem,3.4vw,2.75rem)] font-semibold leading-[1.08] tracking-[-0.028em] text-ph-ink">
+                One table for the whole hunt
+              </h2>
+              <p className={`${PH_BODY} mt-4 max-w-[52ch]`}>
+                Filter by status, open the real application page, and mark what you have done. The agent keeps the list current.
+              </p>
+              <a href="/jobs" className={`${PH_LINK_MONO} mt-7`}>
+                Open the job agent <ArrowRight size={14} />
+              </a>
+            </Reveal>
+            <Reveal delay={0.08}>
+              <WindowFrame src={tourDashboard} alt="The job matches table inside the product" caption="talentpulse.ai / jobs" />
+            </Reveal>
+          </div>
+        </PhosSection>
+
+        {/* ── CTA ── */}
+        <CtaBanner
+          title="Your next role is already posted"
+          text="Point the agent at it — then rehearse that exact interview on the other side."
+          actions={
+            <>
+              <CtaLink href="/jobs">Start job search</CtaLink>
+              <CtaLink href="/practice" variant="glass">
+                Practice an interview
+              </CtaLink>
+            </>
+          }
+        />
+      </main>
+
+      <PhosSiteFooter />
+    </PhosPage>
   );
 }

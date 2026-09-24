@@ -1,0 +1,251 @@
+/**
+ * Job Search product page — the parallel of practice.tsx (the interview
+ * product page). Same shell, same design language, job-side content.
+ *
+ * The status table below is clearly labelled as an example: it is the only
+ * fabricated data left on the marketing site, and it is marked as such.
+ *
+ * UI: Stitch "Galaxy Theme" (2026-09-24) — restyle only; every word is the
+ * page's own copy (docs/backup/find-jobs-before-stitch.tsx.txt).
+ */
+import {
+  ArrowRight, Sparkles, Briefcase, Building2, Radar, ListChecks,
+  ShieldCheck, Clock, Layers, Mic, Target,
+} from "lucide-react";
+import StitchSiteHeader from "@/components/landing/stitch-site-header";
+import StitchSiteFooter from "@/components/landing/stitch-site-footer";
+import {
+  CtaBanner, CtaLink, Eyebrow, FeatureCard, GalaxyHero, GalaxyPage, GalaxySection, SectionIntro, StepTrack, WindowFrame,
+} from "@/components/landing/stitch-marketing";
+import { Reveal } from "@/components/motion/reveal";
+import tourDashboard from "@/assets/landing/tour-dashboard.svg";
+
+const NAV_ITEMS = [
+  { id: "how", label: "How it works", href: "#how" },
+  { id: "features", label: "Features", href: "#features" },
+  { id: "status", label: "Tracking", href: "#status" },
+  { id: "practice", label: "Interview practice", href: "/practice" },
+];
+
+const STEPS = [
+  { icon: Sparkles, title: "Set your targets", desc: "We read your resume and suggest the roles you qualify for — edit them, or add a role you're switching into." },
+  { icon: Radar, title: "The agent scans", desc: "It reads company career pages directly through their hiring APIs — the source, not a stale aggregator." },
+  { icon: ListChecks, title: "You review and apply", desc: "Every match is ranked against your resume with the reasons why. Open the real application, and track the rest." },
+];
+
+/**
+ * What one run actually hands back, per design doc 4b. The doc's third card
+ * promised per-company progress and that you could leave the page; a run is a
+ * single synchronous request, so both are corrected here. Its "closed" status is
+ * also renamed to `dismissed`, which is the status the API really writes.
+ */
+const OUTCOMES = [
+  {
+    title: "A score you can argue with",
+    desc: "Each match names the skills it matched and the ones it could not find.",
+  },
+  {
+    title: "Status you control",
+    desc: "Mark anything reviewed, applied or dismissed. Nothing changes on its own.",
+  },
+  {
+    title: "Runs take up to two minutes",
+    desc: "A run reports how many company boards it checked. Keep the page open while it works.",
+  },
+];
+
+const FEATURES = [
+  { icon: Layers, title: "Resume-ranked matching", desc: "Each opening is scored against your indexed experience, not against keyword overlap." },
+  { icon: Building2, title: "Straight from career pages", desc: "Roles come from company job boards through their own APIs, so you see them first-hand." },
+  { icon: ListChecks, title: "Why it fits — and doesn't", desc: "Matches carry the specific strengths and the gaps you would need to cover." },
+  { icon: ShieldCheck, title: "Assisted, never reckless", desc: "Nothing is ever submitted on your behalf. The agent prepares; you press submit." },
+  { icon: Briefcase, title: "One status table", desc: "New, reviewed, pending, applied, dismissed — the whole hunt in a single view." },
+  { icon: Clock, title: "Many roles, one resume", desc: "Target backend and frontend at the same time and see matches for each side by side." },
+];
+
+/** Illustrative only — labelled in the UI so it can't be read as real traction. */
+const EXAMPLE_ROWS = [
+  { company: "Acme Corp", role: "Senior Python Developer", location: "Remote", match: 92, status: "Applied", tone: "success" as const },
+  { company: "Northwind", role: "Backend Engineer", location: "Bengaluru", match: 87, status: "Pending", tone: "warning" as const, reason: "Login wall — finish this one manually" },
+  { company: "Globex", role: "Full-stack Developer", location: "Hybrid · Pune", match: 81, status: "New", tone: "accent" as const },
+];
+
+const STATUS_TONE = {
+  success: "bg-st-tertiary-container/30 text-st-tertiary",
+  warning: "bg-[#ffb95f]/15 text-[#ffb95f]",
+  accent: "bg-st-primary-container/25 text-st-primary",
+} as const;
+
+export default function FindJobsPage() {
+  return (
+    <GalaxyPage>
+      <StitchSiteHeader navItems={NAV_ITEMS} activeId="jobs" />
+
+      <main className="relative w-full overflow-hidden">
+        {/* ── Hero ── */}
+        <GalaxyHero
+          eyebrow="Job agent"
+          title={
+            <>
+              It finds the openings.{" "}
+              <span className="bg-gradient-to-r from-st-primary via-cyan-300 to-[#6ffbbe] bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(124,58,237,0.6)]">
+                You decide what to send.
+              </span>
+            </>
+          }
+          lead="Give it your resume and the roles you want. It scans company boards and ranks what it finds against your actual experience, with the reason for every score."
+          actions={
+            <>
+              <CtaLink href="/jobs" icon={Briefcase}>
+                Run a search
+              </CtaLink>
+              <CtaLink href="/practice" variant="glass" icon={Mic}>
+                Want to practise first?
+              </CtaLink>
+            </>
+          }
+          note="Free while in beta · Nothing is ever submitted without you"
+        />
+
+        {/* ── What a run gives you ── */}
+        <GalaxySection grid>
+          <SectionIntro eyebrow="What a run gives you" title="Ranked matches with a stated reason." tone="cyan" />
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+            {OUTCOMES.map((item, i) => (
+              <FeatureCard key={item.title} icon={[Target, ListChecks, Clock][i]} title={item.title} desc={item.desc} index={i} />
+            ))}
+          </div>
+
+          {/* The two limits, on the page rather than discovered later. */}
+          <Reveal className="mt-10 grid gap-6 lg:grid-cols-2">
+            <div className="rounded-2xl border border-st-primary/25 bg-[#0e0d16]/90 p-6 shadow-[0_16px_40px_-10px_rgba(0,0,0,0.85),inset_0_1px_0_rgba(255,255,255,0.06)] sm:p-8">
+              <p className="mb-3 font-mono text-[11px] font-semibold uppercase tracking-widest text-st-primary">What it does not do</p>
+              <p className="text-[14px] leading-[22px] text-slate-300">
+                The agent never submits an application, never contacts a company, and never sends
+                your resume to an employer. It reads public listings and ranks them.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-cyan-400/30 bg-gradient-to-b from-[#18142c]/95 via-[#110f22]/95 to-[#0b0a16]/95 p-6 shadow-[0_20px_50px_-10px_rgba(0,0,0,0.9),0_0_20px_rgba(6,182,212,0.15),inset_0_1px_0_rgba(255,255,255,0.15)] sm:p-8">
+              <p className="mb-3 font-mono text-[11px] font-semibold uppercase tracking-widest text-cyan-300">Coverage is partial</p>
+              <p className="text-[14px] leading-[22px] text-slate-300">
+                It scans the company boards on your target list, not the whole market, and it
+                reports how many it checked on every run.
+              </p>
+            </div>
+          </Reveal>
+        </GalaxySection>
+
+        {/* ── How it works ── */}
+        <GalaxySection id="how">
+          <SectionIntro eyebrow="How the agent works" title="Three steps to your first shortlist" />
+          <StepTrack steps={STEPS} columns={3} />
+        </GalaxySection>
+
+        {/* ── Features ── */}
+        <GalaxySection id="features" grid>
+          <SectionIntro eyebrow="Features" title="Built for real hunting" subtitle="Signal over noise on every run." tone="cyan" />
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {FEATURES.map((item, i) => (
+              <FeatureCard key={item.title} icon={item.icon} title={item.title} desc={item.desc} index={i} />
+            ))}
+          </div>
+        </GalaxySection>
+
+        {/* ── Status tracking ── */}
+        <GalaxySection id="status">
+          <SectionIntro
+            eyebrow="Tracking"
+            title="Every application, tracked"
+            subtitle="When the agent can't finish an application safely, it says why and hands you the link."
+          />
+
+          <Reveal>
+            <div className="mb-4 flex items-center justify-center gap-2">
+              <span className="rounded-full border border-white/15 px-2.5 py-0.5 font-mono text-[11px] font-semibold uppercase tracking-wider text-slate-300">
+                Example
+              </span>
+              <span className="text-[12px] text-slate-400">Illustrative rows — your table is filled by your own resume.</span>
+            </div>
+            <div className="st-cosmic-glass overflow-x-auto rounded-2xl">
+              <table className="w-full text-left text-[13px]">
+                <thead className="border-b border-white/10 font-mono text-[11px] uppercase tracking-wider text-slate-400">
+                  <tr>
+                    <th className="px-5 py-3 font-semibold">Company</th>
+                    <th className="px-5 py-3 font-semibold">Role</th>
+                    <th className="hidden px-5 py-3 font-semibold sm:table-cell">Location</th>
+                    <th className="px-5 py-3 font-semibold">Match</th>
+                    <th className="px-5 py-3 font-semibold">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {EXAMPLE_ROWS.map((row) => (
+                    <tr key={row.company} className="align-top">
+                      <td className="px-5 py-4 font-medium text-white">{row.company}</td>
+                      <td className="px-5 py-4 text-slate-300">{row.role}</td>
+                      <td className="hidden px-5 py-4 text-slate-400 sm:table-cell">{row.location}</td>
+                      <td className="px-5 py-4 font-st-display text-[16px] font-semibold tabular-nums text-st-primary">{row.match}%</td>
+                      <td className="px-5 py-4">
+                        <span className={`inline-block rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${STATUS_TONE[row.tone]}`}>{row.status}</span>
+                        {row.reason && <p className="mt-1 text-[12px] text-slate-400">{row.reason}</p>}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Reveal>
+
+          <div className="mt-6 grid gap-6 md:grid-cols-3">
+            {[
+              { icon: ShieldCheck, title: "No account bans", desc: "Nothing is submitted behind your back." },
+              { icon: Clock, title: "Runs between visits", desc: "New matches are waiting the next time you open it." },
+              { icon: Building2, title: "Straight from the source", desc: "Company hiring APIs, not scrapers." },
+            ].map((item, i) => (
+              <FeatureCard key={item.title} icon={item.icon} title={item.title} desc={item.desc} index={i} />
+            ))}
+          </div>
+        </GalaxySection>
+
+        {/* ── Product view ── */}
+        <GalaxySection grid>
+          <div className="grid items-center gap-10 lg:grid-cols-2">
+            <Reveal>
+              <Eyebrow tone="cyan">Inside the product</Eyebrow>
+              <h2 className="mt-2 font-st-display text-[28px] font-semibold leading-9 tracking-[-0.02em] text-white md:text-[36px] md:leading-[44px]">
+                One table for the whole hunt
+              </h2>
+              <p className="mt-4 text-[16px] leading-6 text-slate-300">
+                Filter by status, open the real application page, and mark what you have done. The agent keeps the list current.
+              </p>
+              <a
+                href="/jobs"
+                className="mt-6 inline-flex items-center gap-2 rounded-full border border-white/20 bg-gradient-to-r from-[#7c3aed] via-[#9333ea] to-[#06b6d4] px-6 py-3 text-[13px] font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_6px_28px_rgba(124,58,237,0.55)] transition-all hover:-translate-y-0.5"
+              >
+                Open the job agent <ArrowRight size={16} />
+              </a>
+            </Reveal>
+            <Reveal delay={0.08}>
+              <WindowFrame src={tourDashboard} alt="The job matches table inside the product" caption="talentpulse.ai / jobs" />
+            </Reveal>
+          </div>
+        </GalaxySection>
+
+        {/* ── CTA ── */}
+        <CtaBanner
+          title="Your next role is already posted"
+          text="Point the agent at it — then rehearse that exact interview on the other side."
+          actions={
+            <>
+              <CtaLink href="/jobs">Start job search</CtaLink>
+              <CtaLink href="/practice" variant="glass" className="bg-[#141224]">
+                Practice an interview
+              </CtaLink>
+            </>
+          }
+        />
+      </main>
+
+      <StitchSiteFooter />
+    </GalaxyPage>
+  );
+}

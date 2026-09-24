@@ -1,15 +1,16 @@
+/*
+ * UI: Stitch design system (2026-09-24) — restyle only; copy, steps and logic are
+ * unchanged from docs/backup/select-profile-before-stitch.tsx.txt.
+ */
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { useInterview } from "@/contexts/use-interview";
 import {
   UserCircle2, Upload, FileText, ArrowLeft, ChevronRight,
-  X, AlertCircle, Loader, Check, ShieldCheck,
+  X, Loader, Check, ShieldCheck,
 } from "lucide-react";
-import { PageHeader } from "@/components/ui/page-header";
-import { Stepper } from "@/components/ui/stepper";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Badge, Button, ErrorAlert, PageHeader, StPage, Stepper } from "@/components/phos/controls";
 import { INTERVIEW_STEPS } from "./steps";
 
 type ProfileOption = "existing" | "upload" | null;
@@ -55,12 +56,12 @@ function ProfileOptionCard({
       onClick={disabled ? undefined : onClick}
       disabled={disabled}
       aria-pressed={selected}
-      className={`relative h-full rounded-lg border p-6 text-left transition-[border-color,box-shadow,transform] duration-200 ${
-        disabled
-          ? "cursor-not-allowed border-border bg-surface opacity-60"
+      className={`relative h-full rounded-[2rem] p-6 text-left transition-[box-shadow,transform,background-color] duration-200 ${
+ disabled
+          ? "cursor-not-allowed bg-black opacity-60 border border-ph-line"
           : selected
-            ? "border-accent bg-accent-soft/40 shadow-e2"
-            : "border-border bg-canvas hover:-translate-y-0.5 hover:border-border-strong hover:shadow-e2"
+            ? "bg-ph-surface-2 border border-ph-green/60 shadow-[0_0_24px_-6px_rgba(0,255,65,0.35)]"
+            : "bg-ph-surface border border-ph-line-strong hover:-translate-y-0.5 hover:bg-ph-surface-2"
       }`}
     >
       {badge && (
@@ -72,18 +73,20 @@ function ProfileOptionCard({
       )}
 
       <span
-        className={`flex h-11 w-11 items-center justify-center rounded-md ${
-          selected ? "bg-accent text-accent-fg" : "bg-surface text-ink-muted"
+        className={`flex h-12 w-12 items-center justify-center rounded-[2rem] ${
+ selected
+            ? "bg-ph-green/15 text-ph-green shadow-[0_0_12px_rgba(0,255,65,0.35)]"
+            : "bg-black text-ph-green border border-ph-line"
         }`}
       >
         <Icon size={20} />
       </span>
 
-      <h3 className="mt-4 flex items-center gap-2 text-h4 font-semibold text-ink">
+      <h3 className="mt-4 flex items-center gap-2 font-st-display text-[18px] font-semibold leading-[26px] text-ph-ink">
         {title}
-        {selected && <Check size={15} className="text-accent-text" strokeWidth={3} />}
+        {selected && <Check size={15} className="text-ph-green" strokeWidth={3} />}
       </h3>
-      <p className="mt-1.5 text-small text-ink-muted">{description}</p>
+      <p className="mt-1.5 text-[12px] leading-[18px] text-ph-ink-muted">{description}</p>
     </button>
   );
 }
@@ -114,13 +117,13 @@ function UploadZone({
 
   if (file) {
     return (
-      <div className="flex items-center gap-3 rounded-lg border border-success/30 bg-success-soft px-4 py-3.5">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-success/15 text-success">
+      <div className="flex items-center gap-3 rounded-[2rem] bg-ph-surface px-4 py-3.5 border border-ph-green/50">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ph-green/10 text-ph-green">
           <FileText size={17} />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-body font-medium text-ink">{file.name}</p>
-          <p className="text-small text-ink-muted">
+          <p className="truncate text-[14px] font-medium text-ph-ink">{file.name}</p>
+          <p className="text-[12px] text-ph-green">
             {(file.size / 1024).toFixed(1)} KB · ready to analyse
           </p>
         </div>
@@ -141,21 +144,21 @@ function UploadZone({
       }}
       onDragLeave={() => setDragging(false)}
       onDrop={handleDrop}
-      className={`w-full rounded-lg border-2 border-dashed px-6 py-10 text-center transition-colors ${
-        dragging
-          ? "border-accent bg-accent-soft"
-          : "border-border-strong bg-surface hover:border-accent/60"
+      className={`w-full rounded-[2rem] border-2 border-dashed px-5 py-10 text-center transition-colors ${
+ dragging
+          ? "border-ph-green bg-ph-green/[0.08]"
+          : "border-ph-line-strong bg-black hover:border-ph-green/60"
       }`}
     >
       <input ref={ref} type="file" accept=".pdf" className="hidden" onChange={handleChange} />
-      <span className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-md bg-canvas text-ink-muted">
+      <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-ph-surface-2 text-ph-green ">
         <Upload size={20} />
       </span>
-      <p className="text-body font-medium text-ink">Drop your resume here</p>
-      <p className="mt-1 text-small text-ink-muted">
-        or <span className="text-accent-text">click to browse</span>
+      <p className="font-st-display text-[16px] font-semibold text-ph-ink">Drop your resume here</p>
+      <p className="mt-1 text-[12px] text-ph-ink-muted">
+        or <span className="text-ph-green">click to browse</span>
       </p>
-      <p className="mt-2 text-small text-ink-subtle">PDF only · max 5 MB</p>
+      <p className="mt-3 inline-block rounded-full bg-ph-surface-2 px-3 py-1 text-[11px] font-semibold text-ph-ink-muted">PDF only · max 5 MB</p>
     </button>
   );
 }
@@ -242,12 +245,12 @@ export default function SelectProfilePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-surface">
-      <div className="mx-auto w-full max-w-3xl px-5 py-8 sm:px-6">
+    <StPage narrow>
+      <div>
         <Button
           variant="ghost"
           size="sm"
-          className="-ml-3 mb-6"
+          className="-ml-3 mb-4"
           onClick={() => navigate("/interview/select-role")}
         >
           <ArrowLeft /> Back to role selection
@@ -259,11 +262,11 @@ export default function SelectProfilePage() {
           description="Questions are written from your own experience, so the interview needs a resume to read."
         />
 
-        <div className="mt-6">
+        <div className="mt-4">
           <Stepper steps={INTERVIEW_STEPS} current={1} />
         </div>
 
-        <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
           {options.map((opt) => (
             <ProfileOptionCard
               key={opt.id}
@@ -288,9 +291,9 @@ export default function SelectProfilePage() {
               <div className="pt-6">
                 <UploadZone file={file} onFile={handleFileSelected} onClear={handleFileCleared} />
 
-                <div className="mt-4 flex items-start gap-2.5 rounded-lg border border-border bg-canvas p-4">
-                  <ShieldCheck size={16} className="mt-0.5 shrink-0 text-ink-subtle" />
-                  <p className="text-small text-ink-muted">
+                <div className="mt-4 flex items-start gap-2.5 rounded-[2rem] bg-black p-4 border border-ph-line">
+                  <ShieldCheck size={16} className="mt-0.5 shrink-0 text-ph-green" />
+                  <p className="text-[12px] leading-[18px] text-ph-ink-muted">
                     Your name, contact details and location are stripped out before anything is
                     indexed. You can review and adjust the extracted skills on the next step.
                   </p>
@@ -300,7 +303,7 @@ export default function SelectProfilePage() {
           )}
         </AnimatePresence>
 
-        <div className="mt-8 flex justify-end">
+        <div className="mt-5 flex justify-end">
           <Button size="lg" disabled={!canContinue || isLoading} onClick={handleContinue}>
             {isLoading ? (
               <>
@@ -315,25 +318,9 @@ export default function SelectProfilePage() {
         </div>
 
         {error && (
-          <div
-            role="alert"
-            className="mt-4 flex items-start gap-3 rounded-lg border border-danger/30 bg-danger-soft p-4"
-          >
-            <AlertCircle size={16} className="mt-0.5 shrink-0 text-danger" />
-            <div className="flex-1">
-              <p className="text-small font-medium text-danger">Something went wrong</p>
-              <p className="mt-0.5 text-small text-ink-muted">{error}</p>
-            </div>
-            <button
-              onClick={clearError}
-              aria-label="Dismiss"
-              className="text-ink-subtle transition-colors hover:text-ink"
-            >
-              ×
-            </button>
-          </div>
+          <ErrorAlert className="mt-4" title="Something went wrong" message={error} onDismiss={clearError} />
         )}
       </div>
-    </div>
+    </StPage>
   );
 }

@@ -3,11 +3,24 @@ import { toast } from "react-hot-toast";
 import { AUTH_SESSION_INVALID_EVENT } from "@/lib/auth-events";
 import { authService } from "@/services/authService";
 
+// Which backend this bundle talks to is fixed at build/dev-server start by the
+// mode file (.env.development | .env.remote | .env.production). Logged once so a
+// "why is my local login failing" question is answered by the console instead of
+// the network tab: a local page hitting the deployed API means a different
+// database, so locally registered accounts will not be found.
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  import.meta.env.VITE_API_URL ||
+  "http://127.0.0.1:8000";
+
+const isLocalApi = /^https?:\/\/(localhost|127\.0\.0\.1)(:|\/|$)/.test(API_BASE_URL);
+
+console.info(
+  `[API] ${isLocalApi ? "LOCAL" : "REMOTE"} backend — ${API_BASE_URL} (mode: ${import.meta.env.MODE})`
+);
+
 const axiosInstance = axios.create({
-  baseURL:
-    import.meta.env.VITE_API_BASE_URL ||
-    import.meta.env.VITE_API_URL ||
-    "http://127.0.0.1:8000",
+  baseURL: API_BASE_URL,
   timeout: Number(import.meta.env.VITE_API_TIMEOUT || 30000),
 });
 

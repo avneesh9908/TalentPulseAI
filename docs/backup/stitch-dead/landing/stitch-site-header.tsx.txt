@@ -1,0 +1,108 @@
+/**
+ * Public site header in the Stitch "Galaxy Theme" style (2026-09-24) — the
+ * floating pill nav from the Stitch landing screen, carrying exactly the links
+ * and auth actions of `site-header.tsx`. Dark-only like the pages that use it,
+ * so the theme toggle is not shown here.
+ */
+import { useState } from "react";
+import { ArrowRight, Menu, Network, X } from "lucide-react";
+import type { SiteNavItem } from "./site-header";
+
+interface StitchSiteHeaderProps {
+  navItems: SiteNavItem[];
+  /** Highlights the product page you are currently on. */
+  activeId?: string;
+}
+
+const LABEL_MD = "text-[13px] leading-4 tracking-[0.02em] font-medium";
+
+export default function StitchSiteHeader({ navItems, activeId }: StitchSiteHeaderProps) {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  return (
+    <header className="pointer-events-none fixed left-0 top-0 z-50 w-full px-4 pb-2 pt-4 font-st-body sm:px-6">
+      <nav className="pointer-events-auto mx-auto flex max-w-7xl items-center justify-between gap-4 rounded-full border border-st-primary/25 bg-[#0e0d16]/80 px-4 py-2.5 shadow-[0_16px_36px_-6px_rgba(0,0,0,0.85),0_0_24px_rgba(124,58,237,0.25),inset_0_1px_0_rgba(255,255,255,0.18)] backdrop-blur-xl sm:px-6">
+        <a href="/" aria-label="TalentPulseAI home" className="group flex shrink-0 items-center gap-2">
+          <span className="flex h-8 w-8 items-center justify-center rounded-2xl border border-st-primary/30 bg-[#151422] shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_2px_8px_rgba(0,0,0,0.7)] transition-all group-hover:shadow-[0_0_16px_rgba(124,58,237,0.7)]">
+            <Network size={18} className="text-st-primary" />
+          </span>
+          <span className="font-st-display text-[16px] font-bold tracking-tight text-st-ink">
+            TalentPulse
+            <span className="ml-1 rounded-2xl border border-st-primary/30 bg-st-primary-container/30 px-1.5 py-0.5 font-mono text-[11px] font-semibold tracking-normal text-st-primary">
+              AI
+            </span>
+          </span>
+        </a>
+
+        <ul className="hidden items-center gap-1 text-[12px] leading-[18px] text-st-muted md:flex">
+          {navItems.map((item) => (
+            <li key={item.id}>
+              <a
+                href={item.href}
+                aria-current={activeId === item.id ? "page" : undefined}
+                className={`rounded-full px-3.5 py-1.5 transition-all hover:bg-[#1a182a] hover:text-white ${
+                  activeId === item.id ? "bg-[#1c1b2c] font-semibold text-st-ink" : ""
+                }`}
+              >
+                {item.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+
+        <div className="hidden items-center gap-3 md:flex">
+          <a
+            href="/auth/login"
+            className={`${LABEL_MD} rounded-full px-3.5 py-1.5 text-st-muted transition-all hover:bg-[#1c1a2d] hover:text-white`}
+          >
+            Log in
+          </a>
+          <a
+            href="/auth/register"
+            className={`${LABEL_MD} inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-gradient-to-r from-[#7c3aed] via-[#9333ea] to-[#06b6d4] px-4 py-2 font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_0_20px_rgba(124,58,237,0.5)] transition-all hover:-translate-y-0.5 hover:shadow-[0_0_28px_rgba(6,182,212,0.6)] active:scale-95`}
+          >
+            Get started <ArrowRight size={16} />
+          </a>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setMobileMenuOpen((open) => !open)}
+          aria-expanded={mobileMenuOpen}
+          aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+          className="flex h-9 w-9 items-center justify-center rounded-full text-st-muted transition-colors hover:bg-[#1a182a] hover:text-white md:hidden"
+        >
+          {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
+        </button>
+      </nav>
+
+      {mobileMenuOpen && (
+        <div className="pointer-events-auto mx-auto mt-2 max-w-7xl rounded-[2rem] border border-st-primary/25 bg-[#0e0d16]/95 p-4 shadow-[0_16px_36px_-6px_rgba(0,0,0,0.85)] backdrop-blur-xl md:hidden">
+          <div className="flex flex-col gap-1">
+            {navItems.map((item) => (
+              <a
+                key={item.id}
+                href={item.href}
+                onClick={() => setMobileMenuOpen(false)}
+                className="rounded-full px-3 py-2.5 text-[14px] text-st-muted hover:bg-[#1a182a] hover:text-white"
+              >
+                {item.label}
+              </a>
+            ))}
+            <div className="mt-3 flex flex-col gap-2 border-t border-white/10 pt-4">
+              <a href="/auth/login" className={`${LABEL_MD} rounded-full bg-[#141224] py-2.5 text-center text-white`}>
+                Log in
+              </a>
+              <a
+                href="/auth/register"
+                className={`${LABEL_MD} rounded-full bg-gradient-to-r from-[#7c3aed] via-[#9333ea] to-[#06b6d4] py-2.5 text-center font-semibold text-white`}
+              >
+                Get started
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+    </header>
+  );
+}

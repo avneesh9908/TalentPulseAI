@@ -4,18 +4,20 @@
  * Copy rule for this page: describe what the interview flow actually does.
  * The previous version advertised traction numbers, placeholder testimonials
  * and "cheating detection" the product does not have — all removed.
+ *
+ * UI: the phosphor-terminal design (2026-09-24) — restyle only; every word is
+ * the page's own copy (docs/backup/practice-before-phosphor.tsx.txt).
  */
 import {
-  ArrowRight, Sparkles, Mic, BarChart3, Target, ListChecks, RefreshCw,
+  ArrowRight, Sparkles, Mic, BarChart3, Target, ListChecks, RefreshCw, Search, ShieldCheck, Keyboard,
 } from "lucide-react";
-import SiteHeader from "@/components/landing/site-header";
-import SiteFooter from "@/components/landing/site-footer";
-import { ProductFrame } from "@/components/landing/product-frame";
-import { ProductStack } from "@/components/landing/product-stack";
-import { PRACTICE_PLANES } from "@/components/landing/product-planes";
-import { Section, SectionHeading } from "@/components/ui/section";
-import { Panel } from "@/components/ui/panel";
-import { Button } from "@/components/ui/button";
+import PhosSiteHeader from "@/components/landing/phos-site-header";
+import PhosSiteFooter from "@/components/landing/phos-site-footer";
+import {
+  CtaBanner, CtaLink, FeatureCard, LimitPanel, PhosHero, PhosPage, PhosSection, SectionIntro, StepTrack, WindowFrame,
+} from "@/components/landing/phos-marketing";
+import { GlyphBand } from "@/components/phos";
+import { PH_BODY_SM, PH_H3, PH_LINK_MONO, PH_MONO } from "@/components/phos/tokens";
 import { Reveal } from "@/components/motion/reveal";
 import tourDashboard from "@/assets/landing/tour-dashboard.svg";
 import tourInterview from "@/assets/landing/tour-interview.svg";
@@ -26,6 +28,18 @@ const NAV_ITEMS = [
   { id: "features", label: "Features", href: "#features" },
   { id: "tracks", label: "Tracks", href: "#tracks" },
   { id: "find-jobs", label: "Job search", href: "/find-jobs" },
+];
+
+/** Top strip — every line is a fragment of a claim made further down the page. */
+const TICKER = [
+  "Eight roles",
+  "Three difficulty levels",
+  "Up to twelve skills",
+  "Voice and video",
+  "Scored against real signals",
+  "Reports stay available",
+  "Free while in beta",
+  "Personal details stripped",
 ];
 
 /**
@@ -66,193 +80,125 @@ const TOUR = [
 
 export default function PracticePage() {
   return (
-    <div className="min-h-screen bg-canvas text-ink">
-      <SiteHeader navItems={NAV_ITEMS} activeId="practice" />
+    <PhosPage>
+      <PhosSiteHeader navItems={NAV_ITEMS} activeId="practice" tickerItems={TICKER} />
 
-      {/* ── Hero (design doc 4a) ── */}
-      <section className="border-b border-border">
-        <div className="wrap grid items-center gap-10 py-16 md:py-20 lg:grid-cols-2 lg:gap-12">
-          <Reveal y={16}>
-            <p className="overline">Mock interviews</p>
-            <h1 className="mt-4 max-w-lg text-h1 font-semibold text-ink">
-              Practise the questions you'll actually be asked.
-            </h1>
-            <p className="mt-5 max-w-md text-lead text-ink-muted">
-              Pick a role, upload your resume, and answer out loud or by typing. Every answer comes
-              back scored, with the signals an interviewer would have been listening for.
-            </p>
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-              <Button asChild size="lg">
-                <a href="/interview/select-role">
-                  Start a mock interview <ArrowRight />
-                </a>
-              </Button>
-              <Button asChild size="lg" variant="secondary">
-                <a href="/find-jobs">Looking for openings?</a>
-              </Button>
-            </div>
-            <p className="mt-5 text-small text-ink-subtle">
-              Free while in beta · Personal details are stripped before indexing
-            </p>
-          </Reveal>
+      <main className="relative w-full overflow-hidden">
+        {/* ── Hero ── */}
+        <PhosHero
+          eyebrow="Mock interviews"
+          title={
+            <>
+              Practise the questions{" "}
+              <span className="ph-glow text-ph-green">you'll actually be asked.</span>
+            </>
+          }
+          lead="Pick a role, upload your resume, and answer out loud or by typing. Every answer comes back scored, with the signals an interviewer would have been listening for."
+          actions={
+            <>
+              <CtaLink href="/interview/select-role">Start a mock interview</CtaLink>
+              <CtaLink href="/find-jobs" variant="glass" icon={Search}>
+                Looking for openings?
+              </CtaLink>
+            </>
+          }
+          note="Free while in beta · Personal details are stripped before indexing"
+        />
 
-          <Reveal delay={0.1}>
-            <ProductStack
-              planes={PRACTICE_PLANES}
-              label="A feedback panel scoring an answer 61 out of 100, listing the signals it expected — profiling, a named trade-off, and measuring afterwards — with the interview set-up screen behind it."
-            />
-          </Reveal>
-        </div>
-      </section>
+        {/* ── How a run works ── */}
+        <PhosSection id="how-it-works" grid>
+          <SectionIntro index="01" eyebrow="How a run works" title="Four steps, about ten minutes." />
+          <StepTrack steps={STEPS} />
 
-      {/* ── How a run works ── */}
-      <Section id="how-it-works" tone="muted">
-        <Reveal>
-          <SectionHeading eyebrow="How a run works" title="Four steps, about ten minutes." />
-        </Reveal>
-        <ol className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {STEPS.map((step, i) => (
-            <Reveal key={step.title} delay={i * 0.06}>
-              <li className="border-t-2 border-ink pt-4">
-                <span className="flex size-6 items-center justify-center rounded-full bg-accent-soft text-overline font-semibold text-accent-text">
-                  {i + 1}
-                </span>
-                <h3 className="mt-3 text-h4 font-semibold text-ink">{step.title}</h3>
-                <p className="mt-1.5 text-small text-ink-muted">{step.desc}</p>
-              </li>
-            </Reveal>
-          ))}
-        </ol>
-
-        {/* The limits, stated on the page rather than discovered in use. */}
-        <Reveal>
-          <Panel tone="muted" padding="lg" className="mt-10 grid gap-8 lg:grid-cols-2">
-            <div>
-              <p className="overline">What it does not do</p>
-              <div className="mt-3 space-y-3 text-body text-ink">
-                <p>
-                  Scores are guidance for your own preparation. They are not a hiring decision and
-                  are never shared with an employer.
-                </p>
-                <p>
-                  Recordings never leave your browser. Each answer is captured locally so you can
-                  play it back, and only the answer text is submitted — the audio and video are
-                  discarded when you leave the page.
-                </p>
-              </div>
-            </div>
-            <div>
-              <p className="overline">If speech is unavailable</p>
-              <p className="mt-3 text-body text-ink">
+          {/* The limits, stated on the page rather than discovered in use. */}
+          <Reveal className="mt-14 grid gap-6 lg:grid-cols-2">
+            <LimitPanel icon={ShieldCheck} label="What it does not do">
+              <p>
+                Scores are guidance for your own preparation. They are not a hiring decision and
+                are never shared with an employer.
+              </p>
+              <p>
+                Recordings never leave your browser. Each answer is captured locally so you can
+                play it back, and only the answer text is submitted — the audio and video are
+                discarded when you leave the page.
+              </p>
+            </LimitPanel>
+            <LimitPanel icon={Keyboard} label="If speech is unavailable">
+              <p>
                 Browser support for the speech API this uses is uneven — Firefox has none. Every
                 question can be answered by typing instead, and the scoring is identical.
               </p>
-            </div>
-          </Panel>
-        </Reveal>
-      </Section>
+            </LimitPanel>
+          </Reveal>
+        </PhosSection>
 
-      {/* ── Features ── */}
-      <Section id="features">
-        <Reveal>
-          <SectionHeading
+        {/* ── Features ── */}
+        <PhosSection id="features">
+          <SectionIntro
+            index="02"
             eyebrow="Features"
             title="What makes it feel like the real thing"
             subtitle="Six things the interview flow does today."
-            align="center"
           />
-        </Reveal>
-        <div className="mt-12 grid gap-x-8 gap-y-9 sm:grid-cols-2 lg:grid-cols-3">
-          {FEATURES.map((item, i) => {
-            const Icon = item.icon;
-            return (
-              <Reveal key={item.title} delay={(i % 3) * 0.06}>
-                <div className="flex gap-3.5">
-                  <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border bg-surface text-ink-muted">
-                    <Icon size={16} />
-                  </span>
-                  <div>
-                    <h3 className="text-h4 font-semibold text-ink">{item.title}</h3>
-                    <p className="mt-1 text-small text-ink-muted">{item.desc}</p>
-                  </div>
-                </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {FEATURES.map((item, i) => (
+              <FeatureCard key={item.title} icon={item.icon} title={item.title} desc={item.desc} index={i} />
+            ))}
+          </div>
+        </PhosSection>
+
+        <GlyphBand rows={2} />
+
+        {/* ── Product tour ── */}
+        <PhosSection grid>
+          <SectionIntro index="03" eyebrow="Inside the product" title="What you'll actually see" />
+          <div className="grid gap-6 lg:grid-cols-3">
+            {TOUR.map((slide, i) => (
+              <Reveal key={slide.title} delay={i * 0.07} className="flex h-full flex-col">
+                <WindowFrame src={slide.src} alt={slide.alt} caption={slide.caption} />
+                <h3 className={`${PH_H3} mt-5 text-ph-ink`}>{slide.title}</h3>
+                <p className={`${PH_BODY_SM} mt-1`}>{slide.desc}</p>
               </Reveal>
-            );
-          })}
-        </div>
-      </Section>
+            ))}
+          </div>
+        </PhosSection>
 
-      {/* ── Product tour ── */}
-      <Section tone="muted">
-        <Reveal>
-          <SectionHeading eyebrow="Inside the product" title="What you'll actually see" align="center" />
-        </Reveal>
-        <div className="mt-12 grid gap-6 lg:grid-cols-3">
-          {TOUR.map((slide, i) => (
-            <Reveal key={slide.title} delay={i * 0.07}>
-              <div className="flex h-full flex-col">
-                <ProductFrame src={slide.src} alt={slide.alt} caption={slide.caption} />
-                <h3 className="mt-4 text-h4 font-semibold text-ink">{slide.title}</h3>
-                <p className="mt-1 text-small text-ink-muted">{slide.desc}</p>
-              </div>
-            </Reveal>
-          ))}
-        </div>
-      </Section>
-
-      {/* ── Tracks ── */}
-      <Section id="tracks">
-        <Reveal>
-          <SectionHeading
+        {/* ── Tracks ── */}
+        <PhosSection id="tracks">
+          <SectionIntro
+            index="04"
             eyebrow="Tracks"
             title="Pick the stack you're being hired for"
             subtitle="The warm-up questions are drawn from your stack; the rest come from your resume."
-            align="center"
           />
-        </Reveal>
-        <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {TRACKS.map((track, i) => (
-            <Reveal key={track.name} delay={(i % 3) * 0.06}>
-              <Panel interactive className="h-full">
-                <h3 className="text-h4 font-semibold text-ink">{track.name}</h3>
-                <p className="mt-1 text-small text-ink-muted">{track.topics}</p>
-                <a
-                  href="/interview/select-role"
-                  className="mt-4 inline-flex items-center gap-1.5 text-small font-medium text-accent-text underline-offset-4 hover:underline"
-                >
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {TRACKS.map((track, i) => (
+              <FeatureCard key={track.name} title={track.name} index={i}>
+                <p className={`${PH_MONO} mt-2 text-ph-ink-soft`}>{track.topics}</p>
+                <a href="/interview/select-role" className={`${PH_LINK_MONO} mt-6`}>
                   Start practice <ArrowRight size={14} />
                 </a>
-              </Panel>
-            </Reveal>
-          ))}
-        </div>
-      </Section>
+              </FeatureCard>
+            ))}
+          </div>
+        </PhosSection>
 
-      {/* ── CTA ── */}
-      <Section tone="muted">
-        <Reveal>
-          <Panel tone="raised" padding="lg" className="text-center">
-            <h2 className="mx-auto max-w-xl text-h1 font-semibold text-ink">
-              Rehearse tonight, interview tomorrow
-            </h2>
-            <p className="mx-auto mt-3 max-w-lg text-lead text-ink-muted">
-              Or let the job agent find the interview worth rehearsing for.
-            </p>
-            <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
-              <Button asChild size="lg">
-                <a href="/interview/select-role">
-                  Start an interview <ArrowRight />
-                </a>
-              </Button>
-              <Button asChild size="lg" variant="secondary">
-                <a href="/find-jobs">See the job agent</a>
-              </Button>
-            </div>
-          </Panel>
-        </Reveal>
-      </Section>
+        {/* ── CTA ── */}
+        <CtaBanner
+          title="Rehearse tonight, interview tomorrow"
+          text="Or let the job agent find the interview worth rehearsing for."
+          actions={
+            <>
+              <CtaLink href="/interview/select-role">Start an interview</CtaLink>
+              <CtaLink href="/find-jobs" variant="glass">
+                See the job agent
+              </CtaLink>
+            </>
+          }
+        />
+      </main>
 
-      <SiteFooter />
-    </div>
+      <PhosSiteFooter />
+    </PhosPage>
   );
 }

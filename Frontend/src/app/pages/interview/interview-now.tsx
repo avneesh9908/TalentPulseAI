@@ -1,10 +1,28 @@
 ﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Panel } from "@/components/ui/panel";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { useInterview } from "@/contexts/use-interview";
-import { ArrowLeft, Loader2, Mic, MicOff, Timer, Video, Volume2 } from "lucide-react";
+import {
+  ArrowLeft,
+  AudioLines,
+  BadgeCheck,
+  Bot,
+  Circle,
+  CircleCheck,
+  CircleDot,
+  Lightbulb,
+  Loader2,
+  MessagesSquare,
+  Mic,
+  MicOff,
+  Power,
+  SendHorizontal,
+  SkipForward,
+  SquareTerminal,
+  User,
+  Video,
+  Volume2,
+} from "lucide-react";
+import alexChen from "@/assets/stitch/alex-chen.jpg";
 import { generateInterviewQuestions, retrieveInterviewContext, submitInterview } from "@/api/interviewService";
 import type { InterviewSubmitResponse, RetrievedContextChunk } from "@/types/api";
 
@@ -32,6 +50,31 @@ declare global {
     SpeechRecognition?: SpeechRecognitionCtor;
   }
 }
+
+/*
+ * Layout is the Stitch screen "Practice Studio & Live Simulation (Desktop Web)"
+ * (project 16808869888425310618, screen 8e9e8516f9d546889352580ae87f7fc6),
+ * restyled over the REAL interview (2026-09-23): questions, camera, speech,
+ * transcript and submit are live. The code editor, test telemetry, topology map
+ * and rubric are Stitch's static sample panels. Pre-Stitch version:
+ * docs/backup/interview-now-before-stitch.tsx.txt.
+ */
+const RAISED = "border border-ph-line-strong";
+const RECESSED = "border border-ph-line";
+const CTA =
+  "bg-ph-ink font-semibold text-black shadow-[0_0_0_1px_rgba(0,255,65,0.25)] hover:shadow-[0_0_24px_rgba(0,255,65,0.35)] active:scale-[0.98] transition-all";
+const LABEL_SM = "text-[11px] leading-[14px] tracking-[0.04em] font-semibold";
+const LABEL_MD = "text-[13px] leading-4 tracking-[0.02em] font-medium";
+const BODY_SM = "text-[12px] leading-[18px] tracking-[0.01em]";
+const CODE_SM = "text-[12px] leading-4 font-medium";
+const H_SM = "font-st-display text-[18px] leading-[26px] tracking-[-0.01em] font-medium";
+
+const wordCount = (text?: string) => (text ? text.trim().split(/\s+/).filter(Boolean).length : 0);
+
+const FALLBACK_TIPS = [
+  "Open with the context, then walk through what you did and the result.",
+  "Name one trade-off you made and why you accepted it.",
+];
 
 const QUESTION_TIME_SECONDS = 120;
 const SILENCE_AUTO_ADVANCE_MS = 5000;
@@ -95,6 +138,7 @@ export default function InterviewNowPage() {
   const [cameraReady, setCameraReady] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const feedRef = useRef<HTMLDivElement | null>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const silenceTimerRef = useRef<number | null>(null);
   const finalTranscriptRef = useRef("");
@@ -419,48 +463,140 @@ export default function InterviewNowPage() {
     void load();
   }, [interviewId, selectedRole, experience, difficulty, profileOption, skills, questions.length]);
 
+  // Transcript feed follows the conversation.
+  useEffect(() => {
+    const el = feedRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [currentQuestionIdx, answerDraft, interimTranscript, finalizedAnswers, isGeneratingQuestions]);
+
   // Guard: no active session (direct navigation or refresh before interviewId was persisted)
   if (!interviewId && !isGeneratingQuestions) {
     return (
-      <div className="flex h-[calc(100vh-4rem)] items-center justify-center bg-surface px-6">
-        <Panel tone="raised" padding="lg" className="w-full max-w-md text-center">
-          <h2 className="text-h3 font-semibold text-ink">No active interview session</h2>
-          <p className="mt-2 text-body text-ink-muted">
+      <div className="flex min-h-[calc(100vh-3.5rem-1px)] items-center justify-center bg-ph-bg px-6 font-st-body text-ph-ink">
+        <div className={`w-full max-w-md rounded-[2rem] bg-ph-surface p-8 text-center ${RAISED}`}>
+          <h2 className="font-st-display text-[24px] font-semibold leading-8 text-ph-ink">No active interview session</h2>
+          <p className="mt-2 text-[14px] leading-5 text-ph-ink-muted">
             Your session was not found. Go through the setup steps to start a new interview.
           </p>
-          <Button className="mt-6" onClick={() => navigate("/interview/select-role")}>
+          <button type="button" onClick={() => navigate("/interview/select-role")} className={`${LABEL_MD} ${CTA} mt-6 rounded-full px-6 py-2`}>
             Start a new interview
-          </Button>
-        </Panel>
+          </button>
+        </div>
       </div>
     );
   }
 
+  const total = Math.max(questions.length, 1);
+  const liveAnswer = [answerDraft, interimTranscript].filter(Boolean).join(" ").trim();
+  const signals = questionSignals[currentQuestionIdx] ?? [];
+  const timeLow = questionTimeLeft <= 20;
+  const statusMessage = questionError || submitMessage || (!recognitionSupported ? "Speech recognition is not supported in this browser." : null);
+
   return (
-    <div className="h-[calc(100vh-4rem)] overflow-hidden bg-surface">
-      <div className="relative z-10 flex h-full min-h-0 w-full flex-col px-4 py-3 lg:px-8">
-        <div className="mb-2 flex items-center justify-between gap-4">
-          <Button variant="ghost" size="sm" className="-ml-3" onClick={() => navigate("/interview/quick-setup")}>
-            <ArrowLeft /> Back to setup
-          </Button>
-          <div className="flex items-center gap-3">
-            <span className="text-small text-ink-subtle">
-              Question {Math.min(currentQuestionIdx + 1, Math.max(questions.length, 1))} of {Math.max(questions.length, 1)}
+    <div className="min-h-[calc(100vh-3.5rem-1px)] bg-ph-bg font-st-body text-[14px] leading-5 text-ph-ink antialiased">
+      {/* Session utility bar */}
+      <div className="flex w-full flex-wrap items-center justify-between gap-4 bg-black px-4 py-2 shadow-md sm:px-8">
+        <div className="flex flex-wrap items-center gap-4">
+          <button
+            type="button"
+            onClick={() => navigate("/interview/quick-setup")}
+            className={`${LABEL_MD} flex items-center gap-1 rounded-full px-2 py-1 text-ph-ink-muted transition-colors hover:bg-ph-surface-2 hover:text-ph-ink`}
+          >
+            <ArrowLeft size={16} /> Setup
+          </button>
+          <div
+            className={`flex items-center gap-1 rounded-full bg-ph-surface px-4 py-1 ${RECESSED}`}
+            title={`Status: ${interviewSetup?.status || "initialized"}`}
+          >
+            <span className="h-2 w-2 animate-pulse rounded-full bg-ph-green shadow-[0_0_8px_#00ff41]" />
+            <span className={`${LABEL_SM} max-w-[14rem] truncate uppercase tracking-wider text-ph-green`}>
+              Interview Session #{interviewId ?? "—"}
             </span>
-            <Badge tone={questionTimeLeft <= 20 ? "danger" : "neutral"} size="md">
-              <Timer size={12} />
-              {formatTimer(questionTimeLeft)}
-            </Badge>
+          </div>
+          <div className={`${CODE_SM} hidden items-center gap-1 text-ph-ink-muted sm:flex`}>
+            <SquareTerminal size={16} className="text-ph-green" />
+            <span>
+              {selectedRole ?? "Interview"} · {experience ?? "—"} · {difficulty ?? "—"}
+            </span>
           </div>
         </div>
+        <div className="flex items-center gap-6">
+          <div className={`hidden items-center gap-1 rounded-full bg-ph-surface px-4 py-1 md:flex ${RECESSED}`}>
+            <Mic size={16} className={isListening ? "text-ph-green" : "text-ph-ink-soft"} />
+            <div className="flex h-3 items-center gap-1 px-1" aria-hidden>
+              {["h-2", "h-3", "h-1.5", "h-3", "h-2", "h-3", "h-1"].map((h, i) => (
+                <span
+                  key={i}
+                  className={`w-0.5 rounded-full ${isListening ? `${h} bg-ph-green ${i % 2 ? "animate-pulse" : "animate-bounce"}` : "h-1 bg-ph-line-bright"}`}
+                />
+              ))}
+            </div>
+            <span className={`${CODE_SM} text-ph-ink-muted`}>{isListening ? "Listening" : "Mic idle"}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 rounded-full bg-ph-surface-2 px-2 py-1" title="Time left on this question">
+              <CircleDot size={16} className={timeLow ? "animate-pulse text-ph-green" : "text-ph-ink-soft"} />
+              <span className={`${CODE_SM} font-semibold tabular-nums ${timeLow ? "ph-glow text-ph-green" : "text-ph-ink"}`}>
+                {formatTimer(questionTimeLeft)}
+              </span>
+            </div>
+            <div className="flex items-center gap-1 rounded-full bg-ph-green/10 px-2 py-1">
+              <span className={`${LABEL_SM} font-bold uppercase tracking-wider text-ph-green`}>
+                Question {Math.min(currentQuestionIdx + 1, total)} / {total}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
 
-        <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-2">
-          <Panel padding="sm" className="flex h-full min-h-0 flex-col">
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-h4 font-semibold text-ink">Camera</h2>
-              <span className="inline-flex items-center gap-1.5 text-small text-ink-subtle">
-                <Video size={14} />
-                {cameraReady ? "Ready" : "Initialising"}
+      {/* Three-pane grid */}
+      <div className="grid w-full grid-cols-1 items-start gap-6 px-4 py-4 sm:px-8 xl:grid-cols-12">
+        {/* LEFT: interviewer, camera, question roadmap */}
+        <aside className="flex flex-col gap-4 xl:col-span-4">
+          <div className={`relative flex flex-col gap-2 overflow-hidden rounded-[2rem] bg-ph-surface p-4 ${RAISED}`}>
+            <div className="pointer-events-none absolute -right-12 -top-12 h-28 w-28 rounded-full bg-ph-green/10 blur-xl" />
+            <div className="flex items-center justify-between">
+              <span className={`${LABEL_SM} uppercase tracking-wider text-ph-ink-soft`}>AI Lead Evaluator</span>
+              <span className={`${CODE_SM} flex items-center gap-1 rounded-full bg-ph-surface-2 px-1 py-0.5 text-ph-green`}>
+                <span className="h-1.5 w-1.5 rounded-full bg-ph-green" /> {isGeneratingQuestions ? "Preparing" : "Active"}
+              </span>
+            </div>
+            <div className="mt-1 flex items-center gap-2">
+              <div className="relative shrink-0">
+                <img src={alexChen} alt="Alex Chen" className="ph-tint h-12 w-12 rounded-full border border-ph-green/30 object-cover" />
+                <span className="absolute bottom-0 right-0 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-ph-green-container shadow-md">
+                  <Bot size={10} className="text-ph-green-soft" />
+                </span>
+              </div>
+              <div className="flex min-w-0 flex-col">
+                <span className={`${H_SM} truncate font-semibold text-ph-ink`}>Alex Chen</span>
+                <span className={`${BODY_SM} truncate text-ph-ink-muted`}>{selectedRole ?? "Technical"} Interviewer AI</span>
+              </div>
+            </div>
+            <div className={`mt-1 rounded-2xl bg-black p-2 ${RECESSED}`}>
+              {isGeneratingQuestions ? (
+                <p className={`${LABEL_MD} flex items-center gap-2 leading-relaxed text-ph-ink-muted`}>
+                  <Loader2 size={14} className="animate-spin" /> Generating questions from your resume…
+                </p>
+              ) : (
+                <p className={`${LABEL_MD} italic leading-relaxed text-ph-ink/90`}>“{currentQuestion || "No question available yet."}”</p>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => speakText(currentQuestion)}
+              disabled={!currentQuestion}
+              className={`${LABEL_MD} flex items-center justify-center gap-1 rounded-full bg-ph-surface-2 py-1.5 text-ph-ink transition-colors hover:text-ph-green disabled:opacity-50`}
+            >
+              <Volume2 size={16} /> Read question aloud
+            </button>
+          </div>
+
+          <div className={`flex flex-col gap-2 rounded-[2rem] bg-ph-surface p-4 ${RAISED}`}>
+            <div className="flex items-center justify-between">
+              <span className={`${LABEL_SM} uppercase tracking-wider text-ph-ink-soft`}>Your Camera</span>
+              <span className={`${CODE_SM} flex items-center gap-1 ${cameraReady ? "text-ph-green" : "text-ph-ink-soft"}`}>
+                <Video size={14} /> {cameraReady ? "Live" : "Initialising"}
               </span>
             </div>
             <video
@@ -468,95 +604,200 @@ export default function InterviewNowPage() {
               autoPlay
               muted
               playsInline
-              className="min-h-[260px] w-full flex-1 rounded-md bg-surface-strong object-cover"
+              className={`aspect-video w-full rounded-2xl bg-black object-cover ${RECESSED}`}
             />
-            {mediaError ? <p className="mt-2 text-small text-warning">{mediaError}</p> : null}
-            <div className="mt-4 flex flex-wrap gap-2">
-              <Button
-                onClick={isListening ? stopListening : () => void startListening()}
-                disabled={interviewSubmitted}
-                variant={isListening ? "danger" : "primary"}
-              >
-                {isListening ? <MicOff /> : <Mic />}
-                {isListening ? "Stop recording" : "Start recording"}
-              </Button>
-              <Button variant="secondary" onClick={() => speakText(currentQuestion)} disabled={!currentQuestion}>
-                <Volume2 /> Read question
-              </Button>
+            {mediaError ? <p className={`${BODY_SM} text-ph-ink`}>{mediaError}</p> : null}
+          </div>
+
+          <div className={`flex flex-col gap-2 rounded-[2rem] bg-ph-surface p-4 ${RAISED}`}>
+            <div className="flex items-center justify-between">
+              <span className={`${H_SM} font-semibold text-ph-ink`}>Evaluation Stages</span>
+              <span className={`${CODE_SM} text-ph-green`}>
+                {Math.min(currentQuestionIdx + 1, total)} / {total}
+              </span>
             </div>
-            <p className="mt-3 text-small text-ink-subtle">
-              Interview {interviewId || "not available"} · {interviewSetup?.status || "initialized"}
-            </p>
-          </Panel>
+            <div className="mt-1 flex flex-col gap-1">
+              {questions.length === 0 && <p className={`${BODY_SM} p-1 text-ph-ink-soft`}>Questions appear here once generated.</p>}
+              {questions.map((q, idx) => {
+                const answer = finalizedAnswers[idx];
+                if (idx === currentQuestionIdx) {
+                  return (
+                    <div key={idx} className="flex items-center gap-2 rounded-[2rem] bg-ph-surface-2 p-2 shadow-[0_2px_8px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.12)]">
+                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ph-green/15">
+                        <span className={`${CODE_SM} font-bold text-ph-green`}>{idx + 1}</span>
+                      </div>
+                      <div className="flex min-w-0 flex-col">
+                        <span className={`${LABEL_MD} truncate font-bold text-ph-green`}>{q}</span>
+                        <span className={`${CODE_SM} flex items-center gap-1 text-ph-green`}>
+                          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-ph-green" /> {isListening ? "Recording answer" : "In Evaluation"}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                }
+                if (idx < currentQuestionIdx || answer) {
+                  return (
+                    <div key={idx} className="flex items-center gap-2 rounded-2xl bg-ph-surface-2/40 p-1 text-ph-ink-muted">
+                      <CircleCheck size={18} className="shrink-0 text-ph-green" />
+                      <div className="flex min-w-0 flex-col">
+                        <span className={`${LABEL_MD} truncate text-ph-ink-soft line-through`}>
+                          Question {idx + 1}: {q}
+                        </span>
+                        <span className={`${CODE_SM} text-ph-ink-soft`}>Answered · {wordCount(answer)} words</span>
+                      </div>
+                    </div>
+                  );
+                }
+                return (
+                  <div key={idx} className={`flex items-center gap-2 rounded-2xl p-1 text-ph-ink-muted ${idx === currentQuestionIdx + 1 ? "opacity-50" : "opacity-40"}`}>
+                    <Circle size={18} className="shrink-0 text-ph-ink-soft" />
+                    <div className="flex min-w-0 flex-col">
+                      <span className={`${LABEL_MD} truncate`}>
+                        Question {idx + 1}: {q}
+                      </span>
+                      <span className={`${CODE_SM} text-ph-ink-soft`}>Queued</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
 
-          <Panel padding="sm" className="flex h-full min-h-0 flex-col">
-            {isGeneratingQuestions ? (
-              <div className="flex items-center gap-2 rounded-md bg-surface p-4 text-body text-ink-muted">
-                <Loader2 size={16} className="animate-spin" />
-                Generating questions from your resume…
+        </aside>
+
+
+        {/* RIGHT: live transcript, answer input, hints, decisions */}
+        <aside className="flex flex-col gap-4 xl:col-span-8">
+          <div className={`flex h-[480px] flex-col gap-2 rounded-[2rem] bg-ph-surface p-4 ${RAISED}`}>
+            <div className="flex items-center justify-between pb-1">
+              <div className="flex items-center gap-1">
+                <MessagesSquare size={18} className="text-ph-green" />
+                <span className={`${H_SM} font-semibold text-ph-ink`}>Live Transcription</span>
               </div>
-            ) : (
-              <div className="flex min-h-0 flex-1 flex-col">
-                <div className="mb-4 rounded-md bg-surface p-4">
-                  <p className="overline mb-2">Current question</p>
-                  <p className="text-body text-ink">{currentQuestion || "No question available yet."}</p>
-                </div>
-
-                <div className="mb-3 flex min-h-0 flex-1 flex-col rounded-md bg-surface p-4">
-                  <p className="overline mb-2">Your answer</p>
-                  <p className="mb-2 min-h-10 whitespace-pre-wrap text-small text-ink-muted">
-                    {[answerDraft, interimTranscript].filter(Boolean).join(" ").trim() ||
-                      "Start recording to see the live transcript…"}
-                  </p>
-                  <textarea
-                    value={editableTranscript}
-                    onChange={(e) => {
-                      setEditableTranscript(e.target.value);
-                      setIsTranscriptEdited(true);
-                    }}
-                    rows={8}
-                    aria-label="Your answer"
-                    className="min-h-0 w-full flex-1 rounded-md border border-border-strong bg-canvas p-3 text-body text-ink outline-none focus:border-accent"
-                    placeholder="Write or edit your answer here…"
-                  />
-                  <p className="mt-2 text-small text-ink-subtle">
-                    Auto-advances after {SILENCE_AUTO_ADVANCE_MS / 1000}s of silence.
-                  </p>
-                </div>
-
-                <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
-                  <Button
-                    variant="ghost"
-                    onClick={() => navigate("/dashboard")}
-                  >
-                    Leave
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    onClick={() => handleAdvanceQuestion()}
-                    disabled={isGeneratingQuestions || interviewSubmitted || questions.length === 0}
-                  >
-                    Next question
-                  </Button>
-                  <Button
-                    onClick={() => void handleSubmitInterview()}
-                    disabled={isSubmittingInterview || interviewSubmitted}
-                  >
-                    {isSubmittingInterview ? <Loader2 className="animate-spin" /> : null}
-                    {interviewSubmitted ? "Submitted" : "Submit interview"}
-                  </Button>
-                </div>
+              <span className={`h-2 w-2 rounded-full ${isListening ? "animate-ping bg-ph-green" : "bg-ph-line-bright"}`} />
+            </div>
+            <div ref={feedRef} className={`${BODY_SM} flex-1 space-y-3 overflow-y-auto rounded-2xl bg-black p-1 pr-1 ${RECESSED}`}>
+              {isGeneratingQuestions && (
+                <p className="flex items-center gap-2 p-2 text-ph-ink-muted">
+                  <Loader2 size={14} className="animate-spin" /> Generating questions from your resume…
+                </p>
+              )}
+              {questions.slice(0, currentQuestionIdx + 1).map((q, idx) => {
+                const answer = idx === currentQuestionIdx ? finalizedAnswers[idx] || liveAnswer : finalizedAnswers[idx];
+                return (
+                  <div key={idx} className="space-y-3">
+                    <div className="flex flex-col items-start gap-1">
+                      <div className={`${LABEL_SM} flex items-center gap-1 text-ph-green`}>
+                        <Bot size={12} /> Alex Chen (AI)
+                        <span className="ml-1 text-[10px] text-ph-ink-soft">Q{idx + 1}</span>
+                      </div>
+                      <div className="rounded-[2rem] bg-ph-surface-2 p-2 text-ph-ink shadow-[0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.08)]">
+                        “{q}”
+                      </div>
+                    </div>
+                    {answer ? (
+                      <div className="flex flex-col items-end gap-1">
+                        <div className={`${LABEL_SM} flex items-center gap-1 text-ph-green`}>
+                          Candidate (You) <User size={12} />
+                          <span className="ml-1 text-[10px] text-ph-ink-soft">
+                            {idx === currentQuestionIdx && !finalizedAnswers[idx] ? (isListening ? "Live" : "Draft") : `A${idx + 1}`}
+                          </span>
+                        </div>
+                        <div className="rounded-[2rem] border border-ph-green/40 bg-ph-green/10 p-2 text-ph-green shadow-[0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.08)]">
+                          “{answer}”
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+            <div className="pt-1">
+              <div className={`flex items-end gap-1 rounded-[1.5rem] bg-black px-2 py-1.5 text-ph-ink-muted ${RECESSED}`}>
+                <button
+                  type="button"
+                  onClick={isListening ? stopListening : () => void startListening()}
+                  disabled={interviewSubmitted}
+                  aria-label={isListening ? "Stop recording" : "Start recording"}
+                  title={isListening ? "Stop recording" : "Start recording"}
+                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-all hover:scale-105 active:scale-95 disabled:opacity-50 ${
+ isListening ? "bg-ph-green/15 text-ph-green shadow-[0_0_12px_rgba(0,255,65,0.35)]" : "bg-ph-surface-2 text-ph-ink-soft"
+                  }`}
+                >
+                  {isListening ? <MicOff size={14} /> : <AudioLines size={16} />}
+                </button>
+                <textarea
+                  value={editableTranscript}
+                  onChange={(e) => {
+                    setEditableTranscript(e.target.value);
+                    setIsTranscriptEdited(true);
+                  }}
+                  rows={3}
+                  aria-label="Your answer"
+                  placeholder={isListening ? "Listening… speak your answer" : "Speak or type your answer..."}
+                  className={`${BODY_SM} max-h-40 min-h-[1.75rem] w-full resize-none border-0 bg-transparent py-1 text-ph-ink outline-none placeholder:text-ph-ink-soft`}
+                />
+                <button
+                  type="button"
+                  onClick={() => handleAdvanceQuestion()}
+                  disabled={isGeneratingQuestions || interviewSubmitted || questions.length === 0}
+                  aria-label={isLastQuestion ? "Save answer" : "Save answer and go to next question"}
+                  title={isLastQuestion ? "Save answer" : "Next question"}
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ph-green/15 text-ph-green transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
+                >
+                  <SendHorizontal size={14} />
+                </button>
               </div>
-            )}
+              <p className={`${BODY_SM} mt-1 px-2 text-ph-ink-soft`}>Auto-advances after {SILENCE_AUTO_ADVANCE_MS / 1000}s of silence.</p>
+            </div>
+          </div>
 
-            {(questionError || submitMessage || !recognitionSupported) ? (
-              <p className="mt-4 text-small text-warning">
-                {questionError || submitMessage || "Speech recognition is not supported in this browser."}
-              </p>
-            ) : null}
-          </Panel>
-        </div>
+          <div className={`flex flex-col gap-2 rounded-[2rem] bg-ph-surface p-4 ${RAISED}`}>
+            <span className={`${LABEL_SM} uppercase tracking-wider text-ph-ink-soft`}>Tactical Prompt Suggestions</span>
+            <div className="mt-1 flex flex-col gap-1">
+              {(signals.length > 0 ? signals.slice(0, 3).map((s) => `Cover: ${s}`) : FALLBACK_TIPS).map((tip, i) => (
+                <div
+                  key={tip}
+                  className={`${BODY_SM} flex items-start gap-2 rounded-[2rem] bg-ph-surface-2 p-1 text-ph-ink-muted shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]`}
+                >
+                  <Lightbulb size={16} className={`mt-0.5 shrink-0 ${i % 2 ? "text-ph-green" : "text-ph-green"}`} />
+                  <span>“{tip}”</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className={`flex flex-col gap-2 rounded-[2rem] bg-ph-surface p-4 ${RAISED}`}>
+            <span className={`${LABEL_SM} uppercase tracking-wider text-ph-ink-soft`}>Calibration Decisions</span>
+            <button
+              type="button"
+              onClick={() => void handleSubmitInterview()}
+              disabled={isSubmittingInterview || interviewSubmitted}
+              className={`${LABEL_MD} ${CTA} flex w-full items-center justify-center gap-1 rounded-full py-2 font-semibold disabled:opacity-60`}
+            >
+              {isSubmittingInterview ? <Loader2 size={18} className="animate-spin" /> : <BadgeCheck size={18} />}
+              {interviewSubmitted ? "Submitted" : "Submit Interview for Grading"}
+            </button>
+            <button
+              type="button"
+              onClick={() => handleAdvanceQuestion()}
+              disabled={isGeneratingQuestions || interviewSubmitted || questions.length === 0 || isLastQuestion}
+              className={`${LABEL_MD} flex w-full items-center justify-center gap-1 rounded-full bg-ph-surface-2 py-2 font-semibold text-ph-ink transition-all hover:bg-ph-surface-2 hover:text-ph-green disabled:opacity-50`}
+            >
+              <SkipForward size={16} className="text-ph-green" /> Next Question
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate("/dashboard")}
+              className={`${LABEL_MD} flex w-full items-center justify-center gap-1 rounded-full py-1 text-ph-ink transition-colors hover:bg-ph-ink/10`}
+            >
+              <Power size={16} /> End Interview Session
+            </button>
+            {statusMessage ? <p className={`${BODY_SM} px-1 text-center text-ph-ink`}>{statusMessage}</p> : null}
+          </div>
+        </aside>
       </div>
+
     </div>
   );
 }

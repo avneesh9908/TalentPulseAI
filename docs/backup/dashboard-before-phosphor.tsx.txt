@@ -1,0 +1,599 @@
+/**
+ * Dashboard — the hub for both sides.
+ *
+ * UI: the Stitch screen "TalentPulseAI - Desktop Dashboard" (project
+ * 16808869888425310618, screen d3abcb07945141639fe3c625ae5ecafd) — restyle only
+ * (2026-09-24). Data, copy and sections are exactly the pre-Stitch dashboard's
+ * (docs/backup/dashboard-live-data.tsx.txt): the real /user/overview stats, score
+ * chart and Recent list, plus the sections that were already sample content
+ * (skill radar, Upcoming, AI Suggestions, Achievements, Improvement, Streak),
+ * kept as they were. Dark-only `st-*` palette like the Stitch screen.
+ */
+import { useCallback, useEffect, useMemo, useState, type ComponentType, type ReactNode } from "react";
+import { authService } from "@/services/authService";
+import { motion } from "framer-motion";
+import { CountUp } from "@/components/motion/count-up";
+import {
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Radar,
+  CartesianGrid,
+  Area,
+  AreaChart,
+} from "recharts";
+import { Users, Calendar, Trophy, Target, TrendingUp, Zap, Award, Star, ChevronRight, Activity, Mic, Briefcase } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { getUserOverview, type UserOverview } from "@/api/userService";
+import { getInterviewResults } from "@/api/interviewService";
+
+/**
+ * The four stat cards, from the real payload. `change` used to carry invented
+ * deltas (+12% / +8% / -5% / +18%); there is no time series behind a delta, so
+ * the slot now states what the number actually counts.
+ *
+ * Passed/Failed split on `stats.pass_score`, which the SERVER decides — it is
+ * the product's existing 65 band, shared with the result and profile pages.
+ */
+const buildStats = (o: UserOverview | null) => {
+  const st = o?.stats;
+  const scored = (st?.passed ?? 0) + (st?.failed ?? 0);
+  return [
+    { id: "total", title: "Total Interviews", value: st?.total_interviews ?? 0, change: `${st?.completed ?? 0} completed`, icon: Users },
+    { id: "passed", title: "Passed", value: st?.passed ?? 0, change: `${st?.pass_score ?? 65}+ score`, icon: Trophy },
+    { id: "failed", title: "Failed", value: st?.failed ?? 0, change: `of ${scored} scored`, icon: Target },
+    { id: "avg", title: "Average Score", value: st?.average_score == null ? "—" : `${st.average_score}%`, change: st?.best_score == null ? "no scores yet" : `best ${st.best_score}%`, icon: TrendingUp },
+  ];
+};
+
+const skillRadar = [
+  { skill: "Problem Solving", current: 85, previous: 75 },
+  { skill: "Communication", current: 70, previous: 65 },
+  { skill: "Coding", current: 78, previous: 70 },
+  { skill: "System Design", current: 60, previous: 55 },
+  { skill: "Domain Knowledge", current: 74, previous: 68 },
+];
+
+const upcoming = [
+  { id: 1, role: "Frontend Developer", company: "TechCorp", date: "2025-12-15", time: "10:00 AM", type: "Live", difficulty: "Medium" },
+  { id: 2, role: "ML Intern", company: "AI Labs", date: "2025-12-20", time: "02:30 PM", type: "Recorded", difficulty: "Easy" },
+  { id: 3, role: "Product Eng.", company: "StartupX", date: "2026-01-05", time: "11:00 AM", type: "Live", difficulty: "Hard" },
+];
+
+const achievements = [
+  { id: 1, title: "First Win", description: "Passed your first interview", unlocked: true, icon: Trophy },
+  { id: 2, title: "Streak Master", description: "5 consecutive passes", unlocked: true, icon: Zap },
+  { id: 3, title: "Perfect Score", description: "Score 100 in any interview", unlocked: false, icon: Star },
+  { id: 4, title: "Dedicated", description: "Complete 50 interviews", unlocked: false, icon: Award },
+];
+
+const suggestions = [
+  { title: "Practice: Algo Problems", desc: "Focus on arrays & graphs. Try timed mocks." },
+  { title: "Improve Communication", desc: "Record explanations and compare with samples." },
+  { title: "System Design Primer", desc: "Review scalability patterns for senior roles." },
+];
+
+// ---------- Stitch styling ----------
+const RAISED = "shadow-[0_4px_16px_-2px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.08)]";
+const RECESSED = "shadow-[inset_0_2px_4px_rgba(0,0,0,0.65)]";
+const CTA =
+  "bg-gradient-to-b from-[#8B5CF6] to-[#6D28D9] text-st-on-primary-container shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_4px_12px_rgba(124,58,237,0.35)] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_6px_16px_rgba(124,58,237,0.55)] active:scale-[0.98] transition-all";
+const LABEL_SM = "text-[11px] leading-[14px] tracking-[0.04em] font-semibold";
+const LABEL_MD = "text-[13px] leading-4 tracking-[0.02em] font-medium";
+const BODY_SM = "text-[12px] leading-[18px] tracking-[0.01em]";
+const CODE_SM = "text-[12px] leading-4 font-medium";
+const H_SM = "font-st-display text-[18px] leading-[26px] tracking-[-0.01em] font-medium";
+const H_MD = "font-st-display text-[24px] leading-8 tracking-[-0.02em] font-semibold";
+
+/** Recharts needs real colour strings; these are the Stitch palette's. */
+const chart = {
+  accent: "#7c3aed",
+  line: "#d2bbff",
+  grid: "#353436",
+  axis: "#958da1",
+  surface: "#201f20",
+  ink: "#e5e2e3",
+  border: "#4a4455",
+};
+
+// ---------- Small UI Components ----------
+interface StatCardProps {
+  title: string;
+  value: string | number;
+  change: string;
+  icon: ComponentType<{ className?: string; size?: number | string }>;
+}
+
+function StatCard({ title, value, change, icon: Icon }: StatCardProps) {
+  return (
+    <motion.div
+      whileHover={{ y: -2 }}
+      className={`relative flex h-full flex-col justify-between overflow-hidden rounded-[2rem] bg-st-low p-6 ${RAISED}`}
+    >
+      <div className="mb-2 flex items-center justify-between">
+        <span className={`${LABEL_SM} uppercase tracking-wider text-st-outline`}>{title}</span>
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-st-container text-st-primary shadow-[inset_0_1px_2px_rgba(0,0,0,0.6)]">
+          <Icon size={18} />
+        </div>
+      </div>
+      <div className="my-1 font-st-display text-[48px] font-bold leading-[56px] tracking-[-0.05em] text-st-ink tabular-nums">
+        {/* Real metric: must not sit at 0 while below the fold. */}
+        <CountUp value={String(value)} startOnMount />
+      </div>
+      <span className={`${BODY_SM} flex items-center gap-1 text-st-muted`}>
+        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-st-tertiary" />
+        {change}
+      </span>
+    </motion.div>
+  );
+}
+
+function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
+  return <div className={`rounded-[2rem] bg-st-low p-6 ${RAISED} ${className}`}>{children}</div>;
+}
+
+function CardHeading({
+  icon: Icon,
+  iconClass,
+  title,
+  subtitle,
+  action,
+}: {
+  icon: ComponentType<{ className?: string; size?: number | string }>;
+  iconClass: string;
+  title: string;
+  subtitle: string;
+  action?: ReactNode;
+}) {
+  return (
+    <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <h3 className={`${H_SM} flex items-center gap-2 font-semibold text-st-ink`}>
+          <Icon className={iconClass} size={18} />
+          {title}
+        </h3>
+        <p className={`${BODY_SM} mt-0.5 text-st-muted`}>{subtitle}</p>
+      </div>
+      {action}
+    </div>
+  );
+}
+
+// ---------- Main Page ----------
+export default function UserDashboardPage() {
+  const navigate = useNavigate();
+  const currentUser = authService.getCurrentUserFromStorage();
+  const displayName = currentUser?.full_name ?? currentUser?.email ?? "there";
+
+  const [overview, setOverview] = useState<UserOverview | null>(null);
+  const [overviewError, setOverviewError] = useState<string | null>(null);
+  const [openingReport, setOpeningReport] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getUserOverview()
+      .then((data) => {
+        if (!cancelled) setOverview(data);
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setOverviewError(
+            err instanceof Error ? err.message : "Could not load your interview history."
+          );
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const stats = useMemo(() => buildStats(overview), [overview]);
+
+  /*
+   * The performance chart. `score` is every scored attempt oldest-first; the
+   * second series is the pass band the server reports, drawn as a flat
+   * reference line — the old "target" series was invented week-by-week numbers.
+   */
+  const passScore = overview?.stats.pass_score ?? 65;
+  const scoreHistory = useMemo(
+    () =>
+      (overview?.score_trend ?? []).map((pt, i) => ({
+        name: pt.completed_at
+          ? new Date(pt.completed_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })
+          : `#${i + 1}`,
+        score: pt.score,
+        target: passScore,
+      })),
+    [overview, passScore]
+  );
+
+  const recent = overview?.recent_completed ?? [];
+
+  /** Rehydrate a scored interview into the report page — same contract as /profile. */
+  const openReport = useCallback(
+    async (interviewId: string) => {
+      setOpeningReport(interviewId);
+      setOverviewError(null);
+      try {
+        const result = await getInterviewResults(interviewId);
+        const answered = result.feedback?.question_feedback?.length ?? 0;
+        const resultState = {
+          result,
+          totalQuestions: result.feedback?.total_questions ?? answered,
+          answeredQuestions: answered,
+        };
+        try {
+          sessionStorage.setItem("talentpulse_last_result", JSON.stringify(resultState));
+        } catch {
+          /* ignore quota errors */
+        }
+        navigate("/interview/result", { state: resultState });
+      } catch (err) {
+        setOverviewError(
+          err instanceof Error ? err.message : "Could not open that interview report."
+        );
+      } finally {
+        setOpeningReport(null);
+      }
+    },
+    [navigate]
+  );
+
+  const initial = String(displayName).charAt(0).toUpperCase();
+
+  return (
+    <div className="relative min-h-[calc(100vh-3.5rem)] overflow-hidden bg-st-bg font-st-body text-[14px] leading-5 text-st-ink antialiased">
+      {/* Ambient glow orbs */}
+      <div className="pointer-events-none absolute left-1/4 top-[-140px] h-[350px] w-[500px] rounded-full bg-st-primary-container/10 blur-[130px]" />
+      <div className="pointer-events-none absolute right-[-80px] top-1/2 h-[450px] w-[450px] rounded-full bg-st-tertiary-container/10 blur-[140px]" />
+
+      <div className="relative mx-auto w-full max-w-[90rem] px-4 py-6 sm:px-8">
+        {/* Header Row */}
+        <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="mb-8">
+          <div className="flex items-start gap-6 md:items-center">
+            <div className="relative shrink-0">
+              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-st-container font-st-display text-[32px] font-bold text-st-primary shadow-[0_12px_24px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.2)]">
+                {initial}
+              </div>
+              <div className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-st-lowest shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
+                <span className="h-3.5 w-3.5 rounded-full bg-st-tertiary shadow-[0_0_10px_#4edea3]" />
+              </div>
+            </div>
+            <div className="min-w-0">
+              <h1 className="font-st-display text-[28px] font-semibold leading-9 tracking-[-0.025em] text-st-ink sm:text-[36px] sm:leading-[44px]">
+                Welcome back, <span className="text-st-primary">{displayName}</span>
+              </h1>
+              <p className={`${BODY_SM} mt-1 text-st-muted`}>Your hub for both sides — practice interviews and hunt for jobs</p>
+            </div>
+          </div>
+          {overviewError && (
+            <p className={`${BODY_SM} mt-3 rounded-2xl bg-[#ffb95f]/10 px-4 py-2 text-[#ffb95f] shadow-[inset_0_1px_0_rgba(255,185,95,0.2)]`}>
+              {overviewError}
+            </p>
+          )}
+        </motion.div>
+
+        {/* Two sides — the hub's job is to launch either one */}
+        <div className="mb-8 grid gap-6 sm:grid-cols-2">
+          {[
+            {
+              id: "interview",
+              label: "Interview Practice",
+              desc: "Rehearse with AI questions built from your resume",
+              action: "Start an interview",
+              to: "/interview/select-role",
+              icon: Mic,
+            },
+            {
+              id: "jobs",
+              label: "Job Search",
+              desc: "Let the agent scan career pages and rank matches",
+              action: "Find matching jobs",
+              to: "/jobs",
+              icon: Briefcase,
+            },
+          ].map((side, i) => (
+            <motion.button
+              key={side.id}
+              type="button"
+              onClick={() => navigate(side.to)}
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.05 + i * 0.08 }}
+              whileHover={{ y: -4 }}
+              whileTap={{ scale: 0.99 }}
+              className="group relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-st-low via-st-container to-st-low p-6 text-left shadow-[0_4px_16px_-2px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.1)]"
+            >
+              <div className="pointer-events-none absolute right-0 top-0 h-64 w-64 rounded-full bg-st-primary-container/10 blur-3xl" />
+              <div className="relative z-10 flex items-center justify-between gap-4">
+                <div className="flex items-start gap-4">
+                  <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-st-lowest text-st-primary shadow-[inset_0_2px_5px_rgba(0,0,0,0.7)]`}>
+                    <side.icon size={24} />
+                  </div>
+                  <div>
+                    <h3 className={`${H_MD} text-st-ink`}>{side.label}</h3>
+                    <p className={`${BODY_SM} mt-0.5 text-st-muted`}>{side.desc}</p>
+                  </div>
+                </div>
+                <span className={`${LABEL_MD} ${CTA} hidden shrink-0 items-center gap-1 rounded-full px-5 py-2 font-semibold transition-all group-hover:gap-2 md:inline-flex`}>
+                  {side.action}
+                  <ChevronRight size={16} />
+                </span>
+              </div>
+              <span className={`${LABEL_MD} relative z-10 mt-3 inline-flex items-center gap-1 font-semibold text-st-primary md:hidden`}>
+                {side.action}
+                <ChevronRight size={16} />
+              </span>
+            </motion.button>
+          ))}
+        </div>
+
+        {/* Stats Cards */}
+        <div className="mb-10 grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
+          {stats.map((s, i) => (
+            <motion.div key={s.id} initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: i * 0.1 }}>
+              <StatCard title={s.title} value={s.value} change={s.change} icon={s.icon} />
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Main Grid */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+          {/* Left column */}
+          <div className="flex flex-col gap-6 lg:col-span-8">
+            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}>
+              <Card>
+                <CardHeading
+                  icon={TrendingUp}
+                  iconClass="text-st-primary"
+                  title="Performance Over Time"
+                  subtitle={`Every scored attempt against the ${passScore} pass band`}
+                  action={
+                    <span className={`${LABEL_SM} rounded-full bg-st-lowest px-3 py-1 text-st-primary shadow-[inset_0_2px_4px_rgba(0,0,0,0.6)]`}>
+                      {scoreHistory.length} scored
+                    </span>
+                  }
+                />
+
+                {scoreHistory.length === 0 ? (
+                  <div className={`flex h-[240px] flex-col items-center justify-center rounded-[2rem] bg-st-lowest text-center ${RECESSED}`}>
+                    <p className={`${BODY_SM} text-st-muted`}>No scored interviews yet.</p>
+                    <button
+                      onClick={() => navigate("/interview/select-role")}
+                      className={`${LABEL_MD} mt-1 font-semibold text-st-primary hover:underline`}
+                    >
+                      Take your first interview
+                    </button>
+                  </div>
+                ) : (
+                  <div className="rounded-[2rem] bg-st-lowest p-4 shadow-[inset_0_2px_6px_rgba(0,0,0,0.7)]" style={{ width: "100%", height: 272 }}>
+                    <ResponsiveContainer>
+                      <AreaChart data={scoreHistory}>
+                        <defs>
+                          <linearGradient id="stColorScore" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor={chart.accent} stopOpacity={0.38} />
+                            <stop offset="100%" stopColor={chart.accent} stopOpacity={0} />
+                          </linearGradient>
+                          <linearGradient id="stScoreLine" x1="0" x2="1" y1="0" y2="0">
+                            <stop offset="0%" stopColor="#7c3aed" />
+                            <stop offset="70%" stopColor="#d2bbff" />
+                            <stop offset="100%" stopColor="#4edea3" />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="4 4" stroke={chart.grid} vertical={false} />
+                        <XAxis dataKey="name" stroke={chart.axis} fontSize={12} tickLine={false} axisLine={false} />
+                        <YAxis stroke={chart.axis} fontSize={12} tickLine={false} axisLine={false} width={32} />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: chart.surface,
+                            border: `1px solid ${chart.border}`,
+                            borderRadius: "12px",
+                            color: chart.ink,
+                          }}
+                        />
+                        <Area type="monotone" dataKey="score" stroke="url(#stScoreLine)" strokeWidth={3} fill="url(#stColorScore)" dot={{ r: 4, fill: "#131314", stroke: chart.line, strokeWidth: 2 }} />
+                        <Line type="monotone" dataKey="target" stroke={chart.axis} strokeWidth={2} strokeDasharray="6 6" dot={false} />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+
+                <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  <div className={`rounded-[2rem] bg-st-lowest p-3 ${RECESSED}`}>
+                    <div className={`${LABEL_SM} mb-0.5 uppercase text-st-tertiary`}>Best Score</div>
+                    <div className="font-st-display text-[24px] font-semibold tabular-nums text-st-ink">{overview?.stats.best_score ?? "—"}</div>
+                  </div>
+                  <div className={`rounded-[2rem] bg-st-lowest p-3 ${RECESSED}`}>
+                    <div className={`${LABEL_SM} mb-0.5 uppercase text-st-primary`}>Improvement</div>
+                    <div className="font-st-display text-[24px] font-semibold tabular-nums text-st-ink">+18%</div>
+                  </div>
+                  <div className={`rounded-[2rem] bg-st-lowest p-3 ${RECESSED}`}>
+                    <div className={`${LABEL_SM} mb-0.5 uppercase text-st-primary`}>Current Streak</div>
+                    <div className="font-st-display text-[24px] font-semibold tabular-nums text-st-ink">5 🔥</div>
+                  </div>
+                </div>
+              </Card>
+            </motion.div>
+
+            {/* AI Suggestions — three cards, like Stitch's assessment breakdown */}
+            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3 }}>
+              <Card>
+                <CardHeading icon={Zap} iconClass="text-[#ffb95f]" title="AI Suggestions" subtitle="Personalized tips" />
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                  {suggestions.map((tip) => (
+                    <div
+                      key={tip.title}
+                      className="flex flex-col rounded-[2rem] bg-st-container p-4 shadow-[0_2px_8px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.06)]"
+                    >
+                      <Zap size={18} className="mb-2 text-st-primary" />
+                      <div className={`${H_SM} mb-1 text-st-ink`}>{tip.title}</div>
+                      <div className={`${BODY_SM} text-st-muted`}>{tip.desc}</div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </motion.div>
+
+            {/* Radar Skills */}
+            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.35 }}>
+              <Card>
+                <CardHeading icon={Star} iconClass="text-st-primary" title="Skill Analysis" subtitle="Current vs previous performance" />
+                <div className="rounded-[2rem] bg-st-lowest shadow-[inset_0_2px_6px_rgba(0,0,0,0.7)]" style={{ width: "100%", height: 280 }}>
+                  <ResponsiveContainer>
+                    <RadarChart outerRadius={90} data={skillRadar}>
+                      <PolarGrid stroke={chart.grid} />
+                      <PolarAngleAxis dataKey="skill" stroke={chart.axis} fontSize={12} />
+                      <PolarRadiusAxis angle={30} domain={[0, 100]} stroke={chart.grid} fontSize={11} />
+                      <Radar name="Current" dataKey="current" stroke={chart.line} fill={chart.accent} fillOpacity={0.45} />
+                      <Radar name="Previous" dataKey="previous" stroke={chart.axis} fill={chart.axis} fillOpacity={0.12} />
+                    </RadarChart>
+                  </ResponsiveContainer>
+                </div>
+              </Card>
+            </motion.div>
+          </div>
+
+          {/* Right column */}
+          <div className="flex flex-col gap-6 lg:col-span-4">
+            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.4 }}>
+              <Card>
+                <CardHeading icon={Calendar} iconClass="text-st-tertiary" title="Upcoming" subtitle={`${upcoming.length} scheduled`} />
+                <div className="flex flex-col gap-2">
+                  {upcoming.map((u, i) => (
+                    <motion.div
+                      key={u.id}
+                      initial={{ x: 20, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      transition={{ delay: 0.5 + i * 0.1 }}
+                      className="rounded-[2rem] bg-st-container p-4 shadow-[0_2px_6px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.06)] transition-all hover:bg-st-high"
+                    >
+                      <div className="mb-2 flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-st-lowest font-st-display text-[16px] text-st-primary shadow-[inset_0_1px_2px_rgba(0,0,0,0.6)]`}>
+                            {u.company.charAt(0)}
+                          </div>
+                          <div>
+                            <div className={`${LABEL_MD} font-semibold text-st-ink`}>{u.role}</div>
+                            <div className={`${BODY_SM} text-st-outline`}>{u.company}</div>
+                          </div>
+                        </div>
+                        <span
+                          className={`${CODE_SM} rounded-2xl px-1.5 py-0.5 ${
+                            u.difficulty === "Easy"
+                              ? "bg-st-tertiary/10 text-st-tertiary"
+                              : u.difficulty === "Medium"
+                                ? "bg-[#ffb95f]/10 text-[#ffb95f]"
+                                : "bg-[#93000a]/30 text-st-error"
+                          }`}
+                        >
+                          {u.difficulty}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className={`${BODY_SM} text-st-muted`}>
+                          {u.date} · {u.time}
+                        </div>
+                        <button className={`${LABEL_SM} ${CTA} rounded-full px-4 py-1.5`}>Join</button>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+                <div className="mt-3 text-right">
+                  <button className={`${LABEL_MD} ml-auto flex items-center gap-1 text-st-primary transition hover:opacity-80`}>
+                    View all <ChevronRight size={16} />
+                  </button>
+                </div>
+              </Card>
+            </motion.div>
+
+            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.5 }}>
+              <Card>
+                <CardHeading
+                  icon={Activity}
+                  iconClass="text-st-primary"
+                  title="Recent"
+                  subtitle={recent.length === 0 ? "No scored attempts yet" : `Last ${recent.length} scored`}
+                />
+                <div className={`${CODE_SM} flex flex-col gap-1`}>
+                  {recent.length === 0 && (
+                    <p className={`${BODY_SM} rounded-2xl bg-st-lowest p-3 text-center text-st-muted ${RECESSED}`}>
+                      Finish an interview and it will show up here.
+                    </p>
+                  )}
+                  {recent.map((r, i) => {
+                    const score = r.score ?? 0;
+                    const passed = score >= passScore;
+                    return (
+                      <motion.button
+                        type="button"
+                        key={r.interview_id}
+                        onClick={() => openReport(r.interview_id)}
+                        disabled={openingReport !== null}
+                        aria-label={`Open ${r.role} report`}
+                        initial={{ x: 20, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        transition={{ delay: 0.6 + i * 0.1 }}
+                        className={`w-full rounded-2xl bg-st-lowest p-2.5 text-left transition-colors hover:bg-st-container disabled:opacity-60 ${RECESSED}`}
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className={`${LABEL_MD} truncate font-medium text-st-ink`}>{r.role}</div>
+                            <div className="truncate text-[10px] uppercase tracking-wider text-st-outline">
+                              {r.difficulty} · {r.completed_at ? new Date(r.completed_at).toLocaleDateString() : "date unknown"}
+                            </div>
+                          </div>
+                          <div className="shrink-0 text-right">
+                            <div className={`${LABEL_MD} font-semibold ${passed ? "text-st-tertiary" : "text-st-error"}`}>
+                              {openingReport === r.interview_id ? "Opening…" : passed ? "Pass" : "Fail"}
+                            </div>
+                            <div className="text-[10px] tabular-nums text-st-outline">Score: {r.score ?? "—"}</div>
+                          </div>
+                        </div>
+                      </motion.button>
+                    );
+                  })}
+                </div>
+                <div className="mt-3 text-right">
+                  <button
+                    onClick={() => navigate("/profile")}
+                    className={`${LABEL_MD} ml-auto flex items-center gap-1 font-semibold text-st-primary transition hover:opacity-80`}
+                  >
+                    Full history <ChevronRight size={14} />
+                  </button>
+                </div>
+              </Card>
+            </motion.div>
+
+            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.6 }}>
+              <Card>
+                <CardHeading icon={Trophy} iconClass="text-[#ffb95f]" title="Achievements" subtitle="2 of 4 unlocked" />
+                <div className="grid grid-cols-2 gap-2">
+                  {achievements.map((ach) => (
+                    <div
+                      key={ach.id}
+                      className={`rounded-[2rem] p-3 transition ${
+                        ach.unlocked
+                          ? "bg-st-container shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+                          : `bg-st-lowest opacity-60 ${RECESSED}`
+                      }`}
+                    >
+                      <ach.icon className={ach.unlocked ? "text-[#ffb95f]" : "text-st-outline"} size={18} />
+                      <div className={`${LABEL_MD} mt-2 font-semibold text-st-ink`}>{ach.title}</div>
+                      <div className={`${BODY_SM} mt-0.5 text-st-muted`}>{ach.description}</div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </motion.div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

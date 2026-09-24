@@ -1,0 +1,331 @@
+/**
+ * Stitch design-system primitives (2026-09-24) — the dark "TalentPulseAI 3D UI
+ * System" look used across the revamped screens. Each component mirrors the
+ * props of its `components/ui/*` counterpart (PageHeader, Stepper, Panel,
+ * Button, Badge, TextInput, EmptyState) so a page can switch imports without
+ * touching its content or logic. Dark-only: fixed `st-*` palette, Space
+ * Grotesk / Geist.
+ */
+import * as React from "react";
+import { Check } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+import {
+  ST_BODY_SM,
+  ST_CTA,
+  ST_H_SM,
+  ST_LABEL_MD,
+  ST_LABEL_SM,
+  ST_RAISED,
+  ST_RECESSED,
+} from "./tokens";
+
+/** Page wrapper: Stitch background, ambient glow, container width. */
+export function StPage({
+  children,
+  narrow = false,
+  className,
+}: {
+  children: React.ReactNode;
+  narrow?: boolean;
+  className?: string;
+}) {
+  return (
+    <div className="relative min-h-[calc(100vh-3.5rem)] overflow-hidden bg-st-bg font-st-body text-[14px] leading-5 text-st-ink antialiased">
+      <div className="pointer-events-none absolute -top-32 left-1/4 h-96 w-96 rounded-full bg-st-primary-container/15 blur-[128px]" />
+      <div className="pointer-events-none absolute right-[10%] top-40 h-80 w-80 rounded-full bg-st-tertiary-container/10 blur-[110px]" />
+      <div
+        className={cn(
+          "relative mx-auto w-full px-4 py-6 sm:px-8",
+          narrow ? "max-w-3xl" : "max-w-[90rem]",
+          className
+        )}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// ---- PageHeader ----------------------------------------------------------
+export function PageHeader({
+  eyebrow,
+  title,
+  description,
+  actions,
+  className,
+}: {
+  eyebrow?: string;
+  title: React.ReactNode;
+  description?: React.ReactNode;
+  actions?: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <header className={cn("flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between", className)}>
+      <div className="min-w-0">
+        {eyebrow && (
+          <span className={cn("mb-2 inline-flex items-center gap-1.5 rounded-full bg-st-lowest px-2 py-0.5", ST_RECESSED)}>
+            <span className="h-1.5 w-1.5 rounded-full bg-st-primary shadow-[0_0_8px_#d2bbff]" />
+            <span className={cn(ST_LABEL_SM, "uppercase tracking-widest text-st-primary")}>{eyebrow}</span>
+          </span>
+        )}
+        <h1 className="font-st-display text-[28px] font-bold leading-9 tracking-[-0.02em] text-st-ink md:text-[36px] md:leading-[44px] md:tracking-[-0.025em]">
+          {title}
+        </h1>
+        {description && <p className="mt-1 max-w-2xl text-[16px] leading-6 tracking-[-0.01em] text-st-muted">{description}</p>}
+      </div>
+      {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
+    </header>
+  );
+}
+
+// ---- Stepper -------------------------------------------------------------
+type Step = { id: string; label: string };
+
+export function Stepper({ steps, current, className }: { steps: readonly Step[]; current: number; className?: string }) {
+  return (
+    <ol
+      aria-label="Progress"
+      className={cn("flex w-full items-center gap-2 rounded-full bg-st-lowest p-1.5", ST_RECESSED, className)}
+    >
+      {steps.map((step, i) => {
+        const done = i < current;
+        const active = i === current;
+        return (
+          <li
+            key={step.id}
+            className={cn(
+              "flex min-w-0 flex-1 items-center justify-center gap-2 rounded-full px-2 py-1.5 transition-colors",
+              active && "bg-st-high shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_2px_6px_rgba(0,0,0,0.4)]"
+            )}
+          >
+            <span
+              aria-current={active ? "step" : undefined}
+              className={cn(
+                ST_LABEL_SM,
+                "flex h-6 w-6 shrink-0 items-center justify-center rounded-full",
+                done && "bg-st-tertiary/15 text-st-tertiary",
+                active && "bg-st-primary-container text-st-on-primary-container",
+                !done && !active && "bg-st-container text-st-outline"
+              )}
+            >
+              {done ? <Check size={12} strokeWidth={3} /> : i + 1}
+            </span>
+            <span className={cn(ST_LABEL_MD, "hidden truncate sm:inline", active ? "text-st-primary" : done ? "text-st-ink" : "text-st-outline")}>
+              {step.label}
+            </span>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+// ---- Panel ---------------------------------------------------------------
+const PANEL_PAD = { none: "", sm: "p-4", md: "p-6", lg: "p-8" } as const;
+
+export function Panel({
+  tone = "default",
+  padding = "md",
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement> & {
+  tone?: "default" | "raised" | "muted";
+  padding?: keyof typeof PANEL_PAD;
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-[2rem]",
+        tone === "muted" ? cn("bg-st-lowest", ST_RECESSED) : cn("bg-st-low", ST_RAISED),
+        PANEL_PAD[padding],
+        className
+      )}
+      {...props}
+    />
+  );
+}
+
+export function PanelTitle({ className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
+  return <h2 className={cn(ST_H_SM, "font-semibold text-st-ink", className)} {...props} />;
+}
+
+// ---- Button --------------------------------------------------------------
+type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
+type ButtonSize = "sm" | "md" | "lg" | "icon-sm";
+
+const BUTTON_VARIANT: Record<ButtonVariant, string> = {
+  primary: cn(ST_CTA, "font-semibold"),
+  secondary: "bg-st-container text-st-ink shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] hover:bg-st-high hover:text-st-primary",
+  ghost: "text-st-muted hover:bg-st-container hover:text-st-ink",
+  danger: "bg-[#93000a] font-semibold text-[#ffdad6] hover:brightness-110",
+};
+const BUTTON_SIZE: Record<ButtonSize, string> = {
+  sm: "h-8 px-3 gap-1.5 [&_svg]:size-4",
+  md: "h-9 px-4 gap-1.5 [&_svg]:size-4",
+  lg: "h-11 px-6 gap-2 [&_svg]:size-[18px]",
+  "icon-sm": "h-8 w-8 justify-center [&_svg]:size-4",
+};
+
+export const Button = React.forwardRef<
+  HTMLButtonElement,
+  React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant; size?: ButtonSize; block?: boolean }
+>(function Button({ variant = "primary", size = "md", block = false, className, type = "button", ...props }, ref) {
+  return (
+    <button
+      ref={ref}
+      type={type}
+      className={cn(
+        ST_LABEL_MD,
+        "inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-full transition-all disabled:pointer-events-none disabled:opacity-50",
+        BUTTON_VARIANT[variant],
+        BUTTON_SIZE[size],
+        block && "w-full",
+        className
+      )}
+      {...props}
+    />
+  );
+});
+
+// ---- Badge ---------------------------------------------------------------
+type BadgeTone = "neutral" | "accent" | "success" | "warning" | "danger";
+const BADGE_TONE: Record<BadgeTone, string> = {
+  neutral: cn("bg-st-lowest text-st-muted", ST_RECESSED),
+  accent: "bg-st-primary-container/25 text-st-primary",
+  success: "bg-st-tertiary/10 text-st-tertiary",
+  warning: "bg-[#ffb95f]/10 text-[#ffb95f]",
+  danger: "bg-[#93000a]/30 text-st-error",
+};
+
+export function Badge({
+  tone = "neutral",
+  size = "md",
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLSpanElement> & { tone?: BadgeTone; size?: "sm" | "md" }) {
+  return (
+    <span
+      className={cn(
+        ST_LABEL_SM,
+        "inline-flex items-center gap-1 whitespace-nowrap rounded-full [&_svg]:size-3",
+        size === "sm" ? "px-2 py-0.5" : "px-2.5 py-1",
+        BADGE_TONE[tone],
+        className
+      )}
+      {...props}
+    />
+  );
+}
+
+// ---- TextInput / Field ---------------------------------------------------
+export const TextInput = React.forwardRef<
+  HTMLInputElement,
+  React.InputHTMLAttributes<HTMLInputElement> & { invalid?: boolean }
+>(function TextInput({ className, invalid, ...props }, ref) {
+  return (
+    <input
+      ref={ref}
+      aria-invalid={invalid || undefined}
+      className={cn(
+        "h-10 w-full rounded-full border-0 bg-st-lowest px-4 text-[14px] text-st-ink outline-none transition-all placeholder:text-st-outline disabled:cursor-not-allowed disabled:opacity-60",
+        invalid
+          ? "shadow-[inset_0_2px_4px_rgba(0,0,0,0.7),0_0_0_1px_#ffb4ab]"
+          : "shadow-[inset_0_2px_4px_rgba(0,0,0,0.7),0_1px_0_rgba(255,255,255,0.04)] focus:shadow-[inset_0_2px_4px_rgba(0,0,0,0.7),0_0_0_1px_#7C3AED,0_0_14px_rgba(124,58,237,0.3)]",
+        className
+      )}
+      {...props}
+    />
+  );
+});
+
+/** Label + control + error/hint; the error id is `${htmlFor}-error`, as in ui/field. */
+export function Field({
+  label,
+  htmlFor,
+  error,
+  hint,
+  required,
+  children,
+  className,
+}: {
+  label: string;
+  htmlFor: string;
+  error?: string | null;
+  hint?: React.ReactNode;
+  required?: boolean;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cn("space-y-1.5", className)}>
+      <label htmlFor={htmlFor} className={cn(ST_LABEL_MD, "block px-1 text-st-ink")}>
+        {label}
+        {required && <span className="ml-0.5 text-st-error">*</span>}
+      </label>
+      {children}
+      {error ? (
+        <p id={`${htmlFor}-error`} role="alert" className={cn(ST_BODY_SM, "px-1 text-st-error")}>
+          {error}
+        </p>
+      ) : (
+        hint && <p className={cn(ST_BODY_SM, "px-1 text-st-outline")}>{hint}</p>
+      )}
+    </div>
+  );
+}
+
+// ---- EmptyState ----------------------------------------------------------
+export function EmptyState({
+  icon,
+  title,
+  description,
+  action,
+  className,
+}: {
+  icon?: React.ReactNode;
+  title: React.ReactNode;
+  description?: React.ReactNode;
+  action?: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cn("flex flex-col items-center rounded-[2rem] bg-st-lowest p-8 text-center", ST_RECESSED, className)}>
+      {icon && (
+        <span className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-st-container text-st-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+          {icon}
+        </span>
+      )}
+      <p className={cn(ST_H_SM, "font-semibold text-st-ink")}>{title}</p>
+      {description && <p className={cn(ST_BODY_SM, "mt-1 max-w-md text-st-muted")}>{description}</p>}
+      {action && <div className="mt-4">{action}</div>}
+    </div>
+  );
+}
+
+/** Stitch error card used by the wizard steps. */
+export function ErrorAlert({
+  title,
+  message,
+  onDismiss,
+  className,
+}: {
+  title: string;
+  message: React.ReactNode;
+  onDismiss: () => void;
+  className?: string;
+}) {
+  return (
+    <div role="alert" className={cn("flex items-start gap-3 rounded-[2rem] bg-[#93000a]/25 p-4 shadow-[inset_0_1px_0_rgba(255,180,171,0.15)]", className)}>
+      <span className="mt-0.5 h-2 w-2 shrink-0 rounded-full bg-st-error shadow-[0_0_8px_#ffb4ab]" />
+      <div className="flex-1">
+        <p className={cn(ST_LABEL_MD, "font-semibold text-st-error")}>{title}</p>
+        <p className={cn(ST_BODY_SM, "mt-0.5 text-st-muted")}>{message}</p>
+      </div>
+      <button onClick={onDismiss} aria-label="Dismiss" className="text-st-outline transition-colors hover:text-st-ink">
+        ×
+      </button>
+    </div>
+  );
+}

@@ -4,8 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Lock, X } from "lucide-react";
 import AppSidebar from "@/components/app-sidebar";
 import AppTopbar from "@/components/app-topbar";
-import { Logo } from "@/components/brand/logo";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/phos/controls";
 import { DUR, EASE_OUT } from "@/lib/motion";
 
 interface ProtectedLayoutProps {
@@ -24,14 +23,24 @@ export default function ProtectedLayout({ children, chrome = "app" }: ProtectedL
 
   if (chrome === "focus") {
     return (
-      <div className="min-h-screen bg-surface">
-        <header className="border-b border-border bg-canvas">
-          <div className="flex h-16 items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-            <button onClick={() => navigate("/dashboard")} aria-label="Go to dashboard">
-              <Logo size="sm" />
+      <div className="min-h-screen bg-ph-bg text-ph-ink">
+        <header className="border-b border-ph-line bg-black font-st-body">
+          <div className="flex h-14 items-center justify-between gap-4 px-4 sm:px-5 lg:px-6">
+            <button
+              onClick={() => navigate("/dashboard")}
+              aria-label="Go to dashboard"
+              className="group flex items-center gap-2.5"
+            >
+              <span
+                aria-hidden="true"
+                className="h-2 w-2 rounded-full bg-ph-green shadow-[0_0_10px_#00ff41] transition-transform group-hover:scale-125"
+              />
+              <span className="font-st-display text-[15px] font-semibold tracking-[-0.01em] text-ph-ink">
+                talentpulse<span className="text-ph-green">.ai</span>
+              </span>
             </button>
-            <span className="flex items-center gap-1.5 text-small text-ink-subtle">
-              <Lock size={14} />
+            <span className="flex items-center gap-1.5 rounded-full border border-ph-green/40 bg-ph-green/[0.06] px-3 py-1 font-ph-mono text-[10px] uppercase tracking-[0.18em] text-ph-green">
+              <Lock size={12} />
               Secure session
             </span>
           </div>
@@ -42,9 +51,9 @@ export default function ProtectedLayout({ children, chrome = "app" }: ProtectedL
   }
 
   return (
-    <div className="min-h-screen bg-surface">
+    <div className="min-h-screen bg-ph-bg text-ph-ink">
       {/* Fixed rail on large screens */}
-      <div className="fixed inset-y-0 left-0 z-40 hidden w-60 lg:block">
+      <div className="fixed inset-y-0 left-0 z-40 hidden w-56 lg:block">
         <AppSidebar />
       </div>
 
@@ -58,14 +67,14 @@ export default function ProtectedLayout({ children, chrome = "app" }: ProtectedL
               exit={{ opacity: 0 }}
               transition={{ duration: DUR.fast }}
               onClick={() => setDrawerOpen(false)}
-              className="fixed inset-0 z-40 bg-overlay/50 lg:hidden"
+              className="fixed inset-0 z-40 bg-black/75 backdrop-blur-sm lg:hidden"
             />
             <motion.div
               initial={{ x: "-100%" }}
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ duration: DUR.base, ease: EASE_OUT }}
-              className="fixed inset-y-0 left-0 z-50 w-60 lg:hidden"
+              className="fixed inset-y-0 left-0 z-50 w-56 lg:hidden"
             >
               <AppSidebar onNavigate={() => setDrawerOpen(false)} />
               <Button
@@ -82,7 +91,7 @@ export default function ProtectedLayout({ children, chrome = "app" }: ProtectedL
         )}
       </AnimatePresence>
 
-      <div className="lg:pl-60">
+      <div className="lg:pl-56">
         <AppTopbar onOpenMenu={() => setDrawerOpen(true)} />
         <main>{children}</main>
       </div>

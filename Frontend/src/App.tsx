@@ -4,7 +4,6 @@ import ErrorBoundary from "@/components/error-boundary";
 import { Spinner } from "@/components/ui/spinner";
 import { AuthProvider } from "@/contexts/auth-context";
 import { InterviewProvider } from "@/contexts/interview-provider";
-import { ThemeProvider } from "@/contexts/theme-provider";
 import ProtectedRoute from "@/app/pages/auth/protected-route";
 
 // Layouts (structural — kept eager)
@@ -28,8 +27,8 @@ const Profile = lazy(() => import("@/app/pages/profile/profile"));
 const JobsPage = lazy(() => import("@/app/pages/jobs/jobs"));
 
 const PageFallback = () => (
-  <div className="flex min-h-screen items-center justify-center bg-surface">
-    <Spinner size="md" className="size-7 text-accent" />
+  <div className="flex min-h-screen items-center justify-center bg-ph-bg">
+    <Spinner size="md" className="size-7 text-ph-green" />
   </div>
 );
 
@@ -41,7 +40,6 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <InterviewProvider>
-          <ThemeProvider>
             <Suspense fallback={<PageFallback />}>
             <Routes>
             {/* LANDING PAGE - ENTRY POINT (divides into the two product sides) */}
@@ -177,7 +175,6 @@ function App() {
             <Route path="*" element={<Navigate to="/auth/login" replace />} />
           </Routes>
             </Suspense>
-        </ThemeProvider>
         </InterviewProvider>
       </AuthProvider>
     </BrowserRouter>

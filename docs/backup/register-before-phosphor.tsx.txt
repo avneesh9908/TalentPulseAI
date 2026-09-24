@@ -1,0 +1,197 @@
+/*
+ * UI: Stitch design system (2026-09-24) — restyle only; fields, validation and
+ * copy are unchanged from docs/backup/register-before-stitch.tsx.txt. The page is
+ * dark-only now, so its theme toggle was removed.
+ */
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/use-auth";
+import { AlertCircle, Loader2, Network } from "lucide-react";
+import { FcGoogle } from "react-icons/fc";
+import { validateName, validateEmail, validatePhone, validatePassword } from "@/lib/validation";
+import { Button, Field, Panel, TextInput } from "@/components/stitch";
+
+type RegisterField = "name" | "email" | "phone" | "password";
+
+export default function Register() {
+  const { register } = useAuth();
+
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<RegisterField, string>>>({});
+  const [isLoading, setIsLoading] = useState(false);
+
+  const validators: Record<RegisterField, (v: string) => string | null> = {
+    name: validateName,
+    email: validateEmail,
+    phone: validatePhone,
+    password: validatePassword,
+  };
+  const values: Record<RegisterField, string> = { name, email, phone, password };
+
+  const validateOne = (field: RegisterField) => {
+    const msg = validators[field](values[field]);
+    setFieldErrors((prev) => ({ ...prev, [field]: msg ?? undefined }));
+    return msg;
+  };
+  // Clear a field's error as the user corrects it.
+  const clearFieldError = (field: RegisterField) =>
+    setFieldErrors((prev) => (prev[field] ? { ...prev, [field]: undefined } : prev));
+
+  const handleRegister = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    setError("");
+
+    const next: Partial<Record<RegisterField, string>> = {};
+    (Object.keys(validators) as RegisterField[]).forEach((f) => {
+      const msg = validators[f](values[f]);
+      if (msg) next[f] = msg;
+    });
+    setFieldErrors(next);
+    if (Object.keys(next).length > 0) return;
+
+    setIsLoading(true);
+    try {
+      await register(name, email, phone, password);
+      // Navigation handled inside auth-context
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Registration failed. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="mx-auto w-full max-w-[26rem]">
+      <div className="mb-6 flex items-center justify-center">
+        <a href="/" aria-label="TalentPulseAI home" className="group flex items-center gap-2">
+          <span className="flex h-9 w-9 items-center justify-center rounded-2xl border border-st-primary/30 bg-[#151422] shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_2px_8px_rgba(0,0,0,0.7)] transition-all group-hover:shadow-[0_0_16px_rgba(124,58,237,0.7)]">
+            <Network size={18} className="text-st-primary" />
+          </span>
+          <span className="font-st-display text-[18px] font-bold tracking-tight text-st-ink">
+            TalentPulse
+            <span className="ml-1 rounded-2xl border border-st-primary/30 bg-st-primary-container/30 px-1.5 py-0.5 font-mono text-[11px] font-semibold tracking-normal text-st-primary">
+              AI
+            </span>
+          </span>
+        </a>
+      </div>
+
+      <Panel tone="raised" padding="lg" className="border border-st-primary/25 bg-[#0e0d16]/85 shadow-[0_24px_60px_-10px_rgba(0,0,0,0.9),0_0_40px_rgba(124,58,237,0.25),inset_0_1px_0_rgba(255,255,255,0.15)] backdrop-blur-2xl">
+        <h1 className="font-st-display text-[28px] font-bold leading-9 tracking-[-0.02em] text-white">Create your account</h1>
+        <p className="mt-1.5 text-[14px] leading-5 text-slate-300">
+          Free while in beta. One account covers interview practice and job search.
+        </p>
+
+        {error && (
+          <div
+            role="alert"
+            className="mt-5 flex items-start gap-2 rounded-2xl bg-[#93000a]/25 px-3 py-2.5 text-[13px] text-st-error shadow-[inset_0_1px_0_rgba(255,180,171,0.15)]"
+          >
+            <AlertCircle size={16} className="mt-0.5 shrink-0" />
+            {error}
+          </div>
+        )}
+
+        {/* noValidate: the JS validators own the messages */}
+        <form onSubmit={handleRegister} noValidate className="mt-6 space-y-4">
+          <Field label="Full name" htmlFor="reg-name" error={fieldErrors.name} required>
+            <TextInput
+              id="reg-name"
+              autoComplete="name"
+              value={name}
+              onChange={(e) => { setName(e.target.value); clearFieldError("name"); }}
+              onBlur={() => validateOne("name")}
+              invalid={Boolean(fieldErrors.name)}
+              aria-describedby={fieldErrors.name ? "reg-name-error" : undefined}
+              placeholder="Your name"
+            />
+          </Field>
+
+          <Field label="Email address" htmlFor="reg-email" error={fieldErrors.email} required>
+            <TextInput
+              id="reg-email"
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => { setEmail(e.target.value); clearFieldError("email"); }}
+              onBlur={() => validateOne("email")}
+              invalid={Boolean(fieldErrors.email)}
+              aria-describedby={fieldErrors.email ? "reg-email-error" : undefined}
+              placeholder="you@example.com"
+            />
+          </Field>
+
+          <Field label="Phone number" htmlFor="reg-phone" error={fieldErrors.phone} required>
+            <TextInput
+              id="reg-phone"
+              type="tel"
+              autoComplete="tel"
+              value={phone}
+              onChange={(e) => { setPhone(e.target.value); clearFieldError("phone"); }}
+              onBlur={() => validateOne("phone")}
+              invalid={Boolean(fieldErrors.phone)}
+              aria-describedby={fieldErrors.phone ? "reg-phone-error" : undefined}
+              placeholder="+91 98765 43210"
+            />
+          </Field>
+
+          <Field
+            label="Password"
+            htmlFor="reg-password"
+            error={fieldErrors.password}
+            hint="At least 8 characters."
+            required
+          >
+            <TextInput
+              id="reg-password"
+              type="password"
+              autoComplete="new-password"
+              value={password}
+              onChange={(e) => { setPassword(e.target.value); clearFieldError("password"); }}
+              onBlur={() => validateOne("password")}
+              invalid={Boolean(fieldErrors.password)}
+              aria-describedby={fieldErrors.password ? "reg-password-error" : undefined}
+              placeholder="••••••••"
+            />
+          </Field>
+
+          <Button type="submit" size="lg" block disabled={isLoading}>
+            {isLoading ? (
+              <>
+                <Loader2 className="animate-spin" />
+                Creating account…
+              </>
+            ) : (
+              "Create account"
+            )}
+          </Button>
+        </form>
+
+        <div className="my-5 flex items-center gap-3">
+          <span className="h-px flex-1 bg-white/10" />
+          <span className="font-mono text-[11px] font-semibold uppercase tracking-widest text-st-outline">or</span>
+          <span className="h-px flex-1 bg-white/10" />
+        </div>
+
+        <Button type="button" variant="secondary" size="lg" block>
+          <FcGoogle size={18} />
+          Continue with Google
+        </Button>
+
+        <p className="mt-6 text-center text-[13px] text-slate-400">
+          Already have an account?{" "}
+          <Link
+            to="/auth/login"
+            className="font-semibold text-cyan-300 underline-offset-4 hover:underline"
+          >
+            Log in
+          </Link>
+        </p>
+      </Panel>
+    </div>
+  );
+}

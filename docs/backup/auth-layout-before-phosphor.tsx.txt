@@ -1,0 +1,19 @@
+import { Outlet } from "react-router-dom";
+import galaxy from "@/assets/stitch/galaxy-hero.jpg";
+
+/** Auth pages sit on the Stitch galaxy backdrop (2026-09-24), dark-only. */
+export default function AuthLayout() {
+  return (
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#09080e] p-4 font-st-body text-st-ink antialiased">
+      <div className="pointer-events-none absolute inset-0">
+        <img src={galaxy} alt="" className="h-full w-full object-cover object-center opacity-70" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#09080e]/80 via-[#09080e]/40 to-[#09080e]" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#09080e]/85 via-transparent to-[#09080e]/85" />
+        <div className="absolute left-1/2 top-1/4 h-64 w-[28rem] -translate-x-1/2 rounded-full bg-st-primary-container/25 blur-[110px]" />
+      </div>
+      <div className="relative z-10 w-full py-10">
+        <Outlet />
+      </div>
+    </div>
+  );
+}

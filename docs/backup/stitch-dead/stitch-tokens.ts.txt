@@ -1,0 +1,12 @@
+/** Stitch design-system class tokens shared by the revamped screens (2026-09-24). */
+export const ST_RAISED = "shadow-[0_4px_16px_-2px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.08)]";
+export const ST_RECESSED = "shadow-[inset_0_2px_4px_rgba(0,0,0,0.65)]";
+export const ST_CTA =
+  "bg-gradient-to-b from-[#8B5CF6] to-[#6D28D9] text-st-on-primary-container shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_4px_12px_rgba(124,58,237,0.35)] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_6px_16px_rgba(124,58,237,0.55)] active:scale-[0.98] transition-all";
+export const ST_LABEL_SM = "text-[11px] leading-[14px] tracking-[0.04em] font-semibold";
+export const ST_LABEL_MD = "text-[13px] leading-4 tracking-[0.02em] font-medium";
+export const ST_BODY_SM = "text-[12px] leading-[18px] tracking-[0.01em]";
+export const ST_BODY_MD = "text-[14px] leading-5";
+export const ST_H_SM = "font-st-display text-[18px] leading-[26px] tracking-[-0.01em] font-medium";
+export const ST_H_MD = "font-st-display text-[24px] leading-8 tracking-[-0.02em] font-semibold";
+

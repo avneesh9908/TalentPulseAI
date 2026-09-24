@@ -1,0 +1,140 @@
+/**
+ * Primary in-app navigation, as a left rail.
+ *
+ * Replaces the top `AppNav` pill bar (2026-07-17 IA) with the Stitch
+ * prototype's sidebar. The information architecture is unchanged — Dashboard is
+ * the shared hub, Interviews and Jobs are the two product sides, Profile is the
+ * account page. Active state is still derived from the route, so a shared page
+ * highlights the section it belongs to and nothing else.
+ *
+ * The prototype's two sidebars disagreed on both the item list (Schedule /
+ * Achievements / Notifications vs Jobs / Profile / Settings) and the active
+ * treatment (soft pill vs solid pill). Only the four destinations below exist in
+ * this product. The solid accent pill it shipped with was retired on 2026-08-26:
+ * in the dark-first shell the accent is reserved for state, so active is a
+ * raised surface with a 2px accent marker instead of a violet slab.
+ *
+ * Stitch design system (2026-09-24): dark-only `st-*` surfaces and the Stitch
+ * nav pill (raised, violet label). Every screen is dark-only now, so the
+ * Light/Dark mode toggle was removed (backup: docs/backup/app-sidebar-before-stitch.tsx.txt).
+ */
+import { useNavigate, useLocation } from "react-router-dom";
+import { motion } from "framer-motion";
+import { Briefcase, LayoutDashboard, LogOut, Mic, User } from "lucide-react";
+import { SPRING } from "@/lib/motion";
+import { useAuth } from "@/contexts/use-auth";
+import { authService } from "@/services/authService";
+import { Logo } from "@/components/brand/logo";
+
+const DESTINATIONS = [
+  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, home: "/dashboard", match: ["/dashboard"] },
+  { id: "interview", label: "Interviews", icon: Mic, home: "/interview/select-role", match: ["/interview"] },
+  { id: "jobs", label: "Jobs", icon: Briefcase, home: "/jobs", match: ["/jobs"] },
+  { id: "profile", label: "Profile", icon: User, home: "/profile", match: ["/profile"] },
+] as const;
+
+const isIn = (dest: (typeof DESTINATIONS)[number], pathname: string) =>
+  dest.match.some((m) => pathname.startsWith(m));
+
+interface AppSidebarProps {
+  /** Called after a navigation — the mobile drawer uses it to close itself. */
+  onNavigate?: () => void;
+}
+
+export default function AppSidebar({ onNavigate }: AppSidebarProps) {
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const { logout } = useAuth();
+
+  const currentUser = authService.getCurrentUserFromStorage();
+  const displayName = currentUser?.full_name ?? currentUser?.email ?? "User";
+  const userInitial = displayName.charAt(0).toUpperCase();
+
+  const activeId = DESTINATIONS.find((d) => isIn(d, pathname))?.id;
+
+  const go = (dest: (typeof DESTINATIONS)[number]) => {
+    // Already inside this section? don't reset progress within it.
+    if (!isIn(dest, pathname)) navigate(dest.home);
+    onNavigate?.();
+  };
+
+  return (
+    <div className="flex h-full flex-col border-r border-white/5 bg-st-lowest font-st-body shadow-[1px_0_12px_rgba(0,0,0,0.4)]">
+      {/* Brand block */}
+      <button
+        onClick={() => {
+          navigate("/dashboard");
+          onNavigate?.();
+        }}
+        className="flex items-center gap-2.5 px-3 py-3.5 text-left"
+        aria-label="Go to dashboard"
+      >
+        <Logo size="sm" showText={false} />
+        <span className="min-w-0">
+          <span className="block truncate font-st-display text-[15px] font-bold leading-tight tracking-tight text-st-ink">
+            TalentPulseAI
+          </span>
+          <span className="block truncate text-[10px] font-semibold uppercase tracking-wider text-st-outline">
+            Developer workspace
+          </span>
+        </span>
+      </button>
+
+      <nav aria-label="Primary" className="flex-1 space-y-0.5 px-2">
+        {DESTINATIONS.map((dest) => {
+          const active = dest.id === activeId;
+          const Icon = dest.icon;
+          return (
+            <button
+              key={dest.id}
+              type="button"
+              aria-current={active ? "page" : undefined}
+              onClick={() => go(dest)}
+              className={`relative flex w-full items-center gap-2.5 rounded-full px-3 py-2 text-[13px] font-medium tracking-[0.02em] transition-colors ${
+                active ? "text-st-primary" : "text-st-muted hover:bg-st-container hover:text-st-ink"
+              }`}
+            >
+              {/* Active is Stitch's raised nav pill with a violet label — a raised
+                  surface, not a solid violet slab.
+                  The layer still sits at auto z-index with the label lifted above
+                  it — a negative z-index risks being painted over by the sidebar's
+                  own background, which paints after negative layers. */}
+              {active && (
+                <motion.span
+                  layoutId="app-sidebar-pill"
+                  transition={SPRING}
+                  className="absolute inset-0 rounded-full bg-st-high shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_2px_6px_rgba(0,0,0,0.4)]"
+                />
+              )}
+              <Icon size={16} className={active ? "relative text-st-primary" : "relative"} />
+              <span className="relative">{dest.label}</span>
+            </button>
+          );
+        })}
+      </nav>
+
+      {/* Account group, pinned to the bottom like the prototype's */}
+      <div className="space-y-1 border-t border-white/5 p-2">
+        <div className="flex items-center gap-2.5 px-2.5 py-1.5">
+          {/* A recessed initial tile, as on the Stitch profile/dashboard screens. */}
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-st-container text-[13px] font-semibold text-st-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+            {userInitial}
+          </span>
+          <span className="min-w-0 truncate text-[13px] text-st-muted" title={displayName}>
+            {displayName}
+          </span>
+        </div>
+        <button
+          onClick={() => {
+            logout();
+            onNavigate?.();
+          }}
+          className="flex w-full items-center gap-2.5 rounded-full px-3 py-2 text-[13px] font-medium text-st-error transition-colors hover:bg-[#93000a]/25"
+        >
+          <LogOut size={16} />
+          Log out
+        </button>
+      </div>
+    </div>
+  );
+}

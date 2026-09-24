@@ -1,19 +1,19 @@
+/*
+ * UI: the phosphor-terminal design (2026-09-24) — restyle only; fields,
+ * validation and copy are unchanged from
+ * docs/backup/login-before-phosphor.tsx.txt. The page is dark-only.
+ */
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { useTheme } from "@/contexts/use-theme";
 import { useAuth } from "@/contexts/use-auth";
-import { AlertCircle, Loader2, Moon, Sun } from "lucide-react";
+import { AlertCircle, Loader2 } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import { validateEmail } from "@/lib/validation";
-import { Logo } from "@/components/brand/logo";
-import { Panel } from "@/components/ui/panel";
-import { Button } from "@/components/ui/button";
-import { Field, TextInput } from "@/components/ui/field";
+import { Button, Field, Panel, TextInput } from "@/components/phos/controls";
 
 type LoginField = "email" | "password";
 
 export default function Login() {
-  const { isDark, toggleTheme } = useTheme();
   const { login } = useAuth();
 
   const [email, setEmail] = useState("");
@@ -58,38 +58,36 @@ export default function Login() {
 
   return (
     <div className="mx-auto w-full max-w-[26rem]">
-      <div className="mb-6 flex items-center justify-between">
-        <a href="/" aria-label="TalentPulseAI home">
-          <Logo />
+      <div className="mb-8 flex items-center justify-center">
+        <a href="/" aria-label="TalentPulseAI home" className="group flex items-center gap-2">
+          <span
+            aria-hidden="true"
+            className="h-2 w-2 rounded-full bg-ph-green shadow-[0_0_10px_#00ff41] transition-transform group-hover:scale-125"
+          />
+          <span className="font-st-display text-[17px] font-semibold tracking-[-0.01em] text-ph-ink">
+            talentpulse<span className="text-ph-green">.ai</span>
+          </span>
         </a>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          onClick={toggleTheme}
-          aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-        >
-          {isDark ? <Sun /> : <Moon />}
-        </Button>
       </div>
 
       <Panel tone="raised" padding="lg">
-        <h1 className="text-h2 font-semibold text-ink">Welcome back</h1>
-        <p className="mt-1.5 text-small text-ink-muted">
+        <h1 className="font-st-display text-[26px] font-semibold leading-8 tracking-[-0.02em] text-ph-ink">Welcome back</h1>
+        <p className="mt-2 text-[14px] leading-[1.6] text-ph-ink-muted">
           Log in to pick up your interviews and job matches.
         </p>
 
         {error && (
           <div
             role="alert"
-            className="mt-5 flex items-start gap-2 rounded-md border border-danger/30 bg-danger-soft px-3 py-2.5 text-small text-danger"
+            className="mt-6 flex items-start gap-2.5 rounded-[12px] border border-ph-ink/30 bg-ph-ink/[0.06] px-3.5 py-3 text-[13px] text-ph-ink"
           >
-            <AlertCircle size={16} className="mt-0.5 shrink-0" />
+            <AlertCircle size={16} className="mt-0.5 shrink-0 text-ph-green" />
             {error}
           </div>
         )}
 
         {/* noValidate: the JS validators own the messages */}
-        <form onSubmit={handleLogin} noValidate className="mt-6 space-y-4">
+        <form onSubmit={handleLogin} noValidate className="mt-7 space-y-5">
           <Field label="Email address" htmlFor="login-email" error={fieldErrors.email}>
             <TextInput
               id="login-email"
@@ -130,10 +128,10 @@ export default function Login() {
           </Button>
         </form>
 
-        <div className="my-5 flex items-center gap-3">
-          <span className="h-px flex-1 bg-border" />
-          <span className="text-overline uppercase text-ink-subtle">or</span>
-          <span className="h-px flex-1 bg-border" />
+        <div className="my-6 flex items-center gap-3">
+          <span className="h-px flex-1 bg-ph-line" />
+          <span className="font-ph-mono text-[10px] uppercase tracking-[0.2em] text-ph-ink-soft">or</span>
+          <span className="h-px flex-1 bg-ph-line" />
         </div>
 
         <Button type="button" variant="secondary" size="lg" block>
@@ -141,12 +139,9 @@ export default function Login() {
           Continue with Google
         </Button>
 
-        <p className="mt-6 text-center text-small text-ink-muted">
+        <p className="mt-7 text-center text-[13px] text-ph-ink-soft">
           Don't have an account?{" "}
-          <Link
-            to="/auth/register"
-            className="font-medium text-accent-text underline-offset-4 hover:underline"
-          >
+          <Link to="/auth/register" className="font-medium text-ph-green underline-offset-4 hover:underline">
             Create one
           </Link>
         </p>

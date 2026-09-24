@@ -1,0 +1,788 @@
+import { useCallback, useEffect, useMemo, useState, type ComponentType } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Link, useNavigate } from "react-router-dom";
+import { authService } from "@/services/authService";
+import {
+  deleteResume,
+  getResumeDetail,
+  getUserOverview,
+  type InterviewSummary,
+  type ResumeDetail,
+  type UserOverview,
+} from "@/api/userService";
+import { getInterviewResults } from "@/api/interviewService";
+import { Reveal } from "@/components/motion/reveal";
+import {
+  Mail,
+  Phone,
+  Briefcase,
+  FileText,
+  Lock,
+  ArrowRight,
+  LayoutDashboard,
+  Mic,
+  Award,
+  CalendarClock,
+  Loader2,
+  PlayCircle,
+  RefreshCw,
+  CheckCircle2,
+  Clock,
+  TrendingUp,
+  Trophy,
+  UserRound,
+  Plus,
+  Eye,
+  Trash2,
+  X,
+  AlertTriangle,
+  Layers,
+} from "lucide-react";
+
+/** An interview is finished only once it has been scored. */
+const isComplete = (interview: InterviewSummary) => interview.status === "submitted";
+
+// Answers/questions are never persisted server-side, so an unsubmitted interview
+// cannot be resumed later — label it for what it is rather than implying it can.
+const statusLabel = (interview: InterviewSummary) =>
+  isComplete(interview) ? "Completed" : "Not completed";
+
+const statusClasses = (interview: InterviewSummary) =>
+  isComplete(interview)
+    ? "bg-st-tertiary-container/30 text-st-tertiary"
+    : "bg-[#ffb95f]/15 text-[#ffb95f]";
+
+const scoreTone = (score: number) => {
+  if (score >= 80) return "text-st-tertiary";
+  if (score >= 65) return "text-st-primary";
+  return "text-[#ffb95f]";
+};
+
+/*
+ * UI follows the Stitch screen "Profile & 22-Skill Breakdown (Desktop Web)"
+ * (project 16808869888425310618, screen 5a5d615417eb477b936910c87338c396) —
+ * restyle only (2026-09-24): every label, number and action is the page's own;
+ * Stitch's sample copy and unbacked panels are not used. Pre-Stitch version:
+ * docs/backup/profile-before-stitch.tsx.txt.
+ */
+const RAISED = "shadow-[0_4px_16px_-2px_rgba(0,0,0,0.5),0_1px_2px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.08)]";
+const RECESSED = "shadow-[inset_0_2px_4px_rgba(0,0,0,0.65)]";
+const CTA =
+  "bg-gradient-to-b from-[#8B5CF6] to-[#6D28D9] text-st-on-primary-container shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_4px_12px_rgba(124,58,237,0.35)] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_6px_16px_rgba(124,58,237,0.55)] active:scale-[0.98] transition-all";
+const LABEL_SM = "text-[11px] leading-[14px] tracking-[0.04em] font-semibold";
+const LABEL_MD = "text-[13px] leading-4 tracking-[0.02em] font-medium";
+const BODY_SM = "text-[12px] leading-[18px] tracking-[0.01em]";
+const BODY_LG = "text-[16px] leading-6 tracking-[-0.01em]";
+const CODE_SM = "text-[12px] leading-4 font-medium";
+const H_SM = "font-st-display text-[18px] leading-[26px] tracking-[-0.01em] font-medium";
+
+const formatDate = (value: string | null) => {
+  if (!value) return "—";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
+};
+
+const formatShortDate = (value: string | null) => {
+  if (!value) return "—";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? value
+    : date.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+};
+
+export default function Profile() {
+  const navigate = useNavigate();
+
+  const [overview, setOverview] = useState<UserOverview | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [openingReport, setOpeningReport] = useState<string | null>(null);
+  const [reportError, setReportError] = useState<string | null>(null);
+
+  // Resume view / delete
+  const [viewingId, setViewingId] = useState<number | null>(null);
+  const [viewed, setViewed] = useState<ResumeDetail | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ id: number; name: string } | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [resumeError, setResumeError] = useState<string | null>(null);
+  const [resumeNotice, setResumeNotice] = useState<string | null>(null);
+
+  const loadOverview = useCallback(async () => {
+    setLoading(true);
+    setLoadError(null);
+    try {
+      setOverview(await getUserOverview());
+    } catch (err) {
+      setLoadError(
+        err instanceof Error ? err.message : "Could not load your account data."
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadOverview();
+  }, [loadOverview]);
+
+  // Server is the source of truth; the cached login payload covers the fetch failing.
+  const stored = authService.getCurrentUserFromStorage();
+  const userData = useMemo(() => {
+    const server = overview?.user;
+    return {
+      name: server?.full_name || stored?.full_name || "User",
+      email: server?.email || stored?.email || "—",
+      phone: server?.phone || stored?.phone || "—",
+      publicId: server?.public_id || stored?.public_id || "—",
+    };
+  }, [overview?.user, stored?.full_name, stored?.email, stored?.phone, stored?.public_id]);
+
+  const initial = userData.name.charAt(0).toUpperCase();
+  // Only the server can tell us a section is genuinely empty. Until it answers,
+  // say "unavailable" rather than claiming the user has no interviews/resumes.
+  const dataLoaded = overview !== null;
+  const stats = overview?.stats;
+  const resumes = overview?.resumes ?? [];
+  const history = overview?.recent_completed ?? [];
+  // Headline the newest SCORED interview — the newest row is often just an
+  // abandoned setup, which would otherwise hide the user's actual last result.
+  const newest = overview?.latest_interview ?? null;
+  const latest = overview?.latest_completed ?? newest;
+  const unfinishedSetup =
+    newest && !isComplete(newest) && newest.interview_id !== latest?.interview_id
+      ? newest
+      : null;
+  // Whatever the two cards above already show must not repeat in the history list.
+  const earlier = history.filter(
+    (i) =>
+      i.interview_id !== latest?.interview_id &&
+      i.interview_id !== unfinishedSetup?.interview_id
+  );
+
+  /** Rehydrate a scored interview into the report page (same contract as a fresh submit). */
+  const openReport = useCallback(
+    async (interviewId: string) => {
+      setOpeningReport(interviewId);
+      setReportError(null);
+      try {
+        const result = await getInterviewResults(interviewId);
+        // question_feedback covers the answered questions; total_questions is the
+        // number asked (absent on interviews submitted before it was recorded).
+        const answered = result.feedback?.question_feedback?.length ?? 0;
+        const resultState = {
+          result,
+          totalQuestions: result.feedback?.total_questions ?? answered,
+          answeredQuestions: answered,
+        };
+        try {
+          sessionStorage.setItem("talentpulse_last_result", JSON.stringify(resultState));
+        } catch {
+          /* ignore quota errors */
+        }
+        navigate("/interview/result", { state: resultState });
+      } catch (err) {
+        setReportError(
+          err instanceof Error ? err.message : "Could not open that interview report."
+        );
+      } finally {
+        setOpeningReport(null);
+      }
+    },
+    [navigate]
+  );
+
+  /** Open the viewer — shows the extracted content, since the PDF isn't stored. */
+  const openResume = useCallback(async (resumeId: number) => {
+    setViewingId(resumeId);
+    setResumeError(null);
+    setViewed(null);
+    try {
+      setViewed(await getResumeDetail(resumeId));
+    } catch (err) {
+      setViewingId(null);
+      setResumeError(err instanceof Error ? err.message : "Could not open that resume.");
+    }
+  }, []);
+
+  const removeResume = useCallback(async () => {
+    if (!confirmDelete) return;
+    const { id, name } = confirmDelete;
+    setDeletingId(id);
+    setResumeError(null);
+    setResumeNotice(null);
+    try {
+      const result = await deleteResume(id);
+      setConfirmDelete(null);
+      setResumeNotice(
+        result.job_setup_detached
+          ? `Deleted ${name}. Your job search no longer has a resume selected — pick one in Job Search setup.`
+          : `Deleted ${name}.`
+      );
+      // Re-read rather than patching local state, so stats/latest stay consistent.
+      await loadOverview();
+    } catch (err) {
+      setResumeError(err instanceof Error ? err.message : `Could not delete ${name}.`);
+    } finally {
+      setDeletingId(null);
+    }
+  }, [confirmDelete, loadOverview]);
+
+  const iconButtonClass =
+    "inline-flex h-8 w-8 items-center justify-center rounded-full bg-st-lowest text-st-muted shadow-[inset_0_2px_4px_rgba(0,0,0,0.6)] transition-colors hover:text-st-primary disabled:opacity-50";
+
+  const sectionHeading = (
+    label: string,
+    Icon: ComponentType<{ size?: number | string; className?: string }>,
+    accent: string,
+    action?: React.ReactNode
+  ) => (
+    <div className="flex items-center justify-between gap-2">
+      <div className="flex items-center gap-1.5">
+        <Icon size={20} className={accent} />
+        <h2 className={`${H_SM} font-semibold tracking-tight text-st-ink`}>{label}</h2>
+      </div>
+      {action}
+    </div>
+  );
+
+  const statTiles = [
+    { id: "completed", label: "Completed", value: stats ? stats.completed : null, icon: CheckCircle2, accent: "text-st-tertiary" },
+    { id: "unfinished", label: "Not completed", value: stats ? stats.unfinished : null, icon: Clock, accent: "text-[#ffb95f]" },
+    { id: "avg", label: "Average score", value: stats?.average_score ?? null, icon: TrendingUp, accent: "text-st-primary" },
+    { id: "best", label: "Best score", value: stats?.best_score ?? null, icon: Trophy, accent: "text-st-primary" },
+  ];
+
+  return (
+    <div className="relative min-h-[calc(100vh-3.5rem)] overflow-hidden bg-st-bg font-st-body text-[14px] leading-5 text-st-ink antialiased">
+      {/* Ambient glow */}
+      <div className="pointer-events-none absolute -top-32 left-1/4 h-96 w-96 rounded-full bg-st-primary-container/15 blur-[128px]" />
+      <div className="pointer-events-none absolute right-[16%] top-12 h-80 w-80 rounded-full bg-st-tertiary-container/10 blur-[100px]" />
+
+      <div className="relative mx-auto w-full max-w-[90rem] px-4 py-4 sm:px-8">
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+        {/* Header plate — identity, practice summary and actions */}
+        <div className={`flex w-full flex-col items-start justify-between gap-6 rounded-[2rem] bg-st-low p-6 xl:flex-row xl:items-center ${RAISED}`}>
+          <div className="flex min-w-0 flex-col items-start gap-6 sm:flex-row sm:items-center">
+            <div className="relative shrink-0">
+              <div className="flex h-20 w-20 items-center justify-center rounded-[2rem] bg-st-container font-st-display text-[32px] font-bold text-st-primary shadow-[0_8px_24px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.1)]">
+                {initial}
+              </div>
+            </div>
+            <div className="flex min-w-0 flex-col">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                <h1 className="font-st-display text-[28px] font-semibold leading-9 tracking-tight text-st-ink md:text-[36px] md:leading-[44px]">
+                  {userData.name}
+                </h1>
+                <div className={`flex items-center gap-1.5 rounded-full bg-st-lowest px-2 py-0.5 ${RECESSED}`}>
+                  <span className="h-1.5 w-1.5 rounded-full bg-st-primary shadow-[0_0_6px_#d2bbff]" />
+                  <span className={`${LABEL_SM} uppercase tracking-wider text-st-primary`}>Your Profile</span>
+                </div>
+              </div>
+              <p className={`${BODY_LG} mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-st-muted`}>
+                <span className="font-medium text-st-ink">
+                  {latest?.role
+                    ? `${latest.role} · ${latest.experience}`
+                    : dataLoaded
+                      ? "No interviews yet"
+                      : "—"}
+                </span>
+              </p>
+              <p className={`${BODY_SM} mt-0.5 text-st-muted`}>Your account, your interview history and the resumes on file</p>
+              {/* Practice summary — the four real counters as pills */}
+              <div className="mt-2 flex flex-wrap items-center gap-1">
+                {statTiles.map((tile) => (
+                  <div key={tile.id} className={`flex items-center gap-1.5 rounded-full bg-st-lowest px-2 py-0.5 ${RECESSED}`}>
+                    <tile.icon size={14} className={tile.accent} />
+                    <span className={`${LABEL_SM} text-st-muted`}>{tile.label}</span>
+                    <span className={`${CODE_SM} tabular-nums font-bold text-st-ink`}>{tile.value ?? "—"}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex w-full shrink-0 flex-wrap items-center justify-start gap-2 xl:w-auto xl:justify-end">
+            <Link
+              to="/dashboard"
+              className={`${LABEL_MD} inline-flex items-center gap-1 rounded-full bg-st-lowest px-4 py-1.5 text-st-muted shadow-[inset_0_2px_4px_rgba(0,0,0,0.65)] transition-all hover:text-st-ink`}
+            >
+              <LayoutDashboard size={16} />
+              Dashboard
+            </Link>
+            <Link
+              to="/interview/select-role"
+              className={`${LABEL_MD} inline-flex items-center gap-1 rounded-full bg-st-container px-4 py-1.5 text-st-ink shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_2px_6px_rgba(0,0,0,0.5)] transition-all hover:bg-st-high hover:text-st-primary active:scale-[0.98]`}
+            >
+              <Mic size={16} />
+              Start interview
+            </Link>
+            <Link
+              to="/jobs"
+              className={`${LABEL_MD} ${CTA} inline-flex items-center gap-1 rounded-full px-4 py-1.5 font-semibold`}
+            >
+              <Briefcase size={16} />
+              Find jobs
+            </Link>
+          </div>
+        </div>
+
+        {loading && (
+          <div className={`${BODY_SM} mt-4 flex items-center gap-3 rounded-2xl bg-st-low p-4 text-st-muted ${RAISED}`}>
+            <Loader2 size={16} className="animate-spin" />
+            Loading your account…
+          </div>
+        )}
+
+        {loadError && (
+          <div className={`${BODY_SM} mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-[#ffb95f]/10 p-4 text-[#ffb95f] shadow-[inset_0_1px_0_rgba(255,185,95,0.2)]`}>
+            <span>{loadError}</span>
+            <button
+              type="button"
+              onClick={() => void loadOverview()}
+              className={`${LABEL_MD} inline-flex items-center gap-2 rounded-full bg-[#ffb95f] px-3 py-1.5 font-semibold text-[#2a1700] hover:brightness-95`}
+            >
+              <RefreshCw size={14} />
+              Retry
+            </button>
+          </div>
+        )}
+
+        {/* Three columns — resumes | interviews | account */}
+        <div className="grid w-full grid-cols-1 items-start gap-6 py-6 lg:grid-cols-12">
+          {/* ── Column 1: resumes ─────────────────────────────────────── */}
+          <Reveal className="flex w-full flex-col gap-4 lg:col-span-6 xl:col-span-3">
+            {sectionHeading(
+              "Resumes & documents",
+              Layers,
+              "text-st-primary",
+              // Uploading happens inside the interview setup (that flow supplies the
+              // role/skills a resume row needs), so this jumps there.
+              <Link
+                to="/interview/select-role"
+                aria-label="Add a resume"
+                title="Add a resume (via interview setup)"
+                className={iconButtonClass}
+              >
+                <Plus size={16} />
+              </Link>
+            )}
+
+            {resumeError && <p className={`${BODY_SM} text-[#ffb95f]`}>{resumeError}</p>}
+            {resumeNotice && <p className={`${BODY_SM} text-st-tertiary`}>{resumeNotice}</p>}
+
+            {!dataLoaded ? (
+              !loading && (
+                <p className={`${BODY_SM} rounded-[2rem] bg-st-low p-4 text-st-muted ${RAISED}`}>
+                  Your resumes couldn't be loaded, so they aren't shown here.
+                </p>
+              )
+            ) : resumes.length === 0 ? (
+              <div className={`flex flex-col items-center gap-2 rounded-[2rem] bg-st-lowest p-6 text-center ${RECESSED}`}>
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-st-container text-st-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+                  <FileText size={22} />
+                </div>
+                <p className={`${LABEL_MD} font-semibold text-st-ink`}>No resume on file</p>
+                <p className={`${BODY_SM} text-st-muted`}>
+                  Upload one in the interview setup — both the interview and job agent use it.
+                </p>
+                <Link
+                  to="/interview/select-profile"
+                  className={`${LABEL_MD} ${CTA} mt-1 inline-flex items-center gap-2 rounded-full px-4 py-1.5 font-semibold`}
+                >
+                  Upload resume
+                  <ArrowRight size={15} />
+                </Link>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {resumes.map((resume) => (
+                  <div key={resume.id} className={`flex flex-col gap-3 rounded-[2rem] bg-st-low p-4 ${RAISED}`}>
+                    <div className="flex items-start gap-2">
+                      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[2rem] bg-st-lowest text-st-primary ${RECESSED}`}>
+                        <FileText size={20} />
+                      </div>
+                      <div className="flex min-w-0 flex-1 flex-col">
+                        <span className={`${LABEL_MD} truncate font-medium text-st-ink`}>{resume.file_name}</span>
+                        <span className={`${BODY_SM} text-st-muted`}>
+                          {resume.role} · {resume.experience}
+                        </span>
+                      </div>
+                    </div>
+                    <div className={`flex flex-col gap-1 rounded-[2rem] bg-st-lowest p-2 ${RECESSED}`}>
+                      {resume.skills.length > 0 && (
+                        <span className={`${BODY_SM} truncate text-st-muted`}>{resume.skills.slice(0, 4).join(", ")}</span>
+                      )}
+                      <span className={`${CODE_SM} text-st-outline`}>Added {formatShortDate(resume.created_at)}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => void openResume(resume.id)}
+                        disabled={viewingId === resume.id}
+                        aria-label={`View ${resume.file_name}`}
+                        title="View extracted content"
+                        className={`${LABEL_MD} flex flex-1 items-center justify-center gap-1.5 rounded-full bg-st-container py-1.5 text-st-ink shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition-colors hover:bg-st-high disabled:opacity-50`}
+                      >
+                        {viewingId === resume.id && !viewed ? (
+                          <Loader2 size={15} className="animate-spin" />
+                        ) : (
+                          <Eye size={15} className="text-st-primary" />
+                        )}
+                        View
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setConfirmDelete({ id: resume.id, name: resume.file_name })}
+                        disabled={deletingId === resume.id}
+                        aria-label={`Delete ${resume.file_name}`}
+                        title="Delete resume"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-st-lowest text-st-muted shadow-[inset_0_2px_4px_rgba(0,0,0,0.6)] transition-colors hover:text-st-error disabled:opacity-50"
+                      >
+                        {deletingId === resume.id ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <Link to="/jobs" className={`${LABEL_MD} ${CTA} inline-flex items-center gap-2 rounded-full px-4 py-1.5 font-semibold`}>
+                    <Briefcase size={15} />
+                    Match jobs
+                  </Link>
+                  <Link
+                    to="/interview/select-profile"
+                    className={`${LABEL_MD} inline-flex items-center gap-2 rounded-full bg-st-container px-4 py-1.5 text-st-ink shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition-colors hover:bg-st-high hover:text-st-primary`}
+                  >
+                    Upload another
+                    <ArrowRight size={15} />
+                  </Link>
+                </div>
+              </div>
+            )}
+          </Reveal>
+
+          {/* ── Column 2: interviews ──────────────────────────────────── */}
+          <Reveal className="flex w-full flex-col gap-4 lg:col-span-6 xl:col-span-5">
+            {sectionHeading("Interviews", Award, "text-st-tertiary")}
+
+            {reportError && <p className={`${BODY_SM} text-[#ffb95f]`}>{reportError}</p>}
+
+            {unfinishedSetup && (
+              <p className={`${BODY_SM} rounded-[2rem] bg-st-lowest p-3 leading-relaxed text-st-muted ${RECESSED}`}>
+                You also have an unfinished {unfinishedSetup.role} setup from{" "}
+                {formatShortDate(unfinishedSetup.started_at)}. It can't be resumed — start a new
+                interview to practise that role.
+              </p>
+            )}
+
+            {!dataLoaded && !loading && (
+              <p className={`${BODY_SM} rounded-[2rem] bg-st-low p-4 text-st-muted ${RAISED}`}>
+                Your interview history couldn't be loaded, so it isn't shown here.
+              </p>
+            )}
+
+            {dataLoaded && !latest && (
+              <div className={`rounded-[2rem] bg-st-low p-4 ${RAISED}`}>
+                <p className={`${BODY_SM} text-st-muted`}>
+                  You haven't taken an interview yet. Your status and score will show up here.
+                </p>
+                <Link
+                  to="/interview/select-role"
+                  className={`${LABEL_MD} ${CTA} mt-3 inline-flex items-center gap-2 rounded-full px-4 py-2 font-semibold`}
+                >
+                  <Mic size={16} />
+                  Take your first interview
+                </Link>
+              </div>
+            )}
+
+            {latest && (
+              <div className="rounded-[2rem] bg-st-low p-4 shadow-[0_0_0_1px_rgba(124,58,237,0.55),0_16px_32px_-6px_rgba(0,0,0,0.7),0_0_20px_-2px_rgba(124,58,237,0.25),inset_0_1px_0_rgba(255,255,255,0.12)]">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className={`${LABEL_SM} rounded-2xl bg-st-primary-container px-1.5 py-0.5 uppercase tracking-wider text-st-on-primary-container`}>
+                        Latest
+                      </span>
+                      <span className={`${LABEL_SM} inline-flex items-center gap-1 rounded-full px-2 py-0.5 ${statusClasses(latest)}`}>
+                        <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                        {statusLabel(latest)}
+                      </span>
+                    </div>
+                    <p className={`${H_SM} mt-1 truncate font-semibold text-st-ink`}>{latest.role}</p>
+                    <p className={`${BODY_SM} text-st-muted`}>
+                      {latest.experience} · {latest.difficulty}
+                    </p>
+                    {latest.skills.length > 0 && (
+                      <p className={`${BODY_SM} text-st-muted`}>{latest.skills.slice(0, 4).join(", ")}</p>
+                    )}
+                    <p className={`${CODE_SM} mt-2 flex items-center gap-1.5 text-st-outline`}>
+                      <CalendarClock size={13} />
+                      {isComplete(latest) ? formatDate(latest.completed_at) : `Started ${formatDate(latest.started_at)}`}
+                    </p>
+                  </div>
+
+                  {isComplete(latest) && typeof latest.score === "number" && (
+                    <div className="shrink-0 text-right">
+                      <p className={`font-st-display text-[32px] font-bold leading-none ${scoreTone(latest.score)}`}>{latest.score}</p>
+                      <p className={`${CODE_SM} text-st-outline`}>/ 100</p>
+                    </div>
+                  )}
+                </div>
+
+                {isComplete(latest) && typeof latest.score === "number" && (
+                  <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-st-lowest shadow-[inset_0_1px_2px_rgba(0,0,0,0.8)]">
+                    <div className="h-full rounded-full bg-gradient-to-r from-st-primary-container to-st-primary" style={{ width: `${Math.max(0, Math.min(100, latest.score))}%` }} />
+                  </div>
+                )}
+
+                <div className="mt-3">
+                  {isComplete(latest) ? (
+                    <button
+                      type="button"
+                      onClick={() => void openReport(latest.interview_id)}
+                      disabled={openingReport === latest.interview_id}
+                      className={`${LABEL_MD} ${CTA} inline-flex w-full items-center justify-center gap-2 rounded-full px-4 py-2 font-semibold disabled:opacity-60`}
+                    >
+                      {openingReport === latest.interview_id ? <Loader2 size={15} className="animate-spin" /> : <Award size={15} />}
+                      View report
+                    </button>
+                  ) : (
+                    <Link
+                      to="/interview/select-role"
+                      className={`${LABEL_MD} ${CTA} inline-flex w-full items-center justify-center gap-2 rounded-full px-4 py-2 font-semibold`}
+                    >
+                      <PlayCircle size={15} />
+                      Start a new interview
+                    </Link>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {earlier.length > 0 && (
+              <div className="flex flex-col gap-3">
+                {earlier.map((interview) => (
+                  <div key={interview.interview_id} className={`flex flex-col gap-2 rounded-[2rem] bg-st-low p-4 ${RAISED}`}>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className={`${H_SM} truncate text-st-ink`}>{interview.role}</p>
+                        <p className={`${CODE_SM} text-st-outline`}>
+                          {formatShortDate(isComplete(interview) ? interview.completed_at : interview.started_at)}
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-3">
+                        {typeof interview.score === "number" && (
+                          <span className={`font-st-display text-[28px] font-bold leading-none ${scoreTone(interview.score)}`}>
+                            {interview.score}
+                          </span>
+                        )}
+                        {isComplete(interview) && (
+                          <button
+                            type="button"
+                            onClick={() => void openReport(interview.interview_id)}
+                            disabled={openingReport === interview.interview_id}
+                            aria-label={`Open ${interview.role} report`}
+                            className={`${LABEL_MD} inline-flex items-center gap-1 rounded-full bg-st-container px-3 py-1.5 text-st-ink shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition-colors hover:bg-st-high hover:text-st-primary disabled:opacity-60`}
+                          >
+                            {openingReport === interview.interview_id ? <Loader2 size={13} className="animate-spin" /> : <Award size={13} />}
+                            Report
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    {typeof interview.score === "number" && (
+                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-st-lowest shadow-[inset_0_1px_2px_rgba(0,0,0,0.8)]">
+                        <div className="h-full rounded-full bg-gradient-to-r from-st-primary-container to-st-primary" style={{ width: `${Math.max(0, Math.min(100, interview.score))}%` }} />
+                      </div>
+                    )}
+                  </div>
+                ))}
+                <p className={`${LABEL_SM} px-2 uppercase tracking-wider text-st-outline`}>
+                  Earlier
+                  {stats && stats.completed > history.length && (
+                    <span className="normal-case tracking-normal">
+                      {" "}
+                      · {history.length} of {stats.completed}
+                    </span>
+                  )}
+                </p>
+              </div>
+            )}
+          </Reveal>
+
+          {/* ── Column 3: account ─────────────────────────────────────── */}
+          <Reveal className="flex w-full flex-col gap-4 lg:col-span-12 xl:col-span-4">
+            {sectionHeading("Account", UserRound, "text-st-tertiary")}
+            <div className={`flex flex-col gap-4 rounded-[2rem] bg-st-low p-6 ${RAISED}`}>
+              <dl className="grid grid-cols-1 gap-2">
+                {[
+                  { label: "Email address", value: userData.email, icon: Mail, tone: "text-st-primary", mono: false },
+                  { label: "Phone number", value: userData.phone, icon: Phone, tone: "text-st-primary", mono: false },
+                  { label: "User ID", value: userData.publicId, icon: CheckCircle2, tone: "text-st-tertiary", mono: true },
+                ].map((row) => (
+                  <div key={row.label} className={`flex items-center gap-3 rounded-[2rem] bg-st-lowest p-3 ${RECESSED}`}>
+                    <row.icon size={17} className={`shrink-0 ${row.tone}`} />
+                    <div className="min-w-0">
+                      <dt className={`${LABEL_SM} text-st-outline`}>{row.label}</dt>
+                      <dd className={`truncate font-medium text-st-ink ${row.mono ? `${CODE_SM} font-mono` : ""}`}>
+                        {row.mono ? <span className="select-all">{row.value}</span> : row.value}
+                      </dd>
+                    </div>
+                  </div>
+                ))}
+              </dl>
+
+              <button
+                type="button"
+                className={`${LABEL_MD} flex w-full items-center justify-between rounded-full bg-st-container px-4 py-2 text-st-ink shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition-colors hover:bg-st-high`}
+              >
+                <span className="flex items-center gap-2.5">
+                  <Lock size={17} className="text-st-primary" />
+                  Change password
+                </span>
+                <ArrowRight size={16} className="text-st-outline" />
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2 rounded-full bg-st-low px-4 py-2.5 shadow-[0_4px_16px_-2px_rgba(0,0,0,0.5)]">
+              <span className="h-2 w-2 shrink-0 rounded-full bg-st-tertiary shadow-[0_0_8px_#4edea3]" />
+              <p className={`${BODY_SM} text-st-muted`}>💡 Editing your details and changing your password are coming soon.</p>
+            </div>
+          </Reveal>
+        </div>
+      </motion.div>
+      </div>
+
+      {/* ── Resume viewer ─────────────────────────────────────────────────── */}
+      <AnimatePresence>
+        {viewingId !== null && viewed && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 font-st-body backdrop-blur-sm"
+            onClick={() => {
+              setViewingId(null);
+              setViewed(null);
+            }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.97, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.97, y: 12 }}
+              onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+              aria-label={`${viewed.file_name} content`}
+              className={`flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-[2rem] bg-st-low text-st-ink ${RAISED}`}
+            >
+              <div className="flex items-start gap-3 border-b border-white/5 px-6 py-4">
+                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[2rem] bg-st-lowest text-st-primary ${RECESSED}`}>
+                  <FileText size={18} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className={`${H_SM} truncate font-semibold`}>{viewed.file_name}</h3>
+                  <p className={`${BODY_SM} text-st-muted`}>
+                    {viewed.role} · {viewed.experience} · added {formatShortDate(viewed.created_at)} ·{" "}
+                    {viewed.chunk_count} indexed chunk{viewed.chunk_count === 1 ? "" : "s"}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setViewingId(null);
+                    setViewed(null);
+                  }}
+                  aria-label="Close"
+                  className={iconButtonClass}
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
+                {/* Be explicit: this is the parsed text, not the uploaded file. */}
+                <p className={`${BODY_SM} mb-4 rounded-[2rem] bg-st-lowest px-3 py-2 text-st-muted ${RECESSED}`}>
+                  This is the text extracted from your resume — the one the AI reads. The
+                  uploaded file itself isn't stored, so there's nothing to download. Contact
+                  details are removed before indexing.
+                </p>
+
+                {viewed.sections.length === 0 ? (
+                  <p className={`${BODY_SM} text-st-muted`}>No extracted content was stored for this resume.</p>
+                ) : (
+                  <div className="space-y-4">
+                    {viewed.sections.map((section) => (
+                      <div key={section.name}>
+                        <p className={`${LABEL_SM} mb-1 uppercase tracking-wider text-st-primary`}>{section.name.replace(/_/g, " ")}</p>
+                        <p className={`${BODY_SM} whitespace-pre-wrap leading-relaxed text-st-muted`}>{section.text}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Delete confirmation ───────────────────────────────────────────── */}
+      <AnimatePresence>
+        {confirmDelete && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 font-st-body backdrop-blur-sm"
+            onClick={() => deletingId === null && setConfirmDelete(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.97, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.97, y: 12 }}
+              onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+              className={`w-full max-w-md rounded-[2rem] bg-st-low p-6 text-st-ink ${RAISED}`}
+            >
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#93000a]/40">
+                  <AlertTriangle size={19} className="text-st-error" />
+                </div>
+                <div className="min-w-0">
+                  <h3 className={`${H_SM} font-semibold`}>Delete this resume?</h3>
+                  <p className={`${BODY_SM} mt-1 text-st-muted`}>
+                    <span className="font-medium text-st-ink">{confirmDelete.name}</span> and everything indexed
+                    from it will be removed. Interviews you already completed keep their reports.
+                    This can't be undone — you'd need to upload the file again.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-5 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setConfirmDelete(null)}
+                  disabled={deletingId !== null}
+                  className={`${LABEL_MD} rounded-full bg-st-container px-4 py-2 text-st-ink shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition-colors hover:bg-st-high disabled:opacity-50`}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void removeResume()}
+                  disabled={deletingId !== null}
+                  className={`${LABEL_MD} inline-flex items-center gap-2 rounded-full bg-[#93000a] px-4 py-2 font-semibold text-[#ffdad6] transition-all hover:brightness-110 disabled:opacity-60`}
+                >
+                  {deletingId !== null ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}
+                  Delete
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}

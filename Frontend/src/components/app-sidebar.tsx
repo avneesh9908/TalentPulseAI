@@ -1,25 +1,24 @@
 /**
  * Primary in-app navigation, as a left rail.
  *
- * Replaces the top `AppNav` pill bar (2026-07-17 IA) with the Stitch
- * prototype's sidebar. The information architecture is unchanged — Dashboard is
- * the shared hub, Interviews and Jobs are the two product sides, Profile is the
- * account page. Active state is still derived from the route, so a shared page
- * highlights the section it belongs to and nothing else.
+ * Replaces the top `AppNav` pill bar (2026-07-17 IA) with a left sidebar. The
+ * information architecture is unchanged — Dashboard is the shared hub,
+ * Interviews and Jobs are the two product sides, Profile is the account page.
+ * Active state is still derived from the route, so a shared page highlights the
+ * section it belongs to and nothing else.
  *
- * The prototype's two sidebars disagreed on both the item list (Schedule /
- * Achievements / Notifications vs Jobs / Profile / Settings) and the active
- * treatment (soft pill vs solid pill). Only the four destinations below exist in
- * this product, and the solid pill is used because it survives dark mode.
+ * Phosphor-terminal design (2026-09-24): black rail, hairline border, mono nav
+ * labels, and an accent marker + surface for the active item rather than a
+ * filled slab — the accent stays reserved for state. Every screen is dark-only,
+ * so there is no theme toggle (backup:
+ * docs/backup/app-sidebar-before-phosphor.tsx.txt).
  */
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Briefcase, LayoutDashboard, LogOut, Mic, Moon, Sun, User } from "lucide-react";
+import { Briefcase, LayoutDashboard, LogOut, Mic, User } from "lucide-react";
 import { SPRING } from "@/lib/motion";
-import { useTheme } from "@/contexts/use-theme";
 import { useAuth } from "@/contexts/use-auth";
 import { authService } from "@/services/authService";
-import { Logo } from "@/components/brand/logo";
 
 const DESTINATIONS = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, home: "/dashboard", match: ["/dashboard"] },
@@ -39,7 +38,6 @@ interface AppSidebarProps {
 export default function AppSidebar({ onNavigate }: AppSidebarProps) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const { isDark, toggleTheme } = useTheme();
   const { logout } = useAuth();
 
   const currentUser = authService.getCurrentUserFromStorage();
@@ -54,32 +52,32 @@ export default function AppSidebar({ onNavigate }: AppSidebarProps) {
     onNavigate?.();
   };
 
-  const footItem =
-    "flex w-full items-center gap-3 rounded-md px-3 py-2 text-small font-medium text-ink-muted transition-colors hover:bg-surface-strong hover:text-ink";
-
   return (
-    <div className="flex h-full flex-col border-r border-border bg-surface">
+    <div className="flex h-full flex-col border-r border-ph-line bg-black font-st-body">
       {/* Brand block */}
       <button
         onClick={() => {
           navigate("/dashboard");
           onNavigate?.();
         }}
-        className="flex items-center gap-3 px-4 py-5 text-left"
+        className="flex items-center gap-2.5 border-b border-ph-line px-4 py-4 text-left"
         aria-label="Go to dashboard"
       >
-        <Logo size="sm" showText={false} />
+        <span
+          aria-hidden="true"
+          className="h-2 w-2 shrink-0 rounded-full bg-ph-green shadow-[0_0_10px_#00ff41]"
+        />
         <span className="min-w-0">
-          <span className="block truncate text-h4 font-semibold leading-tight text-ink">
+          <span className="block truncate font-st-display text-[15px] font-semibold leading-tight tracking-[-0.01em] text-ph-ink">
             TalentPulseAI
           </span>
-          <span className="block truncate text-overline font-semibold uppercase text-ink-subtle">
+          <span className="mt-0.5 block truncate font-ph-mono text-[10px] uppercase tracking-[0.18em] text-ph-ink-soft">
             Developer workspace
           </span>
         </span>
       </button>
 
-      <nav aria-label="Primary" className="flex-1 space-y-1 px-3">
+      <nav aria-label="Primary" className="flex-1 space-y-1 p-2">
         {DESTINATIONS.map((dest) => {
           const active = dest.id === activeId;
           const Icon = dest.icon;
@@ -89,49 +87,48 @@ export default function AppSidebar({ onNavigate }: AppSidebarProps) {
               type="button"
               aria-current={active ? "page" : undefined}
               onClick={() => go(dest)}
-              className={`relative flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-small font-medium transition-colors ${
-                active ? "text-accent-fg" : "text-ink-muted hover:bg-surface-strong hover:text-ink"
+              className={`relative flex w-full items-center gap-2.5 rounded-[10px] px-3 py-2.5 font-ph-mono text-[11px] uppercase tracking-[0.14em] transition-colors ${
+                active ? "text-ph-green" : "text-ph-ink-soft hover:bg-ph-surface hover:text-ph-ink"
               }`}
             >
-              {/* The pill sits at auto z-index and the label is lifted above it —
-                  a negative z-index would risk being painted over by the
-                  sidebar's own background, which paints after negative layers. */}
+              {/* Active = a surface plus a 2px accent marker on the left edge.
+                  The layer sits at auto z-index with the label lifted above it —
+                  a negative z-index risks being painted over by the rail's own
+                  background, which paints after negative layers. */}
               {active && (
                 <motion.span
                   layoutId="app-sidebar-pill"
                   transition={SPRING}
-                  className="absolute inset-0 rounded-md bg-accent"
-                />
+                  className="absolute inset-0 rounded-[10px] border border-ph-line-strong bg-ph-surface"
+                >
+                  <span className="absolute inset-y-1.5 left-0 w-0.5 rounded-full bg-ph-green shadow-[0_0_8px_#00ff41]" />
+                </motion.span>
               )}
-              <Icon size={18} className="relative" />
+              <Icon size={15} className="relative" />
               <span className="relative">{dest.label}</span>
             </button>
           );
         })}
       </nav>
 
-      {/* Account group, pinned to the bottom like the prototype's */}
-      <div className="space-y-1 border-t border-border p-3">
-        <div className="flex items-center gap-3 px-3 py-2">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent text-small font-semibold text-accent-fg">
+      {/* Account group, pinned to the bottom */}
+      <div className="space-y-1 border-t border-ph-line p-2">
+        <div className="flex items-center gap-2.5 px-2.5 py-2">
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-ph-green/30 bg-ph-green/[0.06] font-ph-mono text-[12px] text-ph-green">
             {userInitial}
           </span>
-          <span className="min-w-0 truncate text-small text-ink-muted" title={displayName}>
+          <span className="min-w-0 truncate text-[13px] text-ph-ink-muted" title={displayName}>
             {displayName}
           </span>
         </div>
-        <button onClick={toggleTheme} className={footItem}>
-          {isDark ? <Sun size={18} /> : <Moon size={18} />}
-          {isDark ? "Light mode" : "Dark mode"}
-        </button>
         <button
           onClick={() => {
             logout();
             onNavigate?.();
           }}
-          className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-small font-medium text-danger transition-colors hover:bg-danger-soft"
+          className="flex w-full items-center gap-2.5 rounded-[10px] px-3 py-2.5 font-ph-mono text-[11px] uppercase tracking-[0.14em] text-ph-ink-soft transition-colors hover:bg-ph-surface hover:text-ph-ink"
         >
-          <LogOut size={18} />
+          <LogOut size={15} />
           Log out
         </button>
       </div>

@@ -48,6 +48,11 @@ export interface UserOverview {
     unfinished: number;
     average_score: number | null;
     best_score: number | null;
+    /** Scored attempts at or above `pass_score`. Unscored submissions are in neither. */
+    passed: number;
+    failed: number;
+    /** The band the server split on — already the product's 65 tier. */
+    pass_score: number;
   };
   /** Newest row of any status — often an abandoned setup. */
   latest_interview: InterviewSummary | null;
@@ -55,7 +60,16 @@ export interface UserOverview {
   latest_completed: InterviewSummary | null;
   /** Up to 5 newest scored interviews; compare with stats.completed for truncation. */
   recent_completed: InterviewSummary[];
+  /** Every scored attempt, OLDEST FIRST — ready to plot left to right. */
+  score_trend: ScoreTrendPoint[];
   resumes: ResumeSummary[];
+}
+
+export interface ScoreTrendPoint {
+  interview_id: string;
+  role: string;
+  score: number;
+  completed_at: string | null;
 }
 
 export interface ResumeSection {
