@@ -5,6 +5,11 @@
 .env
 .env.*
 !.env.example
+# Mode files: they hold only an API base URL + timeout, no credentials, and which
+# backend a build talks to must be reviewable in the diff — not per-machine state.
+!.env.development
+!.env.remote
+!.env.production
 
 # Python
 __pycache__/

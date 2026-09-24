@@ -16,20 +16,51 @@
  */
 import type { ComponentType } from "react";
 import {
-  ArrowRight, Mic, Briefcase, FileText, Target, BarChart3, Building2,
-  ShieldCheck, Video, ListChecks, Sparkles, Gauge, PlayCircle,
-  FileSearch, UserCheck,
+  ArrowRight,
+  Mic,
+  Briefcase,
+  FileText,
+  Target,
+  BarChart3,
+  Building2,
+  ShieldCheck,
+  Video,
+  ListChecks,
+  Sparkles,
+  Gauge,
+  PlayCircle,
+  FileSearch,
+  UserCheck,
 } from "lucide-react";
 import PhosSiteHeader from "@/components/landing/phos-site-header";
 import PhosSiteFooter from "@/components/landing/phos-site-footer";
-import { AccordionRow, BracketCard, CtaBand, GlyphBand, SectionHead, WindowFrame } from "@/components/phos";
 import {
-  PH_BODY, PH_BODY_SM, PH_BTN_GHOST, PH_BTN_PRIMARY, PH_BTN_TERM, PH_CARD,
-  PH_DISPLAY, PH_H3, PH_LINK_MONO, PH_MONO, PH_MONO_RAW,
+  AccordionRow,
+  BracketCard,
+  CtaBand,
+  GlyphBand,
+  SectionHead,
+  WindowFrame,
+} from "@/components/phos";
+import { PhosphorPhoto } from "@/components/phos/phosphor-photo";
+import { CanvasCard, type SketchName } from "@/components/phos/canvas-card";
+import {
+  PH_BODY,
+  PH_BODY_SM,
+  PH_BTN_GHOST,
+  PH_BTN_PRIMARY,
+  PH_BTN_TERM,
+  PH_CARD,
+  PH_DISPLAY,
+  PH_LINK_MONO,
+  PH_MONO,
+  PH_MONO_RAW,
 } from "@/components/phos/tokens";
 import { Reveal } from "@/components/motion/reveal";
 import tourInterview from "@/assets/landing/tour-interview.svg";
 import tourResults from "@/assets/landing/tour-results.svg";
+/* Hero portrait, supplied by us. Drawn live as a phosphor halftone, never as an <img>. */
+import heroPortrait from "@/assets/phos/hero-portrait.webp";
 
 type Icon = ComponentType<{ size?: number; className?: string }>;
 
@@ -115,23 +146,66 @@ const SIDES = [
 
 /** How the two sides share one resume and feed each other. */
 const FLOW = [
-  { icon: FileText, title: "Upload once", desc: "Your resume is parsed, stripped of personal details, and indexed." },
-  { icon: Target, title: "Pick your lane", desc: "Practice an interview, hunt for jobs — or run both together." },
-  { icon: BarChart3, title: "Get scored", desc: "Answers judged against real signals; jobs ranked by real fit." },
-  { icon: Building2, title: "Walk in ready", desc: "Interview for the role you found, having already rehearsed it." },
+  {
+    icon: FileText,
+    title: "Upload once",
+    desc: "Your resume is parsed, stripped of personal details, and indexed.",
+  },
+  {
+    icon: Target,
+    title: "Pick your lane",
+    desc: "Practice an interview, hunt for jobs — or run both together.",
+  },
+  {
+    icon: BarChart3,
+    title: "Get scored",
+    desc: "Answers judged against real signals; jobs ranked by real fit.",
+  },
+  {
+    icon: Building2,
+    title: "Walk in ready",
+    desc: "Interview for the role you found, having already rehearsed it.",
+  },
 ];
+
+/** One sketch per step of FLOW, in order. */
+const FLOW_SKETCHES: SketchName[] = ["chunks", "branch", "score", "rank"];
 
 /**
  * Replaces the old invented traction stats. Every line here is something the
  * product does today, not a number we cannot back up.
  */
 const CAPABILITIES = [
-  { icon: Sparkles, title: "Resume-aware questions", desc: "Your projects, your stack, your companies — not a generic question bank." },
-  { icon: Gauge, title: "A warm-up before the hard part", desc: "Interviews open on fundamentals, then ramp to the tricky follow-ups." },
-  { icon: Video, title: "Voice and video answers", desc: "Speak your answer with live transcription while the camera records." },
-  { icon: ListChecks, title: "Per-question feedback", desc: "Every answer scored against the signals an interviewer looks for." },
-  { icon: Briefcase, title: "Career pages, not job boards", desc: "The agent reads company hiring APIs directly, so listings are first-hand." },
-  { icon: ShieldCheck, title: "Personal details stripped", desc: "Name, contact and location are removed before anything is embedded." },
+  {
+    icon: Sparkles,
+    title: "Resume-aware questions",
+    desc: "Your projects, your stack, your companies — not a generic question bank.",
+  },
+  {
+    icon: Gauge,
+    title: "A warm-up before the hard part",
+    desc: "Interviews open on fundamentals, then ramp to the tricky follow-ups.",
+  },
+  {
+    icon: Video,
+    title: "Voice and video answers",
+    desc: "Speak your answer with live transcription while the camera records.",
+  },
+  {
+    icon: ListChecks,
+    title: "Per-question feedback",
+    desc: "Every answer scored against the signals an interviewer looks for.",
+  },
+  {
+    icon: Briefcase,
+    title: "Career pages, not job boards",
+    desc: "The agent reads company hiring APIs directly, so listings are first-hand.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Personal details stripped",
+    desc: "Name, contact and location are removed before anything is embedded.",
+  },
 ];
 
 const FAQ = [
@@ -161,61 +235,149 @@ export default function LandingPage() {
       <main className="relative w-full overflow-hidden pt-[104px]">
         {/* ── Hero ── */}
         <section className="ph-grid relative w-full overflow-hidden border-b border-ph-line">
-          <div aria-hidden="true" className="ph-scan pointer-events-none absolute inset-0" />
+          <div
+            aria-hidden="true"
+            className="ph-scan pointer-events-none absolute inset-0"
+          />
           <div
             aria-hidden="true"
             className="pointer-events-none absolute -left-40 top-0 h-[520px] w-[520px] rounded-full bg-ph-green/[0.07] blur-[140px]"
           />
-          <div className="ph-wrap relative z-10 grid gap-14 py-20 md:py-28 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
-            <Reveal>
-              {/* Announcement — the one place a claim about price lives. */}
-              <div className="mb-8 inline-flex items-center gap-2.5 rounded-full border border-ph-green/40 bg-ph-green/[0.06] px-3.5 py-1.5">
-                <span className={`${PH_MONO} text-ph-green`}>Beta</span>
-                <span aria-hidden="true" className="h-3 w-px bg-ph-green/30" />
-                <span className={`${PH_MONO} text-ph-ink-muted`}>
-                  Free while in beta — no card, no sales call.
+          {/*
+            The hero block proper. The portrait is scoped to it rather than to
+            the whole section, so the claims strip below keeps its own black
+            and the cover-crop is not stretched over the section's full height.
+          */}
+          {/*
+            Sized to the first screen minus the fixed header, so the portrait
+            arrives whole instead of being cut by the fold. `svh` rather than
+            `vh` because mobile browser chrome otherwise pushes the CTAs under
+            the address bar.
+          */}
+          <div className="relative flex min-h-[560px] items-center lg:min-h-[calc(100svh-104px)]">
+            {/*
+            Hero portrait: not a framed card but the block's own backdrop,
+            bled against the right edge and feathered into the void, which is
+            how the reference hero is composed. Drawn live as a phosphor
+            scanline halftone — the pointer is a lens that resolves the picture
+            under it, so this layer is the only one that takes pointer events.
+          */}
+            <div
+              className="absolute inset-y-0 right-0 z-0 w-[82%] sm:w-[68%] lg:w-[52%] xl:w-[46%]"
+              style={{
+                maskImage:
+                  "linear-gradient(to right, transparent 0%, #000 46%)",
+                WebkitMaskImage:
+                  "linear-gradient(to right, transparent 0%, #000 46%)",
+              }}
+            >
+              <PhosphorPhoto
+                src={heroPortrait}
+                alt="A candidate at a laptop, drawn as a phosphor scanline portrait."
+                focusX={0.58}
+                focusY={0.46}
+                intensity={1.35}
+              />
+            </div>
+            {/* Holds the headline legible where it crosses the portrait on narrow screens. */}
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-r from-black via-black/90 to-black/35 lg:via-black/15 lg:to-transparent"
+            />
+            {/* Bleeds the portrait's foot into the claims strip below. */}
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-32 bg-gradient-to-t from-black to-transparent"
+            />
+
+            <div className="relative z-10 mx-auto w-full max-w-[100rem] px-[clamp(1.25rem,3.5vw,3rem)] pb-[12vh] pt-8 md:pt-10">
+              {/* Capped well short of the portrait so the two never crowd. */}
+              <Reveal className="max-w-[34rem] xl:max-w-[38rem]">
+                {/* Announcement — the one place a claim about price lives. */}
+                <div className="mb-8 inline-flex items-center gap-2.5 rounded-full border border-ph-green/40 bg-ph-green/[0.06] px-3.5 py-1.5">
+                  <span className={`${PH_MONO} text-ph-green`}>Beta</span>
+                  <span
+                    aria-hidden="true"
+                    className="h-3 w-px bg-ph-green/30"
+                  />
+                  <span className={`${PH_MONO} text-ph-ink-muted`}>
+                    Free while in beta — no card, no sales call.
+                  </span>
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-ph-green shadow-[0_0_8px_#00ff41]" />
+                </div>
+
+                <h1
+                  className={`${PH_DISPLAY} mb-6 max-w-[16ch] text-balance text-ph-ink`}
+                >
+                  Transform your career profile into{" "}
+                  <span className="ph-glow text-ph-green">
+                    high-fidelity signal.
+                  </span>
+                </h1>
+
+                <p className={`${PH_BODY} mb-10 max-w-[62ch] text-pretty`}>
+                  Mock interviews built from your own resume and scored against
+                  the role you're targeting, plus a job agent that ranks real
+                  openings. Personal details are stripped before anything is
+                  indexed.
+                </p>
+
+                <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+                  <a
+                    href="/auth/register"
+                    className={`${PH_BTN_PRIMARY} w-full sm:w-auto`}
+                  >
+                    Get started for free <ArrowRight size={18} />
+                  </a>
+                  <a
+                    href="/demo"
+                    className={`${PH_BTN_GHOST} w-full sm:w-auto`}
+                  >
+                    <PlayCircle size={18} className="text-ph-green" /> Try the
+                    demo
+                  </a>
+                  <span className={PH_BTN_TERM}>
+                    <span
+                      aria-hidden="true"
+                      className="h-1.5 w-1.5 rounded-full bg-ph-green"
+                    />
+                    Personal details stripped
+                  </span>
+                </div>
+              </Reveal>
+
+              {/*
+              The code plate floats in the gap between the headline and the
+              portrait rather than sitting in a frame — it is our own API shape,
+              set unlit so it reads as a terminal echo behind the type. Only
+              shown where there is room for it to clear both.
+            */}
+              <pre className="pointer-events-none absolute left-[46%] top-[26%] hidden font-ph-mono text-[12px] leading-[1.8] text-ph-ink-soft/70 xl:block">
+                <span className="text-ph-ink-soft/45">
+                  {"// resume in, scored answer out"}
                 </span>
-                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-ph-green shadow-[0_0_8px_#00ff41]" />
-              </div>
+                {"\n"}
+                <span className="text-ph-green/70">const</span> interview ={" "}
+                <span className="text-ph-green/70">await</span> start({"{"}
+                {"\n  role:"}{" "}
+                <span className="text-ph-ink/70">{'"frontend"'}</span>,
+                {"\n  from:"}{" "}
+                <span className="text-ph-ink/70">{'"your-resume.pdf"'}</span>,
+                {"\n"}
+                {"});"}
+              </pre>
 
-              <h1 className={`${PH_DISPLAY} mb-6 max-w-[16ch] text-balance text-ph-ink`}>
-                Transform your career profile into{" "}
-                <span className="ph-glow text-ph-green">high-fidelity signal.</span>
-              </h1>
-
-              <p className={`${PH_BODY} mb-10 max-w-[62ch] text-pretty`}>
-                Mock interviews built from your own resume and scored against the role you're
-                targeting, plus a job agent that ranks real openings. Personal details are stripped
-                before anything is indexed.
-              </p>
-
-              <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-                <a href="/auth/register" className={`${PH_BTN_PRIMARY} w-full sm:w-auto`}>
-                  Get started for free <ArrowRight size={18} />
-                </a>
-                <a href="/demo" className={`${PH_BTN_GHOST} w-full sm:w-auto`}>
-                  <PlayCircle size={18} className="text-ph-green" /> Try the demo
-                </a>
-                <span className={PH_BTN_TERM}>
-                  <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-ph-green" />
-                  Personal details stripped
-                </span>
-              </div>
-            </Reveal>
-
-            <Reveal delay={0.1}>
-              <WindowFrame caption="Live interview">
-                <img
-                  src={tourInterview}
-                  alt="Live interview screen with the question, camera and timer"
-                  className="ph-tint block w-full object-cover"
-                />
-              </WindowFrame>
-            </Reveal>
+              <span
+                className={`${PH_MONO} mt-12 flex items-center text-ph-green`}
+              >
+                <span className="mr-2 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-ph-green" />
+                Live scoring
+              </span>
+            </div>
           </div>
 
           {/* The three claims the hero makes, stated plainly. */}
-          <div className="ph-wrap relative z-10 pb-20">
+          <div className="relative z-10 mx-auto w-full max-w-[100rem] px-[clamp(1.25rem,3.5vw,3rem)] pb-20">
             <dl className="grid grid-cols-1 gap-px bg-ph-line md:grid-cols-3">
               {HERO_POINTS.map((point) => (
                 <div key={point.title} className="bg-black p-6">
@@ -245,13 +407,19 @@ export default function LandingPage() {
               {SIDES.map((side, i) => {
                 const SideIcon = side.icon;
                 return (
-                  <Reveal key={side.id} delay={i * 0.08} className={`${PH_CARD} flex flex-col p-6 sm:p-8`}>
+                  <Reveal
+                    key={side.id}
+                    delay={i * 0.08}
+                    className={`${PH_CARD} flex flex-col p-6 sm:p-8`}
+                  >
                     <div className="mb-6 flex items-center gap-3 border-b border-ph-line pb-6">
                       <span className="flex h-10 w-10 items-center justify-center rounded-[12px] border border-ph-green/30 bg-ph-green/[0.06] text-ph-green">
                         <SideIcon size={18} />
                       </span>
                       <div>
-                        <p className={`${PH_MONO} text-ph-green`}>{side.eyebrow}</p>
+                        <p className={`${PH_MONO} text-ph-green`}>
+                          {side.eyebrow}
+                        </p>
                         <h3 className="mt-1 font-st-display text-[22px] font-semibold leading-7 text-ph-ink">
                           {side.title}
                         </h3>
@@ -263,8 +431,15 @@ export default function LandingPage() {
                     <ul className="mt-5 space-y-2.5">
                       {side.points.map((point) => (
                         <li key={point} className="flex items-start gap-2.5">
-                          <span aria-hidden="true" className="mt-[7px] h-1.5 w-1.5 shrink-0 rotate-45 bg-ph-green" />
-                          <span className={`${PH_MONO_RAW} leading-[1.7] text-ph-ink-muted`}>{point}</span>
+                          <span
+                            aria-hidden="true"
+                            className="mt-[7px] h-1.5 w-1.5 shrink-0 rotate-45 bg-ph-green"
+                          />
+                          <span
+                            className={`${PH_MONO_RAW} leading-[1.7] text-ph-ink-muted`}
+                          >
+                            {point}
+                          </span>
                         </li>
                       ))}
                     </ul>
@@ -309,19 +484,28 @@ export default function LandingPage() {
                 aria-hidden="true"
                 className="absolute left-0 right-0 top-[22px] hidden h-px bg-gradient-to-r from-transparent via-ph-green/45 to-transparent lg:block"
               />
-              <ol className="relative grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+              <ol className="relative grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
                 {FLOW.map((step, i) => {
                   const StepIcon = step.icon;
                   return (
-                    <Reveal key={step.title} delay={i * 0.06} className="relative">
-                      <div className="mb-6 flex items-center justify-between">
-                        <span className="flex h-11 w-11 items-center justify-center rounded-full border border-ph-green/40 bg-black font-ph-mono text-[13px] text-ph-green shadow-[0_0_18px_rgba(0,255,65,0.18)]">
-                          {String(i + 1).padStart(2, "0")}
-                        </span>
-                        <StepIcon size={16} className="text-ph-ink-soft" />
-                      </div>
-                      <h3 className={`${PH_H3} mb-2 text-ph-ink`}>{step.title}</h3>
-                      <p className={PH_BODY_SM}>{step.desc}</p>
+                    <Reveal
+                      key={step.title}
+                      delay={i * 0.06}
+                      className="relative h-full"
+                    >
+                      {/* The sketch illustrates the step; it reads no live data. */}
+                      <CanvasCard
+                        sketch={FLOW_SKETCHES[i]}
+                        index={String(i + 1).padStart(2, "0")}
+                        title={
+                          <span className="flex items-center gap-2">
+                            <StepIcon size={15} className="text-ph-green" />
+                            {step.title}
+                          </span>
+                        }
+                      >
+                        {step.desc}
+                      </CanvasCard>
                     </Reveal>
                   );
                 })}
@@ -372,7 +556,9 @@ export default function LandingPage() {
               <h2 className="font-st-display text-[clamp(1.75rem,3.4vw,2.75rem)] font-semibold leading-[1.08] tracking-[-0.028em] text-ph-ink">
                 Straight answers
               </h2>
-              <p className={`${PH_BODY} mt-4 max-w-md`}>The four things people ask before signing up.</p>
+              <p className={`${PH_BODY} mt-4 max-w-md`}>
+                The four things people ask before signing up.
+              </p>
             </Reveal>
             <Reveal delay={0.08} className="border-t border-ph-line">
               {FAQ.map((item) => (
@@ -394,13 +580,19 @@ export default function LandingPage() {
                 footnote={
                   <p className={PH_BODY_SM}>
                     Already have an account?{" "}
-                    <a href="/auth/login" className="text-ph-green underline-offset-4 hover:underline">
+                    <a
+                      href="/auth/login"
+                      className="text-ph-green underline-offset-4 hover:underline"
+                    >
                       Log in
                     </a>
                   </p>
                 }
               >
-                <a href="/auth/register" className={`${PH_BTN_PRIMARY} w-full sm:w-auto`}>
+                <a
+                  href="/auth/register"
+                  className={`${PH_BTN_PRIMARY} w-full sm:w-auto`}
+                >
                   Create a free account <ArrowRight size={18} />
                 </a>
                 <a href="/demo" className={`${PH_BTN_GHOST} w-full sm:w-auto`}>

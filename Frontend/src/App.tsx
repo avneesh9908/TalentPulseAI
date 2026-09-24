@@ -5,6 +5,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { AuthProvider } from "@/contexts/auth-context";
 import { InterviewProvider } from "@/contexts/interview-provider";
 import ProtectedRoute from "@/app/pages/auth/protected-route";
+import { PhosphorCursor } from "@/components/phos/phosphor-cursor";
 
 // Layouts (structural — kept eager)
 import AuthLayout from "@/app/pages/auth/layout";
@@ -19,10 +20,14 @@ const PracticePage = lazy(() => import("@/app/pages/practice"));
 const FindJobsPage = lazy(() => import("@/app/pages/find-jobs"));
 const UsersPage = lazy(() => import("@/app/pages/users/users"));
 const SelectRole = lazy(() => import("@/app/pages/interview/select-role"));
-const SelectProfile = lazy(() => import("@/app/pages/interview/select-profile"));
+const SelectProfile = lazy(
+  () => import("@/app/pages/interview/select-profile"),
+);
 const QuickSetup = lazy(() => import("@/app/pages/interview/quick-setup"));
 const InterviewNow = lazy(() => import("@/app/pages/interview/interview-now"));
-const InterviewResult = lazy(() => import("@/app/pages/interview/interview-result"));
+const InterviewResult = lazy(
+  () => import("@/app/pages/interview/interview-result"),
+);
 const Profile = lazy(() => import("@/app/pages/profile/profile"));
 const JobsPage = lazy(() => import("@/app/pages/jobs/jobs"));
 
@@ -36,148 +41,157 @@ function App() {
   return (
     // ErrorBoundary is outermost so it also catches provider/router render errors.
     <ErrorBoundary>
-    {/* ⚠️ AuthProvider must be INSIDE BrowserRouter (needs useNavigate) */}
-    <BrowserRouter>
-      <AuthProvider>
-        <InterviewProvider>
+      {/* The phosphor pointer, over every route. Inert on touch and under
+        reduced motion, and pointer-events-none so it never eats a click. */}
+      <PhosphorCursor />
+      {/* ⚠️ AuthProvider must be INSIDE BrowserRouter (needs useNavigate) */}
+      <BrowserRouter>
+        <AuthProvider>
+          <InterviewProvider>
             <Suspense fallback={<PageFallback />}>
-            <Routes>
-            {/* LANDING PAGE - ENTRY POINT (divides into the two product sides) */}
-            <Route path="/" element={<LandingPage />} />
-            {/* PUBLIC PRODUCT PAGES — one per side */}
-            <Route path="/practice" element={<PracticePage />} />
-            <Route path="/find-jobs" element={<FindJobsPage />} />
+              <Routes>
+                {/* LANDING PAGE - ENTRY POINT (divides into the two product sides) */}
+                <Route path="/" element={<LandingPage />} />
+                {/* PUBLIC PRODUCT PAGES — one per side */}
+                <Route path="/practice" element={<PracticePage />} />
+                <Route path="/find-jobs" element={<FindJobsPage />} />
 
-            {/* /demo links on landing page redirect to the interview flow */}
-            <Route path="/demo" element={<Navigate to="/interview/select-role" replace />} />
+                {/* /demo links on landing page redirect to the interview flow */}
+                <Route
+                  path="/demo"
+                  element={<Navigate to="/interview/select-role" replace />}
+                />
 
-            {/* AUTH ROUTES - NOT PROTECTED */}
-            <Route path="/auth" element={<AuthLayout />}>
-              <Route path="login" element={<Login />} />
-              <Route path="register" element={<Register />} />
-            </Route>
+                {/* AUTH ROUTES - NOT PROTECTED */}
+                <Route path="/auth" element={<AuthLayout />}>
+                  <Route path="login" element={<Login />} />
+                  <Route path="register" element={<Register />} />
+                </Route>
 
-            {/* INTERVIEW FLOW - PROTECTED ROUTES */}
-            {/* Entry point: Select Role */}
-            <Route
-              path="/interview"
-              element={
-                <ProtectedRoute>
-                  <ProtectedLayout chrome="focus">
-                    <SelectRole />
-                  </ProtectedLayout>
-                </ProtectedRoute>
-              }
-            />
+                {/* INTERVIEW FLOW - PROTECTED ROUTES */}
+                {/* Entry point: Select Role */}
+                <Route
+                  path="/interview"
+                  element={
+                    <ProtectedRoute>
+                      <ProtectedLayout chrome="focus">
+                        <SelectRole />
+                      </ProtectedLayout>
+                    </ProtectedRoute>
+                  }
+                />
 
-            <Route
-              path="/interview/quick-setup"
-              element={
-                <ProtectedRoute>
-                  <ProtectedLayout chrome="focus">
-                    <QuickSetup />
-                  </ProtectedLayout>
-                </ProtectedRoute>
-              }
-            />
+                <Route
+                  path="/interview/quick-setup"
+                  element={
+                    <ProtectedRoute>
+                      <ProtectedLayout chrome="focus">
+                        <QuickSetup />
+                      </ProtectedLayout>
+                    </ProtectedRoute>
+                  }
+                />
 
-            <Route
-              path="/interview/start"
-              element={
-                <ProtectedRoute>
-                  <ProtectedLayout chrome="focus">
-                    <InterviewNow />
-                  </ProtectedLayout>
-                </ProtectedRoute>
-              }
-            />
+                <Route
+                  path="/interview/start"
+                  element={
+                    <ProtectedRoute>
+                      <ProtectedLayout chrome="focus">
+                        <InterviewNow />
+                      </ProtectedLayout>
+                    </ProtectedRoute>
+                  }
+                />
 
-            <Route
-              path="/interview/result"
-              element={
-                <ProtectedRoute>
-                  <ProtectedLayout>
-                    <InterviewResult />
-                  </ProtectedLayout>
-                </ProtectedRoute>
-              }
-            />
+                <Route
+                  path="/interview/result"
+                  element={
+                    <ProtectedRoute>
+                      <ProtectedLayout>
+                        <InterviewResult />
+                      </ProtectedLayout>
+                    </ProtectedRoute>
+                  }
+                />
 
-            {/* Flow Step 1: Select Role */}
-            <Route
-              path="/interview/select-role"
-              element={
-                <ProtectedRoute>
-                  <ProtectedLayout chrome="focus">
-                    <SelectRole />
-                  </ProtectedLayout>
-                </ProtectedRoute>
-              }
-            />
+                {/* Flow Step 1: Select Role */}
+                <Route
+                  path="/interview/select-role"
+                  element={
+                    <ProtectedRoute>
+                      <ProtectedLayout chrome="focus">
+                        <SelectRole />
+                      </ProtectedLayout>
+                    </ProtectedRoute>
+                  }
+                />
 
-            {/* Flow Step 2: Select Profile */}
-            <Route
-              path="/interview/select-profile"
-              element={
-                <ProtectedRoute>
-                  <ProtectedLayout chrome="focus">
-                    <SelectProfile />
-                  </ProtectedLayout>
-                </ProtectedRoute>
-              }
-            />
+                {/* Flow Step 2: Select Profile */}
+                <Route
+                  path="/interview/select-profile"
+                  element={
+                    <ProtectedRoute>
+                      <ProtectedLayout chrome="focus">
+                        <SelectProfile />
+                      </ProtectedLayout>
+                    </ProtectedRoute>
+                  }
+                />
 
-            {/* PROTECTED DASHBOARD */}
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <ProtectedLayout>
-                    <Dashboard />
-                  </ProtectedLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/users"
-              element={
-                <ProtectedRoute>
-                  <ProtectedLayout>
-                    <UsersPage />
-                  </ProtectedLayout>
-                </ProtectedRoute>
-              }
-            />
-            {/* PROTECTED JOB SEARCH */}
-            <Route
-              path="/jobs"
-              element={
-                <ProtectedRoute>
-                  <ProtectedLayout>
-                    <JobsPage />
-                  </ProtectedLayout>
-                </ProtectedRoute>
-              }
-            />
-            {/* PROTECTED PROFILE */}
-            <Route
-              path="/profile"
-              element={
-                <ProtectedRoute>
-                  <ProtectedLayout>
-                    <Profile />
-                  </ProtectedLayout>
-                </ProtectedRoute>
-              }
-            />
+                {/* PROTECTED DASHBOARD */}
+                <Route
+                  path="/dashboard"
+                  element={
+                    <ProtectedRoute>
+                      <ProtectedLayout>
+                        <Dashboard />
+                      </ProtectedLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/users"
+                  element={
+                    <ProtectedRoute>
+                      <ProtectedLayout>
+                        <UsersPage />
+                      </ProtectedLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                {/* PROTECTED JOB SEARCH */}
+                <Route
+                  path="/jobs"
+                  element={
+                    <ProtectedRoute>
+                      <ProtectedLayout>
+                        <JobsPage />
+                      </ProtectedLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                {/* PROTECTED PROFILE */}
+                <Route
+                  path="/profile"
+                  element={
+                    <ProtectedRoute>
+                      <ProtectedLayout>
+                        <Profile />
+                      </ProtectedLayout>
+                    </ProtectedRoute>
+                  }
+                />
 
-            {/* FALLBACK */}
-            <Route path="*" element={<Navigate to="/auth/login" replace />} />
-          </Routes>
+                {/* FALLBACK */}
+                <Route
+                  path="*"
+                  element={<Navigate to="/auth/login" replace />}
+                />
+              </Routes>
             </Suspense>
-        </InterviewProvider>
-      </AuthProvider>
-    </BrowserRouter>
+          </InterviewProvider>
+        </AuthProvider>
+      </BrowserRouter>
     </ErrorBoundary>
   );
 }

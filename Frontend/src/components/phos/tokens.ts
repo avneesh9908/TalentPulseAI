@@ -34,7 +34,9 @@ export const PH_MONO_RAW = "font-ph-mono text-[11px] leading-[1.4] tracking-[0.0
  * everywhere and can be retuned in one place.
  */
 export const PH_CARD_HOVER =
-  "transition-[transform,border-color,box-shadow,background-color] duration-200 hover:-translate-y-0.5 hover:border-ph-green/45 hover:bg-ph-surface-2 hover:shadow-[0_0_0_1px_rgba(0,255,65,0.06),0_12px_32px_-12px_rgba(0,255,65,0.25)]";
+  "transition-[transform,border-color,box-shadow,background-color] duration-200 ease-[cubic-bezier(.22,1,.36,1)] " +
+  "hover:-translate-y-1 hover:border-ph-green hover:bg-ph-surface-2 " +
+  "hover:shadow-[0_0_0_1px_rgba(0,255,65,0.25),0_0_28px_-4px_rgba(0,255,65,0.30),0_18px_44px_-16px_rgba(0,0,0,0.9)]";
 
 export const PH_CARD = `rounded-[16px] border border-ph-line-strong bg-ph-surface ${PH_CARD_HOVER}`;
 export const PH_CARD_FLAT = "rounded-[16px] border border-ph-line bg-ph-surface";
