@@ -390,7 +390,12 @@ export default function Profile() {
                 </Link>
               </div>
             ) : (
-              <div className="flex flex-col gap-3">
+              /* The list grows with every interview setup — 11 rows here already —
+                 so it is capped at roughly three cards and scrolls. The cap is a
+                 max-height, not a fixed one: with one or two resumes the column
+                 still shrinks to fit. `pr-1` keeps the scrollbar off the cards'
+                 hover border. */
+              <div className="flex max-h-[32rem] flex-col gap-3 overflow-y-auto pr-1">
                 {resumes.map((resume) => (
                   <div key={resume.id} className={`flex flex-col gap-3 rounded-[16px] border border-ph-line-strong bg-ph-surface p-4 ${PH_CARD_HOVER}`}>
                     <div className="flex items-start gap-2.5">
