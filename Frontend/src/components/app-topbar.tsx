@@ -35,6 +35,26 @@ export default function AppTopbar({ onOpenMenu }: AppTopbarProps) {
           <Menu />
         </Button>
 
+        {/* The lowercase `talentpulse.ai` lockup, restored from the retired
+            `focus` header (2026-09-26, user asked). Note the rail carries its
+            own `TalentPulseAI` wordmark, so from lg up the brand appears twice
+            by design — add `lg:hidden` here if that ever reads as a duplicate. */}
+        {/* No aria-label: the rail's wordmark is already labelled "Go to
+            dashboard", and a second button with that exact name reads as a
+            duplicate. The visible text names this one instead. */}
+        <button
+          onClick={() => navigate("/dashboard")}
+          className="group flex items-center gap-2.5"
+        >
+          <span
+            aria-hidden="true"
+            className="h-2 w-2 rounded-full bg-ph-green shadow-[0_0_10px_#00ff41] transition-transform group-hover:scale-125"
+          />
+          <span className="font-st-display text-[15px] font-semibold tracking-[-0.01em] text-ph-ink">
+            talentpulse<span className="text-ph-green">.ai</span>
+          </span>
+        </button>
+
         <div className="flex-1" />
 
         {/* Moved here from the `focus` header when the interview funnel joined
