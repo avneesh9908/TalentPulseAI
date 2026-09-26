@@ -11,7 +11,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { Bell, Menu, Zap } from "lucide-react";
+import { Bell, Lock, Menu, Zap } from "lucide-react";
 import { Button } from "@/components/phos/controls";
 
 interface AppTopbarProps {
@@ -36,6 +36,15 @@ export default function AppTopbar({ onOpenMenu }: AppTopbarProps) {
         </Button>
 
         <div className="flex-1" />
+
+        {/* Moved here from the `focus` header when the interview funnel joined
+            the sidebar shell (2026-09-26) — that header was its only home.
+            Hidden below md: at 375 the row is the menu button, this pill,
+            Quick interview and the bell, and the pill is the one that can go. */}
+        <span className="hidden items-center gap-1.5 rounded-full border border-ph-green/40 bg-ph-green/[0.06] px-3 py-1 font-ph-mono text-[10px] uppercase tracking-[0.18em] text-ph-green md:inline-flex">
+          <Lock size={12} />
+          Secure session
+        </span>
 
         <Button
           onClick={() => navigate("/interview/select-role")}
