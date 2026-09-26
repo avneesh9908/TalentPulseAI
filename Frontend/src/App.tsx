@@ -74,7 +74,7 @@ function App() {
                   path="/interview"
                   element={
                     <ProtectedRoute>
-                      <ProtectedLayout chrome="focus">
+                      <ProtectedLayout>
                         <SelectRole />
                       </ProtectedLayout>
                     </ProtectedRoute>
@@ -85,7 +85,7 @@ function App() {
                   path="/interview/quick-setup"
                   element={
                     <ProtectedRoute>
-                      <ProtectedLayout chrome="focus">
+                      <ProtectedLayout>
                         <QuickSetup />
                       </ProtectedLayout>
                     </ProtectedRoute>
@@ -119,7 +119,7 @@ function App() {
                   path="/interview/select-role"
                   element={
                     <ProtectedRoute>
-                      <ProtectedLayout chrome="focus">
+                      <ProtectedLayout>
                         <SelectRole />
                       </ProtectedLayout>
                     </ProtectedRoute>
@@ -131,7 +131,7 @@ function App() {
                   path="/interview/select-profile"
                   element={
                     <ProtectedRoute>
-                      <ProtectedLayout chrome="focus">
+                      <ProtectedLayout>
                         <SelectProfile />
                       </ProtectedLayout>
                     </ProtectedRoute>

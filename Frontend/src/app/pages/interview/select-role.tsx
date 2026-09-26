@@ -229,7 +229,7 @@ export default function SelectRolePage() {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 70, opacity: 0 }}
             transition={{ type: "spring", stiffness: 300, damping: 28 }}
-            className="fixed bottom-5 left-1/2 z-50 w-full max-w-xl -translate-x-1/2 px-4"
+            className="fixed inset-x-0 bottom-5 z-50 mx-auto w-full max-w-xl px-4 lg:left-56"
           >
             <Panel tone="raised" padding="none" className="flex items-center justify-between gap-4 rounded-full border border-ph-green/35 bg-black/90 p-2 pl-3 backdrop-blur-xl">
               <div className="flex min-w-0 items-center gap-3">
@@ -263,7 +263,7 @@ export default function SelectRolePage() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
-            className="fixed bottom-5 left-5 z-50 max-w-sm font-st-body"
+            className="fixed bottom-5 left-5 z-50 max-w-sm font-st-body lg:left-[calc(14rem+1.25rem)]"
           >
             <ErrorAlert title="Something went wrong" message={error} onDismiss={clearError} className="backdrop-blur-xl" />
           </motion.div>

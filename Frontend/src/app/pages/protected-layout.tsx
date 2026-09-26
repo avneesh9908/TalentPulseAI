@@ -10,9 +10,10 @@ import { DUR, EASE_OUT } from "@/lib/motion";
 interface ProtectedLayoutProps {
   children: ReactNode;
   /**
-   * `app` is the sidebar shell used by every destination. `focus` is the
-   * prototype's minimal wizard bar — no nav, one way out — used by the
-   * interview funnel so nothing competes with the step you are on.
+   * `app` is the sidebar shell used by every destination, including the
+   * interview wizard. `focus` is the minimal bar — no nav, one way out —
+   * and is now only for the live session at /interview/start, where the
+   * screen is measured against this header's 56px + 1px border.
    */
   chrome?: "app" | "focus";
 }
