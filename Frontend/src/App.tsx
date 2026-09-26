@@ -96,7 +96,7 @@ function App() {
                   path="/interview/start"
                   element={
                     <ProtectedRoute>
-                      <ProtectedLayout chrome="focus">
+                      <ProtectedLayout>
                         <InterviewNow />
                       </ProtectedLayout>
                     </ProtectedRoute>

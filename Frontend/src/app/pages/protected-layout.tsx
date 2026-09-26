@@ -10,10 +10,12 @@ import { DUR, EASE_OUT } from "@/lib/motion";
 interface ProtectedLayoutProps {
   children: ReactNode;
   /**
-   * `app` is the sidebar shell used by every destination, including the
-   * interview wizard. `focus` is the minimal bar — no nav, one way out —
-   * and is now only for the live session at /interview/start, where the
-   * screen is measured against this header's 56px + 1px border.
+   * `app` is the sidebar shell, and as of 2026-09-26 every protected route
+   * uses it — the interview funnel included, live session and all. `focus`
+   * is the minimal bar (no nav, one way out) and currently has NO callers;
+   * it is kept because the funnel has moved between the two before. Its
+   * header is 56px + a 1px border, the same as the app topbar, which is why
+   * screens measuring `calc(100vh-3.5rem-1px)` work under either one.
    */
   chrome?: "app" | "focus";
 }
